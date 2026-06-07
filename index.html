@@ -2722,10 +2722,38 @@ function toggleSim2Auto() {
 }
 
 async function sfSubmit() {
-  const missing = SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
-  if (missing.length) { alert('Please complete all required fields before submitting.'); return; }
   const data = sfGetData();
   const btn  = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+
+  // ── EDIT MODE — PUT to existing record ──────────────────
+  if (editingId) {
+    if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+    try {
+      const res = await fetch(API_URL + '/api/surveys/' + editingId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + authToken },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (!res.ok) { alert('Save failed: ' + (result.error || 'Unknown error')); return; }
+      editingId = null;
+      const banner = document.getElementById('sf-edit-banner');
+      if (banner) banner.style.display = 'none';
+      await loadSurveysFromAPI();
+      document.getElementById('sf-form-body').classList.add('hide');
+      document.getElementById('sf-success').classList.add('show');
+      document.getElementById('sf-success-txt').textContent = 'Survey updated successfully in database.';
+    } catch(err) {
+      alert('Save failed: ' + err.message);
+    } finally {
+      if (btn) { btn.textContent = 'Save changes'; btn.disabled = false; }
+    }
+    return;
+  }
+
+  // ── NEW SUBMISSION ───────────────────────────────────────
+  const missing = SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
+  if (missing.length) { alert('Please complete all required fields before submitting.'); return; }
   if (btn) { btn.textContent = 'Submitting…'; btn.disabled = true; }
 
   // DEMO MODE — store locally, skip API
