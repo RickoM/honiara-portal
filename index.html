@@ -2331,14 +2331,21 @@ async function dtEdit(btn) {
   s('sf-name', survey.name);
   s('sf-date', survey.date);
 
-  // Time
+  // Time — convert 24hr stored value back to 12hr selects
   if (survey.time) {
     const parts = survey.time.split(':');
-    let h = parseInt(parts[0]||0), m = parseInt(parts[1]||0);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    s('sf-time-hh', h); s('sf-time-mm', String(m).padStart(2,'0'));
-    s('sf-time-ampm', ampm); sfTimeSync();
+    let h24 = parseInt(parts[0]||0);
+    const m = parseInt(parts[1]||0);
+    const ampm = h24 >= 12 ? 'PM' : 'AM';
+    let h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;  // 0 and 12 both map to 12 on clock
+    const hhEl = document.getElementById('sf-time-hh');
+    const mmEl = document.getElementById('sf-time-mm');
+    const apEl = document.getElementById('sf-time-ampm');
+    if (hhEl) hhEl.value = String(h12).padStart(2,'0');
+    if (mmEl) mmEl.value = String(m).padStart(2,'0');
+    if (apEl) apEl.value = ampm;
+    sfTimeSync();
   }
 
   // ── Section A ───────────────────────────────
@@ -2610,6 +2617,7 @@ function sfTimeSync() {
   const hh = parseInt(document.getElementById('sf-time-hh').value);
   const mm = document.getElementById('sf-time-mm').value;
   const ampm = document.getElementById('sf-time-ampm').value;
+  // 12-hour to 24-hour: 12AM=0, 1-11AM=1-11, 12PM=12, 1-11PM=13-23
   let h24 = hh % 12;
   if (ampm === 'PM') h24 += 12;
   document.getElementById('sf-time').value = String(h24).padStart(2,'0') + ':' + mm;
