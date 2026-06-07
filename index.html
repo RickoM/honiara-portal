@@ -2308,9 +2308,9 @@ async function dtEdit(btn) {
   }
   if (!survey) { alert('Could not load survey data.'); return; }
 
-  // Reset form then populate with existing data
-  sfReset();
+  // Set editingId first then reset form (keepEditingId=true preserves it)
   editingId = mongoId;
+  sfReset(true);
 
   // Helper: set text/number/select/textarea value
   const s = (id, val) => { const el = document.getElementById(id); if (el && val != null && val !== '') el.value = val; };
@@ -2398,6 +2398,10 @@ async function dtEdit(btn) {
 
   // ── Notes ────────────────────────────────────
   s('sf-notes', survey.notes);
+
+  // Set submit button to Save changes
+  const submitBtn2 = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+  if (submitBtn2) { submitBtn2.textContent = 'Save changes'; submitBtn2.style.background = 'var(--amber)'; }
 
   // Switch to survey tab and show edit banner
   switchView('survey', document.getElementById('tnav-survey'));
@@ -2931,12 +2935,12 @@ function sfRestoreDraft() {
   } catch(e) { console.error('Draft restore error:', e); }
 }
 
-function sfReset() {
-  editingId = null;
+function sfReset(keepEditingId) {
+  if (!keepEditingId) editingId = null;
   const banner = document.getElementById('sf-edit-banner');
-  if (banner) banner.style.display = 'none';
+  if (banner && !keepEditingId) banner.style.display = 'none';
   const submitBtn = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
-  if (submitBtn) { submitBtn.textContent = 'Submit survey'; submitBtn.style.background = ''; }
+  if (submitBtn && !keepEditingId) { submitBtn.textContent = 'Submit survey'; submitBtn.style.background = ''; }
   document.getElementById('sf-form-body').classList.remove('hide');
   document.getElementById('sf-success').classList.remove('show');
   document.querySelectorAll('#view-survey input[type=radio], #view-survey input[type=checkbox]').forEach(i => i.checked = false);
