@@ -2284,16 +2284,14 @@ async function dtEdit(btn) {
   console.log('dtEdit called with:', mongoId);
   if (!mongoId || mongoId === 'undefined') { alert('Cannot edit — record has no database ID.'); return; }
 
-  // Load from local cache first, then fall back to server
-  let survey = points.find(p => p._id === mongoId);
-  if (!survey) {
-    try {
-      const data = await apiCall('GET', '/api/surveys/' + mongoId);
-      survey = data.survey;
-    } catch(e) {
-      alert('Could not load survey data.');
-      return;
-    }
+  // Always fetch full record from server to get all fields
+  let survey;
+  try {
+    const data = await apiCall('GET', '/api/surveys/' + mongoId);
+    survey = data.survey;
+  } catch(e) {
+    // Fall back to local cache
+    survey = points.find(p => p._id === mongoId);
   }
   if (!survey) { alert('Could not load survey data.'); return; }
 
