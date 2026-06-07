@@ -471,7 +471,7 @@
       Honiara <span>Survey Portal</span>
     </div>
     <div class="topbar-nav">
-      <button class="tnav on" onclick="switchView('survey', this)">Submit Survey</button>
+      <button class="tnav on" id="tnav-survey" onclick="switchView('survey', this)">Submit Survey</button>
       <button class="tnav" onclick="switchView('map', this)">Live Map</button>
       <button class="tnav" onclick="switchView('dashboard', this)">Dashboard</button>
       <button class="tnav" onclick="switchView('data', this)">Data Table</button>
@@ -1799,13 +1799,19 @@ function switchView(id, btn) {
   document.querySelectorAll('.tnav').forEach(t => t.classList.remove('on'));
   if (btn) btn.classList.add('on');
   activeView = id;
-  document.getElementById('view-map').style.display         = id === 'map'      ? 'flex'  : 'none';
-  document.getElementById('view-dashboard').classList.toggle('on', id === 'dashboard');
-  document.getElementById('view-data').classList.toggle('on',      id === 'data');
-  document.getElementById('view-survey').classList.toggle('on',    id === 'survey');
-  if (id === 'dashboard') renderDashboard();
-  if (id === 'data')      renderDataTable();
-  if (id === 'deleted')   loadDeletedSurveys();
+  // Hide all views first
+  document.getElementById('view-map').style.display = 'none';
+  document.getElementById('view-dashboard').classList.remove('on');
+  document.getElementById('view-data').classList.remove('on');
+  document.getElementById('view-survey').classList.remove('on');
+  const delPanel = document.getElementById('sf-deleted-panel');
+  if (delPanel) delPanel.classList.remove('on');
+  // Show selected view
+  if (id === 'map')       { document.getElementById('view-map').style.display = 'flex'; }
+  if (id === 'dashboard') { document.getElementById('view-dashboard').classList.add('on'); renderDashboard(); }
+  if (id === 'data')      { document.getElementById('view-data').classList.add('on'); renderDataTable(); }
+  if (id === 'survey')    { document.getElementById('view-survey').classList.add('on'); }
+  if (id === 'deleted')   { loadDeletedSurveys(); }
 }
 
 // ══════════════════════════════════════════════════════
@@ -2360,7 +2366,7 @@ async function dtEdit(btn) {
   s('sf-notes', survey.notes);
 
   // Switch to survey tab and show edit banner
-  switchView('survey', document.querySelector('.tnav'));
+  switchView('survey', document.getElementById('tnav-survey'));
   document.getElementById('view-survey').scrollTop = 0;
 
   // Change submit button to "Save changes"
