@@ -2332,6 +2332,7 @@ async function dtEdit(btn) {
   s('sf-date', survey.date);
 
   // Time — convert 24hr stored value back to 12hr selects
+  console.log('survey.time from DB:', survey.time);
   if (survey.time) {
     const parts = survey.time.split(':');
     let h24 = parseInt(parts[0]||0);
