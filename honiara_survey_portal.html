@@ -1,0 +1,3057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honiara Mobile Network Survey Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1C3557;
+    --navy-light: #2A4A6B;
+    --navy-dark: #0F1F33;
+    --teal: #0F6E56;
+    --teal-light: #E1F5EE;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --red: #A32D2D;
+    --red-light: #FCEBEB;
+    --green: #27500A;
+    --green-light: #EAF3DE;
+    --blue-light: #E6F1FB;
+    --blue-mid: #378ADD;
+    --gray-50: #F8F9FA;
+    --gray-100: #F1F3F5;
+    --gray-200: #E9ECEF;
+    --gray-400: #ADB5BD;
+    --gray-600: #6C757D;
+    --gray-800: #343A40;
+    --text: #1A1A2E;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--gray-100); color: var(--text); font-size: 13px; }
+  
+  /* ── LAYOUT ── */
+  .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .topbar { background: var(--navy-dark); padding: 0 20px; display: flex; align-items: center; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+  .topbar-logo { color: #fff; font-size: 14px; font-weight: 600; padding: 14px 0; margin-right: 24px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+  .topbar-logo span { color: #5DCAA5; }
+  .topbar-nav { display: flex; }
+  .tnav { padding: 14px 16px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.5); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; background: none; border-top: none; border-left: none; border-right: none; }
+  .tnav.on { color: #fff; border-bottom-color: #5DCAA5; }
+  .tnav:hover:not(.on) { color: rgba(255,255,255,0.8); }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .api-badge { background: rgba(93,202,165,0.15); border: 1px solid rgba(93,202,165,0.3); border-radius: 6px; padding: 4px 10px; font-size: 11px; color: #5DCAA5; font-family: 'JetBrains Mono', monospace; cursor: pointer; }
+  .api-badge.missing { background: rgba(163,45,45,0.15); border-color: rgba(163,45,45,0.3); color: #f08080; }
+  
+  .workspace { display: flex; flex: 1; overflow: hidden; }
+  
+  /* ── SIDEBAR ── */
+  .sidebar { width: 320px; flex-shrink: 0; background: #fff; border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+  .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
+  .sidebar-section:last-child { border-bottom: none; }
+  .ssec-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 10px; }
+  
+  /* ── MAP ── */
+  .map-area { flex: 1; position: relative; background: #2C3E50; }
+  #map { width: 100%; height: 100%; }
+  .map-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a2a3a 0%, #2C3E50 50%, #1a3a2a 100%); color: #fff; gap: 12px; }
+  .map-placeholder svg { opacity: .3; }
+  .map-placeholder h3 { font-size: 18px; font-weight: 500; }
+  .map-placeholder p { font-size: 13px; color: rgba(255,255,255,0.5); text-align: center; max-width: 360px; line-height: 1.6; }
+  .map-placeholder code { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5DCAA5; }
+  
+  /* ── LAYER CONTROLS ── */
+  .layer-ctrl { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; left: 12px; z-index: 10; min-width: 180px; }
+  .layer-ctrl-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 8px; }
+  .layer-toggle { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; }
+  .layer-toggle input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--navy); cursor: pointer; }
+  .layer-toggle-label { font-size: 12px; font-weight: 500; }
+  .layer-icon { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  
+  /* ── MAP STATS ── */
+  .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; }
+  .map-stat-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .map-stat-row:last-child { margin-bottom: 0; }
+  .map-stat-val { font-size: 18px; font-weight: 600; line-height: 1; }
+  .map-stat-lbl { font-size: 11px; color: var(--gray-600); }
+  .progress-bar-mini { height: 4px; background: var(--gray-200); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .progress-bar-mini-fill { height: 100%; background: var(--navy); border-radius: 2px; transition: width .3s; }
+  
+  /* ── SIGNAL LEGEND ── */
+  .sig-legend { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; bottom: 28px; left: 12px; z-index: 10; }
+  .sig-legend-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 7px; }
+  .sig-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-size: 11px; color: var(--gray-800); }
+  .sig-row:last-child { margin-bottom: 0; }
+  .sig-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  
+  /* ── DAY SELECTOR ── */
+  .day-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+  .day-pill { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--gray-50); color: var(--gray-600); white-space: nowrap; transition: all .15s; }
+  .day-pill.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .day-pill.has-data { border-color: var(--blue-mid); color: var(--navy); }
+  .day-pill:hover:not(.on) { background: var(--gray-100); }
+  
+  /* ── METRICS ── */
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric-card { background: var(--gray-50); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .metric-val { font-size: 22px; font-weight: 600; line-height: 1.1; color: var(--text); }
+  .metric-lbl { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
+  
+  /* ── WARD BARS ── */
+  .ward-row { display: grid; grid-template-columns: 90px 1fr 38px 70px; gap: 5px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+  .ward-row:last-child { border-bottom: none; }
+  .wbar-track { background: var(--gray-200); border-radius: 2px; height: 6px; overflow: hidden; position: relative; }
+  .wbar-fill { height: 100%; border-radius: 2px; transition: width .3s; }
+  .wbar-tgt { position: absolute; top: 0; bottom: 0; width: 1.5px; background: rgba(0,0,0,0.3); }
+  .zone-hdr { background: var(--gray-100); padding: 4px 8px; border-radius: 4px; margin: 6px 0 3px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--navy); }
+  
+  /* ── FLAGS / ACTIONS ── */
+  .flag-item { display: flex; gap: 7px; align-items: flex-start; padding: 7px 8px; border-radius: 6px; margin-bottom: 5px; font-size: 11px; line-height: 1.4; }
+  .flag-item:last-child { margin-bottom: 0; }
+  .flag-item.red { background: var(--red-light); color: var(--red); }
+  .flag-item.amber { background: var(--amber-light); color: var(--amber); }
+  .flag-item.green { background: var(--green-light); color: var(--green); }
+  .flag-item.blue { background: var(--blue-light); color: var(--navy); }
+  .flag-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+  
+  /* ── DATA TABLE VIEW ── */
+  .view-panel { display: none; flex: 1; overflow-y: auto; padding: 20px; background: var(--gray-100); }
+  .view-panel.on { display: flex; flex-direction: column; }
+  .data-card { background: #fff; border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+  .data-toolbar { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 12px; background: var(--gray-50); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--gray-50); }
+  
+  /* ── BADGE ── */
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .badge-ok { background: var(--green-light); color: var(--green); }
+  .badge-warn { background: var(--amber-light); color: var(--amber); }
+  .badge-red { background: var(--red-light); color: var(--red); }
+  .badge-blue { background: var(--blue-light); color: var(--navy); }
+  .badge-gray { background: var(--gray-100); color: var(--gray-600); }
+  
+  /* ── BUTTONS ── */
+  .btn { padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text); transition: all .15s; font-family: 'Inter', sans-serif; }
+  .btn:hover { background: var(--gray-50); }
+  .btn-primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .btn-primary:hover { background: var(--navy-light); }
+  .btn-sm { padding: 4px 10px; font-size: 11px; }
+  
+  /* ── FORM CONTROLS ── */
+  select, input { font-size: 12px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); font-family: 'Inter', sans-serif; }
+  
+  /* ── ADD SURVEY FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .form-field { display: flex; flex-direction: column; gap: 3px; }
+  .form-field label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); }
+  .form-field input, .form-field select { width: 100%; }
+  
+  /* ── DETAIL POPUP ── */
+  .detail-popup { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 12px; position: absolute; bottom: 28px; right: 12px; z-index: 20; width: 240px; }
+  .detail-popup.hidden { display: none; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .detail-cell { background: var(--gray-50); border-radius: 6px; padding: 6px 8px; }
+  .detail-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); font-weight: 600; }
+  .detail-val { font-size: 13px; font-weight: 600; margin-top: 1px; color: var(--text); }
+  
+  /* ── API KEY MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; }
+  .modal-overlay.hidden { display: none; }
+  .modal { background: #fff; border-radius: 12px; padding: 24px; width: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .modal p { font-size: 12px; color: var(--gray-600); line-height: 1.6; margin-bottom: 14px; }
+  .modal-steps { background: var(--gray-50); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  .modal-step { font-size: 11px; color: var(--gray-800); margin-bottom: 5px; line-height: 1.5; }
+  .modal-step:last-child { margin-bottom: 0; }
+  .modal-step strong { color: var(--navy); }
+  .modal-input-row { display: flex; gap: 8px; }
+  .modal-input-row input { flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  
+  /* ── UPLOAD AREA ── */
+  .upload-area { border: 2px dashed var(--border); border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: all .15s; }
+  .upload-area:hover { border-color: var(--blue-mid); background: var(--blue-light); }
+  .upload-area input { display: none; }
+  .upload-icon { font-size: 24px; color: var(--gray-400); margin-bottom: 6px; }
+  .upload-text { font-size: 11px; color: var(--gray-600); }
+  
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
+  /* ── SURVEY FORM VIEW ── */
+  .view-survey { display: none; flex: 1; overflow-y: auto; background: var(--gray-100); padding: 0 !important; }
+  .view-survey.on { display: flex; flex-direction: column; }
+  .sf-wrap { width: 100%; margin: 0 auto; padding: 0 24px 80px; box-sizing: border-box; }
+
+  /* ── Standard web widths by device / orientation ── */
+
+  /* Desktop (>1200px) — constrain to readable width */
+  @media (min-width: 1200px) {
+    .sf-wrap { max-width: 1140px; }
+  }
+
+  /* Laptop / large tablet landscape (1024–1199px) */
+  @media (min-width: 1024px) and (max-width: 1199px) {
+    .sf-wrap { max-width: 960px; }
+  }
+
+  /* Tablet landscape (768–1023px) */
+  @media (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
+    .sf-wrap { max-width: 100%; padding: 0 20px 80px; }
+  }
+
+  /* Tablet portrait (768–1023px) */
+  @media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
+    .sf-wrap { max-width: 100%; padding: 0 16px 80px; }
+  }
+
+  /* Mobile landscape (480–767px) */
+  @media (min-width: 480px) and (max-width: 767px) and (orientation: landscape) {
+    .sf-wrap { max-width: 100%; padding: 0 16px 80px; }
+  }
+
+  /* Mobile portrait (<480px) */
+  @media (max-width: 479px) and (orientation: portrait) {
+    .sf-wrap { max-width: 100%; padding: 0 10px 80px; }
+  }
+  .sf-consent { background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--navy); padding: 12px 16px; font-size: 12px; line-height: 1.7; margin-bottom: 12px; border-radius: 0 6px 6px 0; }
+  .sf-progress { background: #fff; border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 30; }
+  .sf-prog-bar { flex: 1; height: 5px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
+  .sf-prog-fill { height: 100%; background: var(--navy); border-radius: 3px; transition: width .3s; }
+  .sf-prog-txt { font-size: 11px; color: var(--gray-600); white-space: nowrap; }
+  .sf-id-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .sf-id-row .sff { display: flex; flex-direction: column; gap: 3px; }
+  .sff label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); }
+  .sff input, .sff select { border: none; border-bottom: 1px solid var(--border); padding: 4px 0; font-size: 12px; font-family: 'Inter', sans-serif; background: transparent; outline: none; width: 100%; height: 26px; box-sizing: border-box; }
+  .sff input:focus, .sff select:focus { border-bottom-color: var(--navy); }
+  .sf-time-opt { padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: 'Inter', sans-serif; }
+  .sf-time-opt:hover { background: var(--gray-50); color: var(--navy); }
+
+  /* time field uses custom HH:MM inputs — no native time picker */
+  .sf-sec-hdr { background: var(--navy); color: #fff; font-weight: 600; font-size: 12px; padding: 9px 14px; border-radius: 6px 6px 0 0; letter-spacing: .01em; margin-top: 12px; }
+  .sf-sec-hdr.interviewer { background: #3D2B1F; }
+  .sf-sec-body { background: #fff; border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; padding: 12px 14px; }
+  .sf-sub-hdr { text-align: center; font-weight: 600; font-size: 12px; margin: 12px 0 8px; color: var(--navy); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+  .sfq { margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--gray-100); }
+  .sfq:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .sfq-lbl { font-size: 12px; font-weight: 500; margin-bottom: 7px; }
+  .sfq-lbl .qn { font-weight: 700; color: var(--navy); margin-right: 3px; }
+  .sf-opts { display: flex; flex-wrap: wrap; gap: 5px; }
+  .sf-opt input[type=radio], .sf-opt input[type=checkbox] { display: none; }
+  .sf-opt label { display: flex; align-items: center; gap: 5px; padding: 6px 11px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 500; color: var(--gray-600); transition: all .12s; user-select: none; }
+  .sf-opt label:hover { border-color: var(--navy); color: var(--navy); }
+  .sf-opt input:checked + label { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .sf-scale5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .sf-scale5 .sf-opt label { flex-direction: column; justify-content: center; padding: 7px 4px; font-size: 10px; text-align: center; }
+  .sf-scale5 .sf-opt label .sn { font-size: 15px; font-weight: 700; margin-bottom: 1px; }
+  .sf-yesno { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 220px; }
+  .sf-yesno .sf-opt label { justify-content: center; font-size: 12px; }
+  .sf-cond { background: var(--gray-50); border-left: 3px solid var(--border); padding: 9px 11px; margin-top: 7px; border-radius: 0 6px 6px 0; display: none; }
+  .sf-cond.show { display: block; }
+  .sf-cond .sfq-lbl { font-size: 11px; color: var(--gray-600); font-style: italic; }
+  .sf-tinput { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 7px 9px; font-size: 12px; font-family: 'Inter', sans-serif; outline: none; resize: vertical; }
+  .sf-tinput:focus { border-color: var(--navy); }
+  .sf-ward-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }
+  .sf-ward-table th { background: var(--gray-50); padding: 6px 8px; text-align: left; font-weight: 600; border: 1px solid var(--border); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--gray-600); }
+  .sf-ward-table td { padding: 6px 8px; border: 1px solid var(--border); vertical-align: middle; }
+  .sf-ward-table .zone-r td { background: var(--gray-50); font-weight: 600; color: var(--navy); font-size: 10px; }
+  .wrad input[type=radio] { display: none; }
+  .wrad label { display: block; width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 3px; cursor: pointer; margin: 0 auto; }
+  .wrad input:checked + label { background: var(--navy); border-color: var(--navy); }
+  .wrad input:checked + label::after { content: '✓'; display: block; text-align: center; color: #fff; font-size: 11px; line-height: 18px; }
+  .sf-fgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .sf-fcell { border: 1px solid var(--border); border-radius: 6px; padding: 9px; }
+  .sf-fcell label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--gray-600); display: block; margin-bottom: 4px; }
+  .sf-fcell input { width: 100%; border: none; border-bottom: 1px solid var(--border); padding: 3px 0; font-size: 12px; font-family: 'JetBrains Mono', monospace, sans-serif; background: transparent; outline: none; }
+  .sf-fcell input:focus { border-bottom-color: var(--navy); }
+  .sf-submit-bar { position: sticky; bottom: 0; background: #fff; border-top: 1px solid var(--border); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; z-index: 30; }
+  .sf-success { text-align: center; padding: 48px 20px; background: #fff; border: 1px solid var(--border); border-radius: 8px; margin-top: 12px; display: none; }
+  .sf-success.show { display: block; }
+  .sf-form-body.hide { display: none; }
+  /* ── LOGIN SCREEN ── */
+  .login-screen { position: fixed; inset: 0; background: var(--navy-dark); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .login-screen.hidden { display: none; }
+  .login-box { background: #fff; border-radius: 14px; padding: 36px 32px; width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+  .login-logo { text-align: center; margin-bottom: 24px; }
+  .login-logo h1 { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+  .login-logo p { font-size: 12px; color: var(--gray-600); }
+  .login-field { margin-bottom: 14px; }
+  .login-field label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); margin-bottom: 5px; }
+  .login-field input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'Inter',sans-serif; outline: none; }
+  .login-field input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(28,53,87,0.12); }
+  .login-btn { width: 100%; padding: 11px; background: var(--navy); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter',sans-serif; margin-top: 6px; transition: background .15s; }
+  .login-btn:disabled { background: var(--gray-400); cursor: not-allowed; opacity: 0.7; pointer-events: none; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .login-error { background: var(--red-light); color: var(--red); border-radius: 6px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; display: none; }
+  .login-error.show { display: block; }
+  /* User badge in topbar */
+  .user-badge { display: flex; align-items: center; gap: 8px; }
+  .user-name { font-size: 12px; color: rgba(255,255,255,0.7); }
+  .user-role { font-size: 10px; background: rgba(93,202,165,0.2); color: #5DCAA5; padding: 2px 7px; border-radius: 10px; }
+  .logout-btn { font-size: 11px; color: rgba(255,255,255,0.4); cursor: pointer; background: none; border: none; padding: 4px 8px; border-radius: 4px; }
+  .logout-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  /* ── DEMO BANNER ── */
+  .demo-banner { background: #BA7517; color: #fff; text-align: center; font-size: 12px; font-weight: 500; padding: 6px 16px; letter-spacing: .01em; flex-shrink: 0; }
+  .demo-banner a { color: #fff; text-decoration: underline; cursor: pointer; }
+  /* ── OPENCELLID LOOKUP ── */
+  .tower-lookup { background: var(--gray-50); border: 1px solid var(--border); border-left: 3px solid #BA7517; border-radius: 0 6px 6px 0; padding: 10px 12px; margin-top: 8px; }
+  .tower-lookup-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #BA7517; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+  .tower-lookup-row { display: flex; gap: 6px; align-items: flex-end; margin-bottom: 8px; }
+  .tower-lookup-row .sf-fcell { flex: 1; margin: 0; border: none; padding: 0; }
+  .tower-lookup-row .sf-fcell input { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+  .lookup-btn { padding: 6px 14px; background: #BA7517; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; flex-shrink: 0; }
+  .lookup-btn:hover { background: #9a6010; }
+  .lookup-btn:disabled { background: var(--gray-400); cursor: not-allowed; }
+  .tower-result { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-size: 12px; display: none; }
+  .tower-result.show { display: block; }
+  .tower-result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
+  .tower-result-cell { background: var(--gray-50); border-radius: 4px; padding: 6px 8px; }
+  .tower-result-cell label { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); font-weight: 600; display: block; margin-bottom: 2px; }
+  .tower-result-cell span { font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+  .tower-result-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .lookup-error { background: var(--red-light); color: var(--red); border-radius: 6px; padding: 7px 10px; font-size: 11px; display: none; margin-top: 6px; }
+  .lookup-error.show { display: block; }
+  .lookup-loading { color: var(--gray-600); font-size: 11px; font-style: italic; margin-top: 6px; display: none; }
+  .lookup-loading.show { display: block; }
+  /* ════════════════════════════════════════════
+     RESPONSIVE LAYOUT
+     Desktop  : > 1024px  — full layout
+     Tablet L : 768-1024px — condensed
+     Tablet P : 480-768px  — single col form
+     Mobile   : < 480px   — full mobile
+  ═══════════════════════════════════════════ */
+
+  /* Base — constrain app to viewport */
+  html, body { max-width: 100vw; overflow-x: hidden; }
+
+  /* ── Topbar ── */
+  @media (max-width: 1024px) {
+    .topbar { padding: 0 12px; }
+    .topbar-logo { margin-right: 12px; }
+    .tnav { padding: 12px 10px; font-size: 11px; }
+    .api-badge { display: none; }
+  }
+  @media (max-width: 768px) {
+    .topbar { flex-wrap: wrap; padding: 0 10px; }
+    .topbar-logo { padding: 10px 0; font-size: 13px; flex: 1; }
+    .topbar-right { padding: 8px 0; gap: 8px; }
+    .topbar-nav { order: 3; width: 100%; border-top: 1px solid rgba(255,255,255,0.08); display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .topbar-nav::-webkit-scrollbar { display: none; }
+    .tnav { padding: 10px 12px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+    .user-name { display: none; }
+    .user-role { font-size: 10px; }
+    .demo-banner { font-size: 11px; padding: 5px 10px; }
+  }
+
+  /* ── Survey form container ── */
+  /* Desktop */
+  .sf-wrap { max-width: 780px; width: 100%; margin: 0 auto; padding: 0 24px 100px; box-sizing: border-box; }
+
+  /* Tablet landscape */
+  @media (max-width: 1024px) {
+    .sf-wrap { max-width: 100%; padding: 0 16px 100px; }
+  }
+
+  /* Tablet portrait */
+  @media (max-width: 768px) {
+    .sf-wrap { padding: 0 12px 100px; }
+    .sf-sec-body { padding: 10px 10px; }
+    .sf-sec-hdr { font-size: 12px; padding: 8px 12px; }
+
+    /* ID row: 2 cols */
+    .sf-id-row div[style*="grid-template-columns:1fr 1fr 1fr 1fr"],
+    div.sf-id-row { grid-template-columns: 1fr 1fr !important; }
+
+    /* Field grids: 2 cols */
+    .sf-fgrid { grid-template-columns: 1fr 1fr !important; }
+
+    /* Bigger touch targets */
+    .sf-opt label { padding: 8px 10px; font-size: 13px; }
+    .sff input, .sff select { font-size: 14px; height: 32px; }
+    .sff label { font-size: 11px; }
+    .btn { padding: 10px 16px; font-size: 13px; }
+    .sf-submit-bar { padding: 10px 12px; }
+  }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .sf-wrap { padding: 0 8px 100px; }
+
+    /* Single column for all grids */
+    .sf-fgrid { grid-template-columns: 1fr !important; }
+    .sf-id-row div[style*="grid-template-columns"],
+    div[style*="grid-template-columns:1fr 1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
+
+    /* Larger text for readability */
+    .sf-opt label { font-size: 14px; padding: 10px 12px; }
+    .sff input, .sff select { font-size: 15px; height: 36px; }
+    .sff label { font-size: 12px; margin-bottom: 2px; }
+    .sf-tinput { font-size: 14px; padding: 10px; }
+
+    /* Submit bar full width buttons */
+    .sf-submit-bar { gap: 8px; padding: 8px; }
+    .sf-submit-bar .btn { flex: 1; text-align: center; font-size: 13px; padding: 11px 8px; }
+
+    /* Section headers */
+    .sf-sec-hdr { font-size: 13px; }
+
+    /* Progress bar */
+    .sf-progress { padding: 8px; }
+    .sf-progress span { font-size: 11px; }
+  }
+
+  /* ── Login box ── */
+  @media (max-width: 768px) {
+    .login-box { width: 88vw; padding: 28px 20px; }
+  }
+  @media (max-width: 480px) {
+    .login-box { width: 94vw; padding: 24px 16px; }
+    .login-field input { font-size: 16px; padding: 12px; } /* 16px stops iOS zoom */
+    .login-btn { font-size: 16px; padding: 13px; }
+  }
+
+  /* ── Data table ── */
+  @media (max-width: 1024px) {
+    .view-panel { padding: 12px; }
+    .data-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  }
+
+  /* ── Dashboard ── */
+  @media (max-width: 768px) {
+    .metric-grid { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+  }
+  @media (max-width: 480px) {
+    .metric-grid { grid-template-columns: 1fr 1fr !important; }
+  }
+
+  /* ── Ward table ── */
+  @media (max-width: 480px) {
+    .sf-ward-table { font-size: 10px; }
+    .sf-ward-table td, .sf-ward-table th { padding: 4px 2px; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#1C3557" stroke-width="1.5" style="margin:0 auto 10px;display:block"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <h1>Honiara Survey Portal</h1>
+      <p>Mobile Network Performance Study · Richard Martin 25218922</p>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-field">
+      <label>Username</label>
+      <input type="text" id="login-username" placeholder="Enter your username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign in</button>
+    <p style="text-align:center;font-size:11px;color:var(--gray-400);margin-top:14px">Access restricted to authorised field assistants only</p>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5DCAA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Honiara <span>Survey Portal</span>
+    </div>
+    <div class="topbar-nav">
+      <button class="tnav on" onclick="switchView('survey', this)">Submit Survey</button>
+      <button class="tnav" onclick="switchView('map', this)">Live Map</button>
+      <button class="tnav" onclick="switchView('dashboard', this)">Dashboard</button>
+      <button class="tnav" onclick="switchView('data', this)">Data Table</button>
+    </div>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <span class="user-name" id="topbar-username"></span>
+        <span class="user-role" id="topbar-role"></span>
+      </div>
+      <span style="font-size:11px;color:rgba(255,255,255,0.4)" id="total-badge">0 / 150 surveys</span>
+      <div class="api-badge missing" id="api-badge" onclick="showApiModal()">⚠ API Key Required</div>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- DEMO BANNER — hidden in production -->
+  <div class="demo-banner" id="demo-banner" style="display:none">
+    ⚠ DEMO MODE — Data is stored locally only and will not be saved to the database.
+    To go live, set <code style="background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">DEMO_MODE = false</code> and deploy the backend.
+  </div>
+
+  <!-- MAP VIEW -->
+  <div class="workspace" id="view-map">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <!-- DAY SELECTOR -->
+      <div class="sidebar-section">
+        <div class="ssec-title">Survey day</div>
+        <div class="day-strip" id="day-strip">
+          <div class="day-pill on" onclick="selectDay('all',this)">All days</div>
+        </div>
+      </div>
+
+      <!-- ADD SURVEY (SIMULATE UPLOAD) -->
+      <div class="sidebar-section">
+        <div class="ssec-title">Simulate data upload</div>
+        <div class="form-grid" style="margin-bottom:8px">
+          <div class="form-field">
+            <label>Ward</label>
+            <select id="f-ward">
+              <option value="">Select ward</option>
+              <optgroup label="West Honiara">
+                <option>Nggossi</option><option>Mbumburu</option><option>Rove/Lengakiki</option>
+              </optgroup>
+              <optgroup label="Central Honiara">
+                <option>Cruz</option><option>Vavaea</option><option>Vuhokesa</option><option>Mataniko</option><option>Kola'a</option>
+              </optgroup>
+              <optgroup label="East Honiara">
+                <option>Kukum</option><option>Naha</option><option>Vura</option><option>Panatina</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>Operator</label>
+            <select id="f-op"><option>Our Telekom</option><option>BMobile</option></select>
+          </div>
+          <div class="form-field">
+            <label>Date</label>
+            <input type="date" id="f-date" value="">
+          </div>
+          <div class="form-field">
+            <label>Type</label>
+            <select id="f-type">
+              <option value="survey">Survey point</option>
+              <option value="cell">Cell site</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary" style="flex:1" onclick="addPoint()">Add point</button>
+          <button class="btn" onclick="addBatch()">+10 random</button>
+          <button class="btn" onclick="clearAll()" title="Reset all data">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </div>
+        <div style="margin-top:10px">
+          <div class="upload-area" onclick="document.getElementById('csv-upload').click()">
+            <input type="file" id="csv-upload" accept=".csv" onchange="handleCSV(this)">
+            <div class="upload-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div class="upload-text">Upload CSV from field<br><span style="color:var(--blue-mid);font-weight:500">Click to select file</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DAILY SUMMARY -->
+      <div class="sidebar-section" id="daily-summary">
+        <div class="ssec-title">Daily summary</div>
+        <div class="metric-grid" id="day-metrics">
+          <div class="metric-card"><div class="metric-val" id="m-today">0</div><div class="metric-lbl">Today's surveys</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Total surveys</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-avgdl">—</div><div class="metric-lbl">Avg DL (Mbps)</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-below1">0</div><div class="metric-lbl">Below 1 Mbps</div></div>
+        </div>
+      </div>
+
+      <!-- FLAGS -->
+      <div class="sidebar-section">
+        <div class="ssec-title">Coverage flags &amp; actions</div>
+        <div id="flags-panel">
+          <div class="flag-item blue">
+            <span class="flag-icon">ℹ</span>
+            <span>Add survey points to see coverage analysis and daily recommendations.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- WARD COVERAGE -->
+      <div class="sidebar-section">
+        <div class="ssec-title">Ward coverage</div>
+        <div id="ward-bars"></div>
+      </div>
+
+    </div>
+
+    <!-- MAP CONTAINER -->
+    <div class="map-area">
+
+      <!-- LAYER CONTROLS -->
+      <div class="layer-ctrl">
+        <div class="layer-ctrl-title">Map layers</div>
+        <label class="layer-toggle">
+          <input type="checkbox" id="layer-surveys" checked onchange="refreshMap()">
+          <div class="layer-icon" style="background:#378ADD"></div>
+          <span class="layer-toggle-label">Survey points</span>
+        </label>
+        <label class="layer-toggle">
+          <input type="checkbox" id="layer-cells" checked onchange="refreshMap()">
+          <div class="layer-icon" style="background:#BA7517;border-radius:2px"></div>
+          <span class="layer-toggle-label">Cell sites</span>
+        </label>
+        <label class="layer-toggle">
+          <input type="checkbox" id="layer-signal" checked onchange="refreshMap()">
+          <div class="layer-icon" style="background:linear-gradient(90deg,#A32D2D,#27500A);border-radius:0"></div>
+          <span class="layer-toggle-label">Signal quality</span>
+        </label>
+        <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+          <div class="layer-ctrl-title" style="margin-bottom:6px">Colour by</div>
+          <select id="colour-mode" onchange="refreshMap()" style="width:100%;font-size:11px;padding:4px 6px">
+            <option value="signal">Signal strength (RSRP)</option>
+            <option value="speed">Download speed vs 1 Mbps</option>
+            <option value="operator">Operator</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- MAP STATS OVERLAY -->
+      <div class="map-stats">
+        <div class="map-stat-row">
+          <div class="map-stat-val" id="ms-total">0</div>
+          <div class="map-stat-lbl">/ 150 surveys</div>
+        </div>
+        <div class="progress-bar-mini">
+          <div class="progress-bar-mini-fill" id="ms-progress" style="width:0%"></div>
+        </div>
+        <div style="font-size:10px;color:var(--gray-600);margin-top:4px" id="ms-day">No data yet</div>
+      </div>
+
+      <!-- SIGNAL LEGEND -->
+      <div class="sig-legend" id="sig-legend">
+        <div class="sig-legend-title" id="legend-title">Signal strength (RSRP)</div>
+        <div class="sig-row"><div class="sig-dot" style="background:#27500A"></div>Excellent (&gt; -80 dBm)</div>
+        <div class="sig-row"><div class="sig-dot" style="background:#639922"></div>Good (-80 to -90)</div>
+        <div class="sig-row"><div class="sig-dot" style="background:#BA7517"></div>Fair (-90 to -100)</div>
+        <div class="sig-row"><div class="sig-dot" style="background:#D85A30"></div>Poor (-100 to -110)</div>
+        <div class="sig-row"><div class="sig-dot" style="background:#A32D2D"></div>Very poor (&lt; -110)</div>
+      </div>
+
+      <!-- MAP DIV -->
+      <div id="map">
+        <div class="map-placeholder">
+          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+          <h3>Google Maps satellite view</h3>
+          <p>Add your Google Maps API key to load the live satellite map of Honiara. Survey points, cell sites, and signal overlays will plot automatically once the key is set.</p>
+          <p>Click <code>⚠ API Key Required</code> in the top right to add your key.</p>
+          <div style="background:rgba(255,255,255,0.07);border-radius:10px;padding:16px 20px;margin-top:8px;text-align:left;max-width:400px">
+            <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">What will appear on the map</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.7);display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:50%;background:#378ADD;flex-shrink:0"></div>Interview participant locations (coloured by signal)</div>
+              <div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:3px;background:#BA7517;flex-shrink:0"></div>Cell site GPS waypoints (tower markers)</div>
+              <div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:linear-gradient(90deg,#A32D2D55,#27500A55);border-radius:2px;flex-shrink:0"></div>Signal quality heatmap overlay</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div><!-- end workspace -->
+
+  <!-- DASHBOARD VIEW -->
+  <div class="view-panel" id="view-dashboard">
+    <div style="max-width:1100px;margin:0 auto">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="dash-metrics"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div class="data-card" style="padding:16px" id="dash-zone-bars"></div>
+        <div class="data-card" style="padding:16px" id="dash-flags"></div>
+      </div>
+      <div class="data-card" style="padding:16px" id="dash-ward-detail"></div>
+    </div>
+  </div>
+
+  <!-- DATA TABLE VIEW -->
+  <div class="view-panel" id="view-data">
+    <div class="data-card">
+      <div class="data-toolbar">
+        <span style="font-size:12px;color:var(--gray-600)" id="data-count">0 records</span>
+        <select id="dt-ward" onchange="renderDataTable()" style="font-size:11px">
+          <option value="">All wards</option>
+          <option>Nggossi</option><option>Mbumburu</option><option>Rove/Lengakiki</option>
+          <option>Cruz</option><option>Vavaea</option><option>Vuhokesa</option><option>Mataniko</option><option>Kola'a</option>
+          <option>Kukum</option><option>Naha</option><option>Vura</option><option>Panatina</option>
+        </select>
+        <select id="dt-op" onchange="renderDataTable()" style="font-size:11px">
+          <option value="">All operators</option>
+          <option>Our Telekom</option><option>BMobile</option>
+        </select>
+        <select id="dt-type" onchange="renderDataTable()" style="font-size:11px">
+          <option value="">All types</option>
+          <option value="survey">Survey points</option>
+          <option value="cell">Cell sites</option>
+        </select>
+        <button class="btn btn-sm" onclick="exportCSV()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="addBatch()">+ Add 10 random</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="data-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Type</th><th>Date</th><th>Ward</th><th>Zone</th><th>Operator</th>
+              <th>Lat</th><th>Lng</th><th>RSRP dBm</th><th>Signal</th>
+              <th>DL Mbps</th><th>UL Mbps</th><th>Ping ms</th>
+              <th>Browsing %</th><th>Streaming %</th><th>Jitter ms</th>
+              <th>eNB-LCID</th><th>TAC-ECI</th>
+            </tr>
+          </thead>
+          <tbody id="dt-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<!-- SURVEY FORM VIEW -->
+<div class="view-panel view-survey" id="view-survey">
+  <div class="sf-wrap">
+
+    <!-- FORM TITLE -->
+    <div style="background:var(--navy);color:#fff;text-align:center;padding:16px 20px;margin-bottom:0">
+      <div style="font-size:17px;font-weight:600;margin-bottom:4px">Honiara Mobile Network Survey Portal</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.6);font-style:italic">Field Data Recording Sheet + Survey Form — Richard Martin UCL 25218922</div>
+    </div>
+
+    <!-- PROGRESS BAR -->
+    <div class="sf-progress">
+      <div class="sf-prog-bar"><div class="sf-prog-fill" id="sf-prog-fill" style="width:0%"></div></div>
+      <span class="sf-prog-txt" id="sf-prog-txt">0 of 8 required fields</span>
+    </div>
+
+    <!-- ID ROW -->
+    <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+      <div class="sff"><label>Respondent ID</label><input type="text" id="sf-respondent-id" placeholder="" style="background:var(--gray-50);color:var(--gray-600)" readonly></div>
+      <div class="sff"><label>Respondent Name <span style="font-size:10px;color:var(--gray-600);font-weight:400">(verification only)</span></label><input type="text" id="sf-name" placeholder="Full name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())"></div>
+      <div class="sff"><label>Date</label><input type="date" id="sf-date"></div>
+      <div class="sff">
+        <label>Time</label>
+        <div style="display:flex;gap:4px;align-items:center;padding:2px 0">
+          <select id="sf-time-hh" onchange="sfTimeSync()" style="border:none;border-bottom:1px solid var(--border);background:transparent;font-size:12px;font-family:'Inter',sans-serif;padding:2px 0;outline:none;cursor:pointer">
+            <option value="01">1</option><option value="02">2</option><option value="03">3</option><option value="04">4</option><option value="05">5</option><option value="06">6</option><option value="07">7</option><option value="08">8</option><option value="09">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          </select>
+          <span style="color:var(--gray-600);font-weight:600">:</span>
+          <select id="sf-time-mm" onchange="sfTimeSync()" style="border:none;border-bottom:1px solid var(--border);background:transparent;font-size:12px;font-family:'Inter',sans-serif;padding:2px 0;outline:none;cursor:pointer">
+            <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option><option value="32">32</option><option value="33">33</option><option value="34">34</option><option value="35">35</option><option value="36">36</option><option value="37">37</option><option value="38">38</option><option value="39">39</option><option value="40">40</option><option value="41">41</option><option value="42">42</option><option value="43">43</option><option value="44">44</option><option value="45">45</option><option value="46">46</option><option value="47">47</option><option value="48">48</option><option value="49">49</option><option value="50">50</option><option value="51">51</option><option value="52">52</option><option value="53">53</option><option value="54">54</option><option value="55">55</option><option value="56">56</option><option value="57">57</option><option value="58">58</option><option value="59">59</option>
+          </select>
+          <select id="sf-time-ampm" onchange="sfTimeSync()" style="border:none;border-bottom:1px solid var(--border);background:transparent;font-size:12px;font-family:'Inter',sans-serif;padding:2px 0;outline:none;cursor:pointer">
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
+          <input type="hidden" id="sf-time">
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <div id="sf-form-body" class="sf-form-body">
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- PART 2: SURVEY FORM (SECTIONS A–E)            -->
+      <!-- ══════════════════════════════════════════════ -->
+      <div style="background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px 8px 0 0;margin-top:16px;display:flex;align-items:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <div style="font-size:13px;font-weight:600">PART 1 — Survey Form</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-left:auto">Sections A–E — complete with respondent</div>
+      </div>
+
+      <div class="sf-consent"><strong>Consent:</strong> Participation is voluntary and confidential. Your name is collected only to confirm survey authenticity and will not appear in any published findings. Responses will be used solely for academic research into mobile network performance in Honiara. You may stop at any time.</div>
+
+      <!-- Respondent name -->
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:12px">
+
+      </div>
+
+      <!-- SECTION A -->
+      <div class="sf-sec-hdr">SECTION A — Respondent Profile</div>
+      <div class="sf-sec-body">
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">A1</span> Which ward do you currently live in?</div>
+          <table class="sf-ward-table">
+            <thead><tr><th>Constituency</th><th>Ward</th><th style="text-align:center;width:52px">Tick</th><th>Location (where you live and use your mobile)</th></tr></thead>
+            <tbody>
+              <tr class="zone-r"><td colspan="4">West Honiara</td></tr>
+              <tr><td></td><td>Nggossi</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-ng" value="Nggossi" onchange="generateRespondentId(this.value)"><label for="sf-a1-ng" onclick="wardLabelClick(event,'sf-a1-ng')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr><td></td><td>Mbumburu</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-mb" value="Mbumburu" onchange="generateRespondentId(this.value)"><label for="sf-a1-mb" onclick="wardLabelClick(event,'sf-a1-mb')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr><td></td><td>Rove/Lengakiki</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-rl" value="Rove/Lengakiki" onchange="generateRespondentId(this.value)"><label for="sf-a1-rl" onclick="wardLabelClick(event,'sf-a1-rl')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr class="zone-r"><td colspan="4">Central Honiara</td></tr>
+              <tr><td></td><td>Cruz</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-cr" value="Cruz" onchange="generateRespondentId(this.value)"><label for="sf-a1-cr" onclick="wardLabelClick(event,'sf-a1-cr')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr><td></td><td>Vavaea</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-va" value="Vavaea" onchange="generateRespondentId(this.value)"><label for="sf-a1-va" onclick="wardLabelClick(event,'sf-a1-va')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr><td></td><td>Vuhokesa</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-vu" value="Vuhokesa" onchange="generateRespondentId(this.value)"><label for="sf-a1-vu" onclick="wardLabelClick(event,'sf-a1-vu')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr><td></td><td>Mataniko</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-ma" value="Mataniko" onchange="generateRespondentId(this.value)"><label for="sf-a1-ma" onclick="wardLabelClick(event,'sf-a1-ma')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr><td></td><td>Kola'a</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-ka" value="Kola'a" onchange="generateRespondentId(this.value)"><label for="sf-a1-ka" onclick="wardLabelClick(event,'sf-a1-ka')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr class="zone-r"><td colspan="4">East Honiara</td></tr>
+              <tr><td></td><td>Kukum</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-ku" value="Kukum" onchange="generateRespondentId(this.value)"><label for="sf-a1-ku" onclick="wardLabelClick(event,'sf-a1-ku')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr><td></td><td>Naha</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-na" value="Naha" onchange="generateRespondentId(this.value)"><label for="sf-a1-na" onclick="wardLabelClick(event,'sf-a1-na')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr><td></td><td>Vura</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-vr" value="Vura" onchange="generateRespondentId(this.value)"><label for="sf-a1-vr" onclick="wardLabelClick(event,'sf-a1-vr')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+              <tr><td></td><td>Panatina</td><td class="wrad"><input type="radio" name="sf-a1" id="sf-a1-pa" value="Panatina" onchange="generateRespondentId(this.value)"><label for="sf-a1-pa" onclick="wardLabelClick(event,'sf-a1-pa')" style="cursor:pointer"></label></td><td><input style="width:100%;border:none;border-bottom:1px solid var(--border);font-size:11px;outline:none;padding:2px 0" placeholder="Describe location..."></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">A2</span> How long have you lived at your current address?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-1" value="Less than 1 year" onchange="sfProgress()"><label for="sf-a2-1">Less than 1 year</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-2" value="1–3 years"><label for="sf-a2-2">1–3 years</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-3" value="3–5 years"><label for="sf-a2-3">3–5 years</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-4" value="5–10 years"><label for="sf-a2-4">5–10 years</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-5" value="10+ years"><label for="sf-a2-5">10+ years</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">A3</span> What is your primary mobile network operator?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-ot" value="Our Telekom" onchange="sfProgress();sfToggle('sf-a3-other-box',false);toggleSim2Auto()"><label for="sf-a3-ot">Our Telekom</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-bm" value="BMobile" onchange="sfToggle('sf-a3-other-box',false);toggleSim2Auto()"><label for="sf-a3-bm">BMobile</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-bo" value="Both" onchange="sfToggle('sf-a3-other-box',false);toggleSim2Auto()"><label for="sf-a3-bo">Both</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-oth" value="Other" onchange="sfProgress();sfToggle('sf-a3-other-box',true);toggleSim2Auto()"><label for="sf-a3-oth">Other (specify)</label></div>
+            <div id="sf-a3-other-box" class="sf-cond" style="width:100%;margin-top:6px">
+              <div class="sfq-lbl">Please specify operator:</div>
+              <input type="text" id="sf-a3-other-text" class="sf-tinput" placeholder="Enter operator name..." style="margin-top:4px">
+            </div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">A4</span> When you experience coverage or speed problems, which operator's SIM are you typically using?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-a4" id="sf-a4-ot" value="Our Telekom"><label for="sf-a4-ot">Our Telekom</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a4" id="sf-a4-bm" value="BMobile"><label for="sf-a4-bm">BMobile</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a4" id="sf-a4-bo" value="Both equally"><label for="sf-a4-bo">Both equally</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a4" id="sf-a4-na" value="Not Applicable"><label for="sf-a4-na">Not Applicable</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a4" id="sf-a4-oth" value="Other" onchange="sfToggle('sf-a4-other-box',true)"><label for="sf-a4-oth">Other (specify)</label></div>
+            <div id="sf-a4-other-box" class="sf-cond"><input type="text" id="sf-a4-other-text" class="sf-tinput" placeholder="Specify operator..." style="margin-top:4px"></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">A5</span> What type of mobile plan do you use?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-a5" id="sf-a5-pre" value="Prepaid" onchange="sfProgress()"><label for="sf-a5-pre">Prepaid</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a5" id="sf-a5-post" value="Postpaid"><label for="sf-a5-post">Postpaid</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a5" id="sf-a5-dk" value="Don't know"><label for="sf-a5-dk">Don't know</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">A6</span> How many people in your household regularly use mobile data?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-1" value="1"><label for="sf-a6-1">1</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-2" value="2–3"><label for="sf-a6-2">2–3</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-3" value="4–5"><label for="sf-a6-3">4–5</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-4" value="6 or more"><label for="sf-a6-4">6 or more</label></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION B -->
+      <div class="sf-sec-hdr">SECTION B — Network Coverage</div>
+      <div class="sf-sec-body">
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">B1</span> How would you rate your mobile signal strength at home?</div>
+          <div class="sf-scale5">
+            <div class="sf-opt"><input type="radio" name="sf-b1" id="sf-b1-1" value="1" onchange="sfProgress()"><label for="sf-b1-1"><span class="sn">1</span>Very Poor</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-b1" id="sf-b1-2" value="2"><label for="sf-b1-2"><span class="sn">2</span>Poor</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-b1" id="sf-b1-3" value="3"><label for="sf-b1-3"><span class="sn">3</span>Good</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-b1" id="sf-b1-4" value="4"><label for="sf-b1-4"><span class="sn">4</span>Very Good</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-b1" id="sf-b1-5" value="5"><label for="sf-b1-5"><span class="sn">5</span>Excellent</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">B2</span> How often do you experience dropped calls in your area?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-b2" id="sf-b2-n" value="Never"><label for="sf-b2-n">Never</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-b2" id="sf-b2-r" value="Rarely"><label for="sf-b2-r">Rarely</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-b2" id="sf-b2-s" value="Sometimes"><label for="sf-b2-s">Sometimes</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-b2" id="sf-b2-o" value="Often"><label for="sf-b2-o">Often</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-b2" id="sf-b2-vo" value="Very often"><label for="sf-b2-vo">Very often</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">B3</span> Are there specific locations in your ward where you regularly lose signal?</div>
+          <div class="sf-yesno">
+            <div class="sf-opt"><input type="radio" name="sf-b3" id="sf-b3-y" value="Yes" onchange="sfToggle('sf-b3c',true)"><label for="sf-b3-y">Yes</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-b3" id="sf-b3-n" value="No" onchange="sfToggle('sf-b3c',false)"><label for="sf-b3-n">No</label></div>
+          </div>
+          <div id="sf-b3c" class="sf-cond"><div class="sfq-lbl">If yes — please describe where:</div><textarea class="sf-tinput" rows="2" id="sf-b3-det" placeholder="Describe location(s)..."></textarea></div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">B4</span> Do you experience coverage problems in any of the following situations? (tick all that apply)</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="checkbox" name="sf-b4" id="sf-b4-1" value="Inside buildings"><label for="sf-b4-1">Inside buildings</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-b4" id="sf-b4-2" value="At night"><label for="sf-b4-2">At night</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-b4" id="sf-b4-3" value="In bad weather"><label for="sf-b4-3">In bad weather</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-b4" id="sf-b4-4" value="No problems"><label for="sf-b4-4">No problems</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-b4" id="sf-b4-5" value="Other"><label for="sf-b4-5">Other (specify)</label></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION C -->
+      <div class="sf-sec-hdr">SECTION C — Quality of Service</div>
+      <div class="sf-sec-body">
+
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:8px;padding:4px 0;border-bottom:1px solid var(--border)">Voice</div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">C1</span> How would you rate your mobile voice calls for everyday use?</div>
+          <div class="sf-scale5">
+            <div class="sf-opt"><input type="radio" name="sf-c1" id="sf-c1-1" value="1" onchange="sfProgress()"><label for="sf-c1-1"><span class="sn">1</span>Very Poor</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c1" id="sf-c1-2" value="2"><label for="sf-c1-2"><span class="sn">2</span>Poor</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c1" id="sf-c1-3" value="3"><label for="sf-c1-3"><span class="sn">3</span>Good</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c1" id="sf-c1-4" value="4"><label for="sf-c1-4"><span class="sn">4</span>Very Good</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c1" id="sf-c1-5" value="5"><label for="sf-c1-5"><span class="sn">5</span>Excellent</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">C2</span> In the past month, how often have you experienced cross-talk, echo, or interference during mobile voice calls?</div>
+          <div class="sf-scale5">
+            <div class="sf-opt"><input type="radio" name="sf-c2" id="sf-c2-1" value="1"><label for="sf-c2-1"><span class="sn">1</span>Very Often</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c2" id="sf-c2-2" value="2"><label for="sf-c2-2"><span class="sn">2</span>Often</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c2" id="sf-c2-3" value="3"><label for="sf-c2-3"><span class="sn">3</span>Sometimes</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c2" id="sf-c2-4" value="4"><label for="sf-c2-4"><span class="sn">4</span>Rarely</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c2" id="sf-c2-5" value="5"><label for="sf-c2-5"><span class="sn">5</span>Never</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">C3</span> How reliable is your mobile voice service for everyday communication?</div>
+          <div class="sf-scale5">
+            <div class="sf-opt"><input type="radio" name="sf-c3" id="sf-c3-1" value="1"><label for="sf-c3-1"><span class="sn">1</span>Very Unreliable</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c3" id="sf-c3-2" value="2"><label for="sf-c3-2"><span class="sn">2</span>Unreliable</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c3" id="sf-c3-3" value="3"><label for="sf-c3-3"><span class="sn">3</span>Fair</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c3" id="sf-c3-4" value="4"><label for="sf-c3-4"><span class="sn">4</span>Reliable</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c3" id="sf-c3-5" value="5"><label for="sf-c3-5"><span class="sn">5</span>Very Reliable</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">C4</span> Do voice call problems tend to happen at specific times of day? (tick all that apply)</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="checkbox" name="sf-c4" id="sf-c4-1" value="Morning"><label for="sf-c4-1">Morning</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c4" id="sf-c4-2" value="Midday"><label for="sf-c4-2">Midday</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c4" id="sf-c4-3" value="Evening"><label for="sf-c4-3">Evening</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c4" id="sf-c4-4" value="Night"><label for="sf-c4-4">Night</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c4" id="sf-c4-5" value="No difference"><label for="sf-c4-5">No difference</label></div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin:12px 0 8px;padding:4px 0;border-bottom:1px solid var(--border)">Data</div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">C5</span> How would you rate your mobile data speed for everyday use?</div>
+          <div class="sf-scale5">
+            <div class="sf-opt"><input type="radio" name="sf-c5" id="sf-c5-1" value="1" onchange="sfProgress()"><label for="sf-c5-1"><span class="sn">1</span>Very Slow</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c5" id="sf-c5-2" value="2"><label for="sf-c5-2"><span class="sn">2</span>Slow</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c5" id="sf-c5-3" value="3"><label for="sf-c5-3"><span class="sn">3</span>Neither slow nor fast</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c5" id="sf-c5-4" value="4"><label for="sf-c5-4"><span class="sn">4</span>Fast</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c5" id="sf-c5-5" value="5"><label for="sf-c5-5"><span class="sn">5</span>Very Fast</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">C6</span> At what time of day is your mobile data slowest? (tick all that apply)</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="checkbox" name="sf-c6" id="sf-c6-1" value="Morning"><label for="sf-c6-1">Morning</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c6" id="sf-c6-2" value="Midday"><label for="sf-c6-2">Midday</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c6" id="sf-c6-3" value="Evening"><label for="sf-c6-3">Evening</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c6" id="sf-c6-4" value="Night"><label for="sf-c6-4">Night</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c6" id="sf-c6-5" value="No difference"><label for="sf-c6-5">No difference</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">C7</span> Have you noticed your mobile data getting slower over the past 1–2 years?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-c7" id="sf-c7-y" value="Yes"><label for="sf-c7-y">Yes</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c7" id="sf-c7-n" value="No"><label for="sf-c7-n">No</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-c7" id="sf-c7-ns" value="Not sure"><label for="sf-c7-ns">Not sure</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">C8</span> Which apps do you use most that require mobile data? (tick all that apply)</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="checkbox" name="sf-c8" id="sf-c8-1" value="WhatsApp"><label for="sf-c8-1">WhatsApp</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c8" id="sf-c8-2" value="Facebook"><label for="sf-c8-2">Facebook</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c8" id="sf-c8-3" value="YouTube"><label for="sf-c8-3">YouTube</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c8" id="sf-c8-4" value="Mobile banking"><label for="sf-c8-4">Mobile banking</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c8" id="sf-c8-5" value="Voice calls"><label for="sf-c8-5">Voice calls</label></div>
+            <div class="sf-opt"><input type="checkbox" name="sf-c8" id="sf-c8-6" value="Other"><label for="sf-c8-6">Other</label></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION D -->
+      <div class="sf-sec-hdr">SECTION D — Affordability</div>
+      <div class="sf-sec-body">
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">D1</span> How much do you spend per month on mobile services (calls and data)?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-1" value="Under SBD 50" onchange="sfProgress()"><label for="sf-d1-1">Under SBD 50</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-2" value="SBD 50–100"><label for="sf-d1-2">SBD 50–100</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-3" value="SBD 100–200"><label for="sf-d1-3">SBD 100–200</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-4" value="SBD 200–500"><label for="sf-d1-4">SBD 200–500</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-5" value="Over SBD 500"><label for="sf-d1-5">Over SBD 500</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">D2</span> Do you consider your current mobile plan to be affordable?</div>
+          <div class="sf-scale5">
+            <div class="sf-opt"><input type="radio" name="sf-d2" id="sf-d2-1" value="1"><label for="sf-d2-1"><span class="sn">1</span>Very Unaffordable</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d2" id="sf-d2-2" value="2"><label for="sf-d2-2"><span class="sn">2</span>Unaffordable</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d2" id="sf-d2-3" value="3"><label for="sf-d2-3"><span class="sn">3</span>Fair</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d2" id="sf-d2-4" value="4"><label for="sf-d2-4"><span class="sn">4</span>Affordable</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d2" id="sf-d2-5" value="5"><label for="sf-d2-5"><span class="sn">5</span>Very Affordable</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">D3</span> Have you ever been unable to afford to top up your phone when you needed to?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-d3" id="sf-d3-n" value="Never"><label for="sf-d3-n">Never</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d3" id="sf-d3-r" value="Rarely"><label for="sf-d3-r">Rarely</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d3" id="sf-d3-s" value="Sometimes"><label for="sf-d3-s">Sometimes</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d3" id="sf-d3-o" value="Often"><label for="sf-d3-o">Often</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">D4</span> Do you have WiFi at home? If yes, how does it compare to your mobile data?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-f" value="Yes — faster than mobile"><label for="sf-d4-f">Yes — faster than mobile</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-s" value="Yes — about the same"><label for="sf-d4-s">Yes — about the same</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-sl" value="Yes — slower than mobile"><label for="sf-d4-sl">Yes — slower than mobile</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-n" value="No WiFi at home"><label for="sf-d4-n">No WiFi at home</label></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECTION E -->
+      <div class="sf-sec-hdr">SECTION E — Competition and Market</div>
+      <div class="sf-sec-body">
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">E1</span> Have you ever switched between Our Telekom and BMobile?</div>
+          <div class="sf-yesno">
+            <div class="sf-opt"><input type="radio" name="sf-e1" id="sf-e1-y" value="Yes" onchange="sfToggle('sf-e1yc',true);sfToggle('sf-e1nc',false);sfProgress()"><label for="sf-e1-y">Yes</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e1" id="sf-e1-n" value="No" onchange="sfToggle('sf-e1yc',false);sfToggle('sf-e1nc',true)"><label for="sf-e1-n">No</label></div>
+          </div>
+          <div id="sf-e1yc" class="sf-cond"><div class="sfq-lbl">If yes — what was the main reason for switching?</div><textarea class="sf-tinput" rows="2" id="sf-e1-yr" placeholder="Describe reason for switching..."></textarea></div>
+          <div id="sf-e1nc" class="sf-cond">
+            <div class="sfq-lbl">If no — what was the main reason?</div>
+            <div class="sf-opts" style="margin-top:5px">
+              <div class="sf-opt"><input type="radio" name="sf-e1n" id="sf-e1n-1" value="Satisfied with current provider"><label for="sf-e1n-1">Satisfied with current provider</label></div>
+              <div class="sf-opt"><input type="radio" name="sf-e1n" id="sf-e1n-2" value="No coverage from other operator in my area"><label for="sf-e1n-2">No coverage from other operator in my area</label></div>
+              <div class="sf-opt"><input type="radio" name="sf-e1n" id="sf-e1n-3" value="Too complicated or expensive to switch"><label for="sf-e1n-3">Too complicated or expensive to switch</label></div>
+              <div class="sf-opt"><input type="radio" name="sf-e1n" id="sf-e1n-4" value="Never thought about it"><label for="sf-e1n-4">Never thought about it</label></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">E2</span> In your view, is there a quality difference between Our Telekom and BMobile?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-e2" id="sf-e2-1" value="Much better Our Telekom"><label for="sf-e2-1">Much better Our Telekom</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e2" id="sf-e2-2" value="Slightly better Our Telekom"><label for="sf-e2-2">Slightly better Our Telekom</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e2" id="sf-e2-3" value="About the same"><label for="sf-e2-3">About the same</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e2" id="sf-e2-4" value="Slightly better BMobile"><label for="sf-e2-4">Slightly better BMobile</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e2" id="sf-e2-5" value="Much better BMobile"><label for="sf-e2-5">Much better BMobile</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">E3</span> Have you heard of or used Starlink satellite Internet in your area?</div>
+          <div class="sf-opts">
+            <div class="sf-opt"><input type="radio" name="sf-e3" id="sf-e3-u" value="Yes — I use it"><label for="sf-e3-u">Yes — I use it</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e3" id="sf-e3-h" value="Yes — I have heard of it"><label for="sf-e3-h">Yes — I have heard of it</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e3" id="sf-e3-n" value="No — never heard of it"><label for="sf-e3-n">No — never heard of it</label></div>
+          </div>
+        </div>
+
+        <div class="sfq">
+          <div class="sfq-lbl"><span class="qn">E4</span> What single improvement would most benefit mobile services in your area?</div>
+          <textarea class="sf-tinput" rows="3" id="sf-e4" placeholder="Open response — write exactly what respondent says..."></textarea>
+        </div>
+
+      </div>
+
+      <!-- NOTES -->
+      <div class="sf-sec-hdr interviewer">Interviewer Notes</div>
+      <div class="sf-sec-body">
+        <div class="sf-fcell"><label>Any observations, anomalies, or issues at this survey point</label><textarea class="sf-tinput" rows="3" id="sf-notes" placeholder="Record any observations, unusual readings, or issues..."></textarea></div>
+      </div>
+
+      <!-- PART 1: FIELD DATA RECORDING SHEET            -->
+      <!-- ══════════════════════════════════════════════ -->
+      <div style="background:var(--amber);color:#fff;padding:10px 16px;border-radius:8px 8px 0 0;margin-bottom:0;display:flex;align-items:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <div style="font-size:13px;font-weight:600">PART 2 — Field Data Recording Sheet</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-left:auto">Complete after interview</div>
+      </div>
+
+      <!-- STEP 1: DEVICE + SIM -->
+      <div class="sf-sec-hdr interviewer">Step 1 — DEVICE+SIM Tab (Network Cell Info Lite)</div>
+      <div class="sf-sec-body">
+        <div class="sf-fgrid">
+          <div class="sf-fcell">
+            <label>Operator name</label>
+            <select id="fd-s1-op" style="width:100%;margin-top:2px" onchange="s1OpChange()">
+              <option value="">— select —</option>
+              <option value="Our Telekom">Our Telekom</option>
+              <option value="BMobile">BMobile</option>
+              <option value="Other">Other (specify)</option>
+            </select>
+            <input type="text" id="fd-s1-op-other" placeholder="Enter operator name" style="display:none;width:100%;margin-top:4px">
+          </div>
+          <div class="sf-fcell">
+            <label>SIM state</label>
+            <select id="fd-s1-simstate" style="width:100%;margin-top:2px">
+              <option value="">— select —</option>
+              <option value="Ready">Ready</option>
+            </select>
+          </div>
+          <div class="sf-fcell">
+            <label>Service state</label>
+            <select id="fd-s1-svcstate" style="width:100%;margin-top:2px">
+              <option value="">— select —</option>
+              <option value="In-Service">In-Service</option>
+              <option value="N/A">N/A</option>
+            </select>
+          </div>
+        </div>
+        <div class="sf-fgrid">
+          <div class="sf-fcell">
+            <label>Roaming</label>
+            <select id="fd-s1-roaming" style="width:100%;margin-top:2px">
+              <option value="">— select —</option>
+              <option value="No">No</option>
+              <option value="Yes — Roaming">Yes (Roaming flagged)</option>
+            </select>
+          </div>
+          <div></div><div></div>
+        </div>
+      </div>
+
+      <!-- STEP 2A: RAW TAB SIM1 -->
+      <div class="sf-sec-hdr interviewer">Step 2A — RAW Tab — SIM 1 (WiFi OFF — SIM1: Serving block only)</div>
+      <div class="sf-sec-body">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin-bottom:8px">Network identification</div>
+        <div class="sf-fgrid">
+          <div class="sf-fcell"><label>MCC</label><input type="text" id="fd-s2a-mcc" placeholder="Type exactly what NCIL shows e.g. 540"></div>
+          <div class="sf-fcell"><label>MNC</label><input type="text" id="fd-s2a-mnc" placeholder="Type exactly what NCIL shows e.g. 1"></div>
+          <div class="sf-fcell"><label>Band</label><input type="text" id="fd-s2a-band" placeholder="Type exactly what NCIL shows e.g. 28 or 41 (or leave blank if not shown)"></div>
+          <div></div>
+        </div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Signal strength</div>
+        <div class="sf-fgrid">
+          <div class="sf-fcell"><label>RSRP (dBm)</label><input type="number" id="fd-s2a-rsrp" placeholder="e.g. -108"></div>
+          <div class="sf-fcell"><label>RSRQ (dB)</label><input type="number" id="fd-s2a-rsrq" placeholder="e.g. -15"></div>
+          <div class="sf-fcell"><label>RSSNR (dB)</label><input type="number" id="fd-s2a-rssnr" placeholder="e.g. 5"></div>
+        </div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Tower identity — most important for mapping</div>
+        <div class="sf-fgrid">
+          <div class="sf-fcell"><label>TAC</label><input type="text" id="fd-s2a-tac" placeholder="e.g. 6188"></div>
+          <div class="sf-fcell"><label>ECI</label><input type="text" id="fd-s2a-eci" placeholder="e.g. 3032806"></div>
+          <div class="sf-fcell"><label>eNB</label><input type="text" id="fd-s2a-enb" placeholder="e.g. 11846"></div>
+        </div>
+        <div class="sf-fgrid" style="margin-top:0">
+          <div class="sf-fcell"><label>LCID</label><input type="text" id="fd-s2a-lcid" placeholder="e.g. 230"></div>
+          <div class="sf-fcell"><label>PCI</label><input type="text" id="fd-s2a-pci" placeholder="e.g. 419"></div>
+          <div class="sf-fcell">
+            <label>Screenshot — RAW screen SIM 1</label>
+            <input type="file" id="fd-s2a-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2B: RAW TAB SIM2 (conditional) -->
+      <div class="sf-sec-hdr interviewer" style="cursor:pointer;user-select:none" onclick="toggleSim2()">
+        Step 2B — RAW Tab — SIM 2
+        <span id="sim2-toggle-label" style="font-size:11px;font-weight:400;margin-left:8px;opacity:0.7">(tap to expand — only if respondent uses Both operators)</span>
+      </div>
+      <div id="sim2-block" style="display:none">
+        <div class="sf-sec-body">
+          <div style="background:var(--amber-light);border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--amber);margin-bottom:10px">
+            <strong>Before recording:</strong> Settings → Network &amp; internet → SIM cards → set Preferred SIM for data to SIM 2. Confirm operator name changed in NCIL.
+          </div>
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin-bottom:8px">Network identification</div>
+          <div class="sf-fgrid">
+            <div class="sf-fcell"><label>MCC</label><input type="text" id="fd-s2b-mcc" placeholder="Type exactly what NCIL shows e.g. 540"></div>
+            <div class="sf-fcell"><label>MNC</label><input type="text" id="fd-s2b-mnc" placeholder="Type exactly what NCIL shows e.g. 2"></div>
+            <div class="sf-fcell">
+              <label>Band</label>
+              <input type="text" id="fd-s2b-band" placeholder="Type exactly what NCIL shows e.g. 28 or 41 (or leave blank if not shown)">
+            </div>
+            <div></div>
+          </div>
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Signal strength</div>
+          <div class="sf-fgrid">
+            <div class="sf-fcell"><label>RSRP (dBm)</label><input type="number" id="fd-s2b-rsrp" placeholder="e.g. -105"></div>
+            <div class="sf-fcell"><label>RSRQ (dB)</label><input type="number" id="fd-s2b-rsrq" placeholder="e.g. -14"></div>
+            <div class="sf-fcell"><label>RSSNR (dB)</label><input type="number" id="fd-s2b-rssnr" placeholder="e.g. 3"></div>
+          </div>
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Tower identity</div>
+          <div class="sf-fgrid">
+            <div class="sf-fcell"><label>TAC</label><input type="text" id="fd-s2b-tac" placeholder="e.g. 6188"></div>
+            <div class="sf-fcell"><label>ECI</label><input type="text" id="fd-s2b-eci" placeholder="e.g. 3032900"></div>
+            <div class="sf-fcell"><label>eNB</label><input type="text" id="fd-s2b-enb" placeholder="e.g. 11847"></div>
+          </div>
+          <div class="sf-fgrid" style="margin-top:0">
+            <div class="sf-fcell"><label>LCID</label><input type="text" id="fd-s2b-lcid" placeholder="e.g. 231"></div>
+            <div class="sf-fcell"><label>PCI</label><input type="text" id="fd-s2b-pci" placeholder="e.g. 420"></div>
+            <div class="sf-fcell">
+              <label>Screenshot — RAW screen SIM 2</label>
+              <input type="file" id="fd-s2b-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEPS 3-5: SPEED TESTS SIM1 -->
+      <div class="sf-sec-hdr interviewer">Steps 3–5 — Speed Tests SIM 1 (WiFi OFF — confirm Type: Mobile)</div>
+      <div class="sf-sec-body">
+        <div style="background:var(--red-light);border:1px solid var(--red);border-radius:6px;padding:7px 12px;font-size:11px;color:var(--red);margin-bottom:10px">
+          <strong>WiFi must be OFF.</strong> If result shows Type: WiFi the reading is invalid — turn WiFi off and repeat.
+        </div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin-bottom:6px">SIM 1</div>
+        <!-- Speed grid -->
+        <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+          <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em">Field</div>
+          <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">NCIL SPEED<br>(Step 3)</div>
+          <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">Ookla<br>(Step 4)</div>
+          <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">nPerf<br>(Step 5)</div>
+        </div>
+        <!-- Connection type / Operator — NCIL and Ookla only -->
+        <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+          <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Type</div>
+          <div class="sf-fcell" style="padding:4px 8px">
+            <input type="text" id="fd-s1-ncil-type" placeholder="e.g. Mobile" style="width:100%">
+          </div>
+          <div class="sf-fcell" style="padding:4px 8px">
+            <input type="text" id="fd-s1-ookla-type" placeholder="e.g. Our Telekom" style="width:100%">
+          </div>
+          <div></div>
+        </div>
+        <!-- Download — nPerf: DL + Avg -->
+        <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+          <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Download</div>
+          <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-ncil-dl" placeholder="DL" style="flex:1;min-width:0"><select id="fd-s1-ncil-dl-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+          <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-ookla-dl" placeholder="DL" style="flex:1;min-width:0"><select id="fd-s1-ookla-dl-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+          <div class="sf-fcell" style="padding:4px 8px">
+            <input type="text" id="fd-s1-nperf-type" placeholder="e.g. 4G / Our Telekom" style="width:100%;margin-bottom:4px">
+            <div style="display:flex;gap:4px;margin-bottom:4px"><input type="number" step="0.01" id="fd-s1-nperf-dl" placeholder="DL" style="flex:1;min-width:0"><select id="fd-s1-nperf-dl-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+            <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-nperf-dl-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s1-nperf-dl-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+          </div>
+        </div>
+        <!-- Upload — nPerf: UL + Avg -->
+        <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+          <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Upload</div>
+          <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-ncil-ul" style="flex:1;min-width:0"><select id="fd-s1-ncil-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+          <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-ookla-ul" style="flex:1;min-width:0"><select id="fd-s1-ookla-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+          <div class="sf-fcell" style="padding:4px 8px">
+            <div style="display:flex;gap:4px;margin-bottom:4px"><input type="number" step="0.01" id="fd-s1-nperf-ul" placeholder="UL" style="flex:1;min-width:0"><select id="fd-s1-nperf-ul-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+            <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-nperf-ul-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s1-nperf-ul-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+          </div>
+        </div>
+        <!-- Ping/Latency — nPerf: Lat + Avg -->
+        <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+          <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Ping / Latency (ms)</div>
+          <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-ncil-ping" style="width:100%"></div>
+          <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-ookla-ping" style="width:100%"></div>
+          <div class="sf-fcell" style="padding:4px 8px">
+            <input type="number" id="fd-s1-nperf-ping" placeholder="Lat" style="width:100%;margin-bottom:4px">
+            <input type="number" id="fd-s1-nperf-lat-avg" placeholder="Avg" style="width:100%">
+          </div>
+        </div>
+        <!-- Jitter -->
+        <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+          <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Jitter (ms)</div>
+          <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-ncil-jitter" style="width:100%"></div>
+          <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-ookla-jitter" style="width:100%"></div>
+          <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-nperf-jitter" style="width:100%"></div>
+        </div>
+        <!-- Browsing/Streaming — nPerf only, outside main grid -->
+        <div style="display:grid;grid-template-columns:200px 1fr 1fr;gap:8px;margin-bottom:4px">
+          <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">nPerf — Browsing / Stream %</div>
+          <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-nperf-browse" placeholder="Browse %" style="width:100%"></div>
+          <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-nperf-stream" placeholder="Stream %" style="width:100%"></div>
+        </div>
+        <!-- Screenshot -->
+        <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:8px">
+          <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Screenshot</div>
+          <div class="sf-fcell" style="padding:6px 8px"><label style="font-size:10px;color:var(--gray-600)">NCIL</label><input type="file" id="fd-s1-ncil-scr" accept="image/*" style="width:100%;font-size:11px"></div>
+          <div class="sf-fcell" style="padding:6px 8px"><label style="font-size:10px;color:var(--gray-600)">Ookla</label><input type="file" id="fd-s1-ookla-scr" accept="image/*" style="width:100%;font-size:11px"></div>
+          <div class="sf-fcell" style="padding:6px 8px"><label style="font-size:10px;color:var(--gray-600)">nPerf</label><input type="file" id="fd-s1-nperf-scr" accept="image/*" style="width:100%;font-size:11px"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:200px 1fr;gap:8px;margin-top:8px">
+          <div class="sf-fcell">
+            <label>Anomaly flag SIM 1</label>
+            <select id="fd-s1-anomaly" style="width:100%;margin-top:2px">
+              <option value="">— select —</option>
+              <option value="consistent">All three consistent</option>
+              <option value="different">One result different</option>
+            </select>
+          </div>
+          <div class="sf-fcell">
+            <label>Anomaly note (describe which app differed and by how much)</label>
+            <textarea id="fd-s1-anomaly-note" rows="2" style="width:100%;margin-top:4px;font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:6px;padding:6px 8px;resize:vertical" placeholder="e.g. nPerf download was 2.1 Mbps vs NCIL 5.4 and Ookla 4.8 — possible server congestion"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEPS 3-5: SPEED TESTS SIM2 (conditional) -->
+      <div id="sim2-speed-hdr" class="sf-sec-hdr interviewer" style="display:none">Steps 3–5 — Speed Tests SIM 2</div>
+      <div id="sim2-speed-block" style="display:none">
+        <div class="sf-sec-body">
+          <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+            <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em">Field</div>
+            <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">NCIL SPEED</div>
+            <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">Ookla</div>
+            <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">nPerf</div>
+          </div>
+          <!-- Connection type / Operator — NCIL and Ookla only -->
+          <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+            <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Type</div>
+            <div class="sf-fcell" style="padding:4px 8px">
+              <input type="text" id="fd-s2-ncil-type" placeholder="e.g. Mobile" style="width:100%">
+            </div>
+            <div class="sf-fcell" style="padding:4px 8px">
+              <input type="text" id="fd-s2-ookla-type" placeholder="e.g. BMobile" style="width:100%">
+            </div>
+            <div></div>
+          </div>
+          <!-- Download — nPerf: DL + Avg + Max -->
+          <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+            <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Download</div>
+            <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-ncil-dl" style="flex:1;min-width:0"><select id="fd-s2-ncil-dl-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+            <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-ookla-dl" style="flex:1;min-width:0"><select id="fd-s2-ookla-dl-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+            <div class="sf-fcell" style="padding:4px 8px">
+              <input type="text" id="fd-s2-nperf-type" placeholder="e.g. 4G / BMobile" style="width:100%;margin-bottom:4px">
+              <div style="display:flex;gap:4px;margin-bottom:4px"><input type="number" step="0.01" id="fd-s2-nperf-dl" placeholder="DL" style="flex:1;min-width:0"><select id="fd-s2-nperf-dl-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+              <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-nperf-dl-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s2-nperf-dl-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+            </div>
+          </div>
+          <!-- Upload — nPerf: UL + Avg + Max -->
+          <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+            <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Upload</div>
+            <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-ncil-ul" style="flex:1;min-width:0"><select id="fd-s2-ncil-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+            <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-ookla-ul" style="flex:1;min-width:0"><select id="fd-s2-ookla-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+            <div class="sf-fcell" style="padding:4px 8px">
+              <div style="display:flex;gap:4px;margin-bottom:4px"><input type="number" step="0.01" id="fd-s2-nperf-ul" placeholder="UL" style="flex:1;min-width:0"><select id="fd-s2-nperf-ul-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+              <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-nperf-ul-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s2-nperf-ul-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+            </div>
+          </div>
+          <!-- Ping/Latency — nPerf: Lat + Avg -->
+          <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+            <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Ping / Latency (ms)</div>
+            <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-ncil-ping" style="width:100%"></div>
+            <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-ookla-ping" style="width:100%"></div>
+            <div class="sf-fcell" style="padding:4px 8px">
+              <input type="number" id="fd-s2-nperf-ping" placeholder="Lat" style="width:100%;margin-bottom:4px">
+              <input type="number" id="fd-s2-nperf-lat-avg" placeholder="Avg" style="width:100%">
+            </div>
+          </div>
+          <!-- Jitter -->
+          <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
+            <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Jitter (ms)</div>
+            <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-ncil-jitter" style="width:100%"></div>
+            <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-ookla-jitter" style="width:100%"></div>
+            <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-nperf-jitter" style="width:100%"></div>
+          </div>
+          <!-- Browsing/Streaming — nPerf only, outside main grid -->
+          <div style="display:grid;grid-template-columns:200px 1fr 1fr;gap:8px;margin-bottom:4px">
+            <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">nPerf — Browsing / Stream %</div>
+            <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-nperf-browse" placeholder="Browse %" style="width:100%"></div>
+            <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-nperf-stream" placeholder="Stream %" style="width:100%"></div>
+          </div>
+          <!-- Screenshot -->
+          <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:8px">
+            <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Screenshot</div>
+            <div class="sf-fcell" style="padding:6px 8px"><label style="font-size:10px;color:var(--gray-600)">NCIL</label><input type="file" id="fd-s2-ncil-scr" accept="image/*" style="width:100%;font-size:11px"></div>
+            <div class="sf-fcell" style="padding:6px 8px"><label style="font-size:10px;color:var(--gray-600)">Ookla</label><input type="file" id="fd-s2-ookla-scr" accept="image/*" style="width:100%;font-size:11px"></div>
+            <div class="sf-fcell" style="padding:6px 8px"><label style="font-size:10px;color:var(--gray-600)">nPerf</label><input type="file" id="fd-s2-nperf-scr" accept="image/*" style="width:100%;font-size:11px"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:200px 1fr;gap:8px;margin-top:4px">
+            <div class="sf-fcell">
+              <label>Anomaly flag SIM 2</label>
+              <select id="fd-s2-anomaly" style="width:100%;margin-top:2px">
+                <option value="">— select —</option>
+                <option value="consistent">All three consistent</option>
+                <option value="different">One result different</option>
+              </select>
+            </div>
+            <div class="sf-fcell">
+              <label>Anomaly note SIM 2</label>
+              <textarea id="fd-s2-anomaly-note" rows="2" style="width:100%;margin-top:4px;font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:6px;padding:6px 8px;resize:vertical" placeholder="e.g. nPerf download was 2.1 Mbps vs NCIL 5.4 and Ookla 4.8"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 6: GPS LOCATION -->
+      <div class="sf-sec-hdr interviewer">Step 6 — GPS Location (survey point — record before moving on)</div>
+      <div class="sf-sec-body">
+        <div style="background:var(--gray-50);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--gray-600);margin-bottom:10px;line-height:1.6">
+          <strong>Primary:</strong> Google Maps → tap blue dot → read coordinates. &nbsp;<strong>Fallback:</strong> NCIL → MAP tab → read LAT/LON. &nbsp;Always 4 decimal places. Latitude negative e.g. −9.4318. Longitude positive e.g. 160.0523.
+        </div>
+        <div class="sf-fgrid">
+          <div class="sf-fcell"><label>Latitude</label><input type="number" step="0.0001" id="sf-lat" placeholder="e.g. -9.4318"></div>
+          <div class="sf-fcell"><label>Longitude</label><input type="number" step="0.0001" id="sf-lon" placeholder="e.g. 160.0523"></div>
+          <div class="sf-fcell">
+            <label>Upload GPS screenshot</label>
+            <input type="file" id="fd-s6-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 7: TOWER GPS WAYPOINT -->
+      <div class="sf-sec-hdr interviewer">Step 7 — Tower GPS Waypoint</div>
+      <div class="sf-sec-body">
+        <div style="background:var(--amber-light);border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--amber);margin-bottom:12px;line-height:1.6">
+          <strong>When to complete:</strong> Only if you can walk to within 10 metres of the tower base safely and without trespassing. If behind a fence, on private land, or on a slope — select Accessible: No below and Step 7 fields will be disabled.
+        </div>
+        <!-- Accessible gate — must select Yes to unlock tower fields -->
+        <div class="sf-fgrid" style="margin-bottom:10px">
+          <div class="sf-fcell">
+            <label>Accessible? <span style="color:var(--red);font-size:10px">&#9733; Select first to unlock fields</span></label>
+            <select id="fd-s7-access" style="width:100%;margin-top:2px" onchange="checkTowerAccess()">
+              <option value="">— select first —</option>
+              <option value="yes">Yes — tower accessible</option>
+              <option value="no">No — fence / private land / unsafe slope</option>
+            </select>
+          </div>
+          <div class="sf-fcell"><label>Reason if not accessible</label><input type="text" id="fd-s7-noaccess-reason" placeholder="e.g. fenced compound, steep slope..." style="opacity:0.4"></div>
+          <div></div>
+        </div>
+        <!-- Tower fields — locked until Accessible = Yes -->
+        <div id="tower-fields" style="opacity:0.35;pointer-events:none;transition:all 0.3s">
+          <div class="sf-fgrid">
+            <div class="sf-fcell"><label>Tower Latitude</label><input type="number" step="0.0001" id="fd-s7-tlat" placeholder="e.g. -9.4305"></div>
+            <div class="sf-fcell"><label>Tower Longitude</label><input type="number" step="0.0001" id="fd-s7-tlon" placeholder="e.g. 160.0498"></div>
+            <div class="sf-fcell">
+              <label>Tower operator</label>
+              <select id="fd-s7-top" style="width:100%;margin-top:2px" onchange="s7OpChange()">
+                <option value="">— select —</option>
+                <option value="Our Telekom">Our Telekom</option>
+                <option value="BMobile">BMobile</option>
+                <option value="Other">Other (specify)</option>
+              </select>
+              <input type="text" id="fd-s7-top-other" placeholder="Enter operator name" style="display:none;width:100%;margin-top:4px">
+            </div>
+          </div>
+          <div class="sf-fgrid">
+            <div class="sf-fcell">
+              <label>Tower type</label>
+              <select id="fd-s7-ttype" style="width:100%;margin-top:2px">
+                <option value="">— select —</option>
+                <option value="Monopole">Monopole</option>
+                <option value="Lattice / Self-supporting">Lattice / Self-supporting</option>
+                <option value="Guyed mast">Guyed mast</option>
+                <option value="Rooftop">Rooftop</option>
+                <option value="Water tower mounted">Water tower mounted</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="sf-fcell"><label>eNB confirmed</label>
+              <select id="fd-s7-enb-conf" style="width:100%;margin-top:2px">
+                <option value="">— select —</option>
+                <option value="yes">Yes — matches Step 2A</option>
+                <option value="no">No — new eNB (record below)</option>
+              </select>
+            </div>
+            <div class="sf-fcell"><label>New eNB (if different)</label><input type="text" id="fd-s7-newenb" placeholder="only if eNB differs"></div>
+          </div>
+          <div class="sf-fgrid">
+            <div class="sf-fcell"><label>Photo taken</label>
+              <select id="fd-s7-photo" style="width:100%;margin-top:2px">
+                <option value="">— select —</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div class="sf-fcell">
+              <label>Upload tower screenshot</label>
+              <input type="file" id="fd-s7-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
+            </div>
+            <div></div>
+          </div>
+        </div>
+
+        <!-- OPENCELLID TOWER LOOKUP -->
+        <div class="tower-lookup">
+          <div class="tower-lookup-title">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6 6l.94-1.01a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            Cell Tower Lookup — OpenCelliD
+          </div>
+          <p style="font-size:11px;color:var(--gray-600);margin-bottom:8px;line-height:1.5">
+            Enter MCC, MNC, and eNB from NCIL RAW tab to look up tower GPS coordinates from OpenCelliD. Requires a free API key from <strong>opencellid.org</strong>.
+          </p>
+          <div class="tower-lookup-row">
+            <div class="sf-fcell"><label style="font-size:10px;color:var(--gray-600);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px">API Key</label><input type="text" id="ocid-key" placeholder="Your OpenCelliD key" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;font-family:'JetBrains Mono',monospace"></div>
+          </div>
+          <div class="tower-lookup-row">
+            <div class="sf-fcell"><label style="font-size:10px;color:var(--gray-600);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px">MCC</label><input type="text" id="ocid-mcc" placeholder="e.g. 540" maxlength="3" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:'JetBrains Mono',monospace"></div>
+            <div class="sf-fcell"><label style="font-size:10px;color:var(--gray-600);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px">MNC</label><input type="text" id="ocid-mnc" placeholder="e.g. 1" maxlength="2" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:'JetBrains Mono',monospace"></div>
+            <div class="sf-fcell"><label style="font-size:10px;color:var(--gray-600);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px">eNB ID</label><input type="text" id="ocid-enb" placeholder="e.g. 13042" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:'JetBrains Mono',monospace"></div>
+            <button class="lookup-btn" id="lookup-btn" onclick="lookupTower()">Look up tower</button>
+          </div>
+          <div class="lookup-loading" id="lookup-loading">Querying OpenCelliD database…</div>
+          <div class="lookup-error" id="lookup-error"></div>
+          <div class="tower-result" id="tower-result">
+            <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:5px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Tower found in OpenCelliD database
+            </div>
+            <div class="tower-result-grid">
+              <div class="tower-result-cell"><label>Tower Latitude</label><span id="tr-lat">—</span></div>
+              <div class="tower-result-cell"><label>Tower Longitude</label><span id="tr-lon">—</span></div>
+              <div class="tower-result-cell"><label>Radio type</label><span id="tr-radio">—</span></div>
+              <div class="tower-result-cell"><label>Cell ID (CID)</label><span id="tr-cid">—</span></div>
+              <div class="tower-result-cell"><label>Range estimate</label><span id="tr-range">—</span></div>
+              <div class="tower-result-cell"><label>Samples in DB</label><span id="tr-samples">—</span></div>
+            </div>
+            <div class="tower-result-actions">
+              <button class="btn btn-primary" style="font-size:11px;padding:5px 12px" onclick="addTowerToMap()">Add tower to map</button>
+              <button class="btn" style="font-size:11px;padding:5px 12px" onclick="copyTowerCoords()">Copy coordinates</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- SUBMIT BAR -->
+      <div class="sf-submit-bar">
+        <span style="font-size:11px;color:var(--gray-600)" id="sf-hint">Complete required fields to submit</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="sfSaveDraft()">Save draft</button>
+          <button class="btn btn-primary" onclick="sfSubmit()">Submit survey</button>
+        </div>
+      </div>
+
+    </div><!-- end sf-form-body -->
+
+    <!-- SUCCESS -->
+    <div class="sf-success" id="sf-success">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="margin:0 auto 10px;display:block"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <div style="font-size:16px;font-weight:600;color:var(--green);margin-bottom:6px">Survey submitted</div>
+      <div style="font-size:12px;color:var(--gray-600);margin-bottom:16px" id="sf-success-txt">Data recorded successfully.</div>
+      <button class="btn btn-primary" onclick="sfReset()">Start next survey</button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- API KEY MODAL -->
+<div class="modal-overlay hidden" id="api-modal">
+  <div class="modal">
+    <h2>Google Maps API Key</h2>
+    <p>You need a Google Maps JavaScript API key to load the satellite map of Honiara. The key is free for up to 28,000 map loads per month — well within your fieldwork needs.</p>
+    <div class="modal-steps">
+      <div class="modal-step">1. Go to <strong>console.cloud.google.com</strong></div>
+      <div class="modal-step">2. Create a new project (e.g. "Honiara Survey Portal")</div>
+      <div class="modal-step">3. Go to <strong>APIs &amp; Services → Library</strong> and enable <strong>Maps JavaScript API</strong></div>
+      <div class="modal-step">4. Go to <strong>APIs &amp; Services → Credentials</strong> → Create API Key</div>
+      <div class="modal-step">5. Copy the key and paste it below</div>
+    </div>
+    <div class="modal-input-row">
+      <input type="text" id="api-key-input" placeholder="AIzaSy..." autocomplete="off">
+      <button class="btn btn-primary" onclick="applyApiKey()">Apply key</button>
+      <button class="btn" onclick="hideApiModal()">Cancel</button>
+    </div>
+    <p style="margin-top:10px;font-size:11px;color:var(--gray-400)">The key is stored in your browser session only and never sent anywhere except to Google Maps.</p>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  DATA MODEL
+// ══════════════════════════════════════════════════════
+
+// ── API CONFIGURATION ────────────────────────────────────────────
+// Change this to your Render.com URL after deployment
+const API_URL = 'https://honiara-survey-api.onrender.com';
+
+// ── DEMO MODE ─────────────────────────────────────────────────────
+// Set to true to bypass login and API calls for local preview.
+// Set to false before deploying to production.
+const DEMO_MODE = false;
+
+// ── AUTH STATE ───────────────────────────────────────────────────
+let authToken = localStorage.getItem('honiara_token') || null;
+let currentUser = JSON.parse(localStorage.getItem('honiara_user') || 'null');
+
+// Clear any stale token on fresh page load — forces login every session
+if (!DEMO_MODE) {
+  localStorage.removeItem('honiara_token');
+  localStorage.removeItem('honiara_user');
+  authToken = null;
+  currentUser = null;
+}
+
+const WARDS = {
+  'Nggossi':        {zone:'West',    target:20, lat:-9.405, lng:160.018},
+  'Mbumburu':       {zone:'West',    target:15, lat:-9.418, lng:160.028},
+  'Rove/Lengakiki': {zone:'West',    target:15, lat:-9.432, lng:160.012},
+  'Cruz':           {zone:'Central', target:5,  lat:-9.423, lng:160.042},
+  'Vavaea':         {zone:'Central', target:10, lat:-9.430, lng:160.048},
+  'Vuhokesa':       {zone:'Central', target:5,  lat:-9.416, lng:160.052},
+  'Mataniko':       {zone:'Central', target:10, lat:-9.438, lng:160.045},
+  "Kola'a":         {zone:'Central', target:20, lat:-9.445, lng:160.058},
+  'Kukum':          {zone:'East',    target:5,  lat:-9.424, lng:160.065},
+  'Naha':           {zone:'East',    target:5,  lat:-9.432, lng:160.072},
+  'Vura':           {zone:'East',    target:10, lat:-9.440, lng:160.079},
+  'Panatina':       {zone:'East',    target:30, lat:-9.448, lng:160.088},
+};
+
+const HONIARA_CENTER = { lat: -9.432, lng: 160.052 };
+const TOTAL_TARGET   = 150;
+
+let points   = [];   // all survey & cell site data points
+let selDay   = 'all';
+let apiKey   = '';
+let gmap     = null;
+let markers  = [];
+let heatmap  = null;
+let activeView = 'map';
+
+// ══════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════
+
+function rsrpColor(r) {
+  const v = +r;
+  if (isNaN(v)) return '#888888';
+  if (v >= -80)  return '#27500A';
+  if (v >= -90)  return '#639922';
+  if (v >= -100) return '#BA7517';
+  if (v >= -110) return '#D85A30';
+  return '#A32D2D';
+}
+function rsrpLabel(r) {
+  const v = +r;
+  if (isNaN(v)) return '—';
+  if (v >= -80)  return 'Excellent';
+  if (v >= -90)  return 'Good';
+  if (v >= -100) return 'Fair';
+  if (v >= -110) return 'Poor';
+  return 'Very poor';
+}
+function speedColor(dl) {
+  const v = +dl;
+  return v >= 1 ? '#27500A' : v > 0 ? '#A32D2D' : '#888888';
+}
+function opColor(op) {
+  return op === 'Our Telekom' ? '#1C3557' : '#BA7517';
+}
+
+function wardCount(w, day) {
+  const src = day && day !== 'all' ? points.filter(p => p.date <= day) : points;
+  return src.filter(p => p.ward === w && p.type === 'survey').length;
+}
+function zoneCount(z, day) {
+  const src = day && day !== 'all' ? points.filter(p => p.date <= day) : points;
+  return src.filter(p => p.zone === z && p.type === 'survey').length;
+}
+function wardStatus(w, day) {
+  const c = wardCount(w, day), t = WARDS[w].target, ratio = c / t;
+  if (!c)       return 'empty';
+  if (ratio > 1.3) return 'over';
+  if (ratio >= .8) return 'ok';
+  return 'warn';
+}
+function getDays() {
+  return [...new Set(points.filter(p => p.type === 'survey').map(p => p.date))].sort();
+}
+
+// ══════════════════════════════════════════════════════
+//  ADD DATA
+// ══════════════════════════════════════════════════════
+
+function addPoint() {
+  const ward = document.getElementById('f-ward').value;
+  const op   = document.getElementById('f-op').value;
+  const date = document.getElementById('f-date').value || new Date().toISOString().split('T')[0];
+  const type = document.getElementById('f-type').value;
+  if (!ward) { alert('Please select a ward'); return; }
+  const base = WARDS[ward];
+  pushPoint(ward, op, date, type, base);
+  refresh();
+}
+
+function pushPoint(ward, op, date, type, base) {
+  const jitterLat = (Math.random() - 0.5) * 0.008;
+  const jitterLng = (Math.random() - 0.5) * 0.010;
+  const rsrp = -75 - Math.floor(Math.random() * 45);
+  points.push({
+    id:   (points.length + 1).toString().padStart(3, '0'),
+    ward, op, date, type,
+    zone: WARDS[ward].zone,
+    lat:  base.lat + jitterLat,
+    lng:  base.lng + jitterLng,
+    rsrp, dl: +(0.4 + Math.random() * 9).toFixed(2),
+    ul: +(0.2 + Math.random() * 3).toFixed(2),
+    ping: 20 + Math.floor(Math.random() * 180),
+    browse: Math.round(40 + Math.random() * 55),
+    stream: Math.round(35 + Math.random() * 55),
+    jitter: Math.round(50 + Math.random() * 1200),
+    enb: type === 'cell' ? (10000 + Math.floor(Math.random() * 5000)) + '-' + Math.floor(Math.random() * 255) : '',
+    taceci: type === 'cell' ? (6000 + Math.floor(Math.random() * 1000)) + '-' + (3000000 + Math.floor(Math.random() * 100000)) : '',
+  });
+}
+
+function addBatch() {
+  const wards = Object.keys(WARDS);
+  const today = new Date();
+  for (let i = 0; i < 10; i++) {
+    const ward = wards[Math.floor(Math.random() * wards.length)];
+    const d = new Date(today); d.setDate(d.getDate() - Math.floor(Math.random() * 5));
+    const date = d.toISOString().split('T')[0];
+    const op = Math.random() > .5 ? 'Our Telekom' : 'BMobile';
+    pushPoint(ward, op, date, 'survey', WARDS[ward]);
+    if (Math.random() > .7) pushPoint(ward, op, date, 'cell', WARDS[ward]);
+  }
+  refresh();
+}
+
+function clearAll() {
+  if (!confirm('Reset all data?')) return;
+  points = []; selDay = 'all';
+  refresh();
+}
+
+function handleCSV(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split('\n').filter(l => l.trim());
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,'').toLowerCase());
+    for (let i = 1; i < lines.length; i++) {
+      const vals = lines[i].split(',').map(v => v.trim().replace(/"/g,''));
+      const obj = {};
+      headers.forEach((h, idx) => { obj[h] = vals[idx] || ''; });
+      const ward = obj['ward'] || obj['w'];
+      if (ward && WARDS[ward]) {
+        const base = WARDS[ward];
+        const jLat = (Math.random() - .5) * .006;
+        const jLng = (Math.random() - .5) * .008;
+        points.push({
+          id: (points.length + 1).toString().padStart(3, '0'),
+          ward, op: obj['operator'] || obj['op'] || 'Our Telekom',
+          date: obj['date'] || obj['d'] || new Date().toISOString().split('T')[0],
+          type: 'survey', zone: WARDS[ward].zone,
+          lat: parseFloat(obj['lat']) || base.lat + jLat,
+          lng: parseFloat(obj['lng'] || obj['lon']) || base.lng + jLng,
+          rsrp: obj['rsrp'] || obj['r'] || '-100',
+          dl: obj['dl'] || obj['dl_mbps'] || '2',
+          ul: obj['ul'] || '0.5', ping: obj['ping'] || obj['pi'] || '80',
+          browse: obj['browse'] || obj['br'] || '60',
+          stream: obj['stream'] || obj['st'] || '55',
+          jitter: obj['jitter'] || obj['ji'] || '200',
+          enb: obj['enb-lcid'] || obj['enblcid'] || '',
+          taceci: obj['tac-eci'] || obj['taceci'] || '',
+        });
+      }
+    }
+    refresh();
+    alert(`Imported ${lines.length - 1} rows successfully`);
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+// ══════════════════════════════════════════════════════
+//  VIEW SWITCHING
+// ══════════════════════════════════════════════════════
+
+function switchView(id, btn) {
+  document.querySelectorAll('.tnav').forEach(t => t.classList.remove('on'));
+  btn.classList.add('on');
+  activeView = id;
+  document.getElementById('view-map').style.display         = id === 'map'      ? 'flex'  : 'none';
+  document.getElementById('view-dashboard').classList.toggle('on', id === 'dashboard');
+  document.getElementById('view-data').classList.toggle('on',      id === 'data');
+  document.getElementById('view-survey').classList.toggle('on',    id === 'survey');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'data')      renderDataTable();
+}
+
+// ══════════════════════════════════════════════════════
+//  REFRESH
+// ══════════════════════════════════════════════════════
+
+function refresh() {
+  renderDayStrip();
+  updateSidebarMetrics();
+  renderWardBars();
+  renderFlags();
+  updateTopBadge();
+  refreshMap();
+  if (activeView === 'dashboard') renderDashboard();
+  if (activeView === 'data')      renderDataTable();
+}
+
+function updateTopBadge() {
+  const total = points.filter(p => p.type === 'survey').length;
+  document.getElementById('total-badge').textContent = `${total} / ${TOTAL_TARGET} surveys`;
+  document.getElementById('ms-total').textContent = total;
+  document.getElementById('ms-progress').style.width = Math.round(total / TOTAL_TARGET * 100) + '%';
+  const days = getDays();
+  document.getElementById('ms-day').textContent = days.length ? `${days.length} survey day${days.length > 1 ? 's' : ''}` : 'No data yet';
+}
+
+function selectDay(d, el) {
+  selDay = d;
+  document.querySelectorAll('.day-pill').forEach(p => p.classList.remove('on'));
+  if (el) el.classList.add('on');
+  refresh();
+}
+
+function renderDayStrip() {
+  const days = getDays();
+  const strip = document.getElementById('day-strip');
+  strip.innerHTML = `<div class="day-pill ${selDay === 'all' ? 'on' : 'has-data'}" onclick="selectDay('all',this)">All days</div>`;
+  days.forEach(d => {
+    const cnt = points.filter(p => p.date === d && p.type === 'survey').length;
+    const div = document.createElement('div');
+    div.className = 'day-pill ' + (selDay === d ? 'on' : 'has-data');
+    div.textContent = `${d.slice(5)} (${cnt})`;
+    div.onclick = () => selectDay(d, div);
+    strip.appendChild(div);
+  });
+}
+
+function updateSidebarMetrics() {
+  const today = new Date().toISOString().split('T')[0];
+  const src   = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
+  const surveys = src.filter(p => p.type === 'survey');
+  const todaySurveys = points.filter(p => p.date === today && p.type === 'survey');
+  const dlVals = surveys.map(p => +p.dl).filter(v => !isNaN(v) && v > 0);
+  const avgDl  = dlVals.length ? (dlVals.reduce((a, b) => a + b) / dlVals.length).toFixed(2) : '—';
+  const below1 = dlVals.filter(v => v < 1).length;
+
+  document.getElementById('m-today').textContent = todaySurveys.length;
+  document.getElementById('m-total').textContent = surveys.length;
+  document.getElementById('m-avgdl').textContent = avgDl;
+  document.getElementById('m-below1').textContent = below1;
+  document.getElementById('m-below1').style.color = below1 > 0 ? 'var(--red)' : 'var(--green)';
+}
+
+function renderWardBars() {
+  const bz = {West: [], Central: [], East: []};
+  Object.entries(WARDS).forEach(([w, i]) => bz[i.zone].push(w));
+  let html = '';
+  ['West', 'Central', 'East'].forEach(zone => {
+    const zc = zoneCount(zone, selDay === 'all' ? null : selDay);
+    const zt = Object.values(WARDS).filter(w => w.zone === zone).reduce((a, w) => a + w.target, 0);
+    html += `<div class="zone-hdr"><span>${zone}</span><span style="font-weight:400;color:var(--gray-600)">${zc}/${zt}</span></div>`;
+    bz[zone].forEach(w => {
+      const c   = wardCount(w, selDay === 'all' ? null : selDay);
+      const t   = WARDS[w].target;
+      const fp  = Math.min(130, Math.round(c / t * 100));
+      const st  = wardStatus(w, selDay === 'all' ? null : selDay);
+      const col = st === 'over' ? '#E24B4A' : st === 'ok' ? '#639922' : st === 'empty' ? '#B5D4F4' : '#EF9F27';
+      const bdg = st === 'over' ? 'badge-red' : st === 'ok' ? 'badge-ok' : st === 'empty' ? 'badge-blue' : 'badge-warn';
+      const lbl = st === 'over' ? 'Over' : st === 'ok' ? 'On track' : st === 'empty' ? 'Not started' : 'Behind';
+      html += `<div class="ward-row">
+        <span style="font-weight:500;font-size:11px">${w}</span>
+        <div class="wbar-track"><div class="wbar-fill" style="width:${fp}%;background:${col}"></div><div class="wbar-tgt" style="left:76.9%"></div></div>
+        <span style="text-align:right;color:var(--gray-600)">${c}/${t}</span>
+        <span><span class="badge ${bdg}">${lbl}</span></span>
+      </div>`;
+    });
+  });
+  document.getElementById('ward-bars').innerHTML = html;
+}
+
+function renderFlags() {
+  const day = selDay === 'all' ? null : selDay;
+  const flags = [];
+  const over    = Object.keys(WARDS).filter(w => { const c = wardCount(w, day), t = WARDS[w].target; return c / t > 1.3; });
+  const empty   = Object.keys(WARDS).filter(w => wardCount(w, day) === 0);
+  const behind  = Object.keys(WARDS).filter(w => { const c = wardCount(w, day), t = WARDS[w].target; return c > 0 && c < t * .5; });
+  const surveys = (day ? points.filter(p => p.date <= day) : points).filter(p => p.type === 'survey');
+  const total   = surveys.length;
+
+  over.forEach(w    => flags.push({cls:'red',   icon:'⚠', msg:`<strong>${w}</strong> over-surveyed (${wardCount(w,day)}/${WARDS[w].target}) — redirect team tomorrow`}));
+  empty.forEach(w   => flags.push({cls:'blue',  icon:'○', msg:`<strong>${w}</strong> not yet surveyed (target: ${WARDS[w].target})`}));
+  behind.forEach(w  => flags.push({cls:'amber', icon:'↓', msg:`<strong>${w}</strong> behind — ${wardCount(w,day)}/${WARDS[w].target} done`}));
+
+  if (!flags.length && total > 5) flags.push({cls:'green', icon:'✓', msg:'All wards progressing within target range'});
+  if (!flags.length && total === 0) flags.push({cls:'blue', icon:'ℹ', msg:'Add survey points to see coverage analysis'});
+
+  document.getElementById('flags-panel').innerHTML = flags.map(f =>
+    `<div class="flag-item ${f.cls}"><span class="flag-icon">${f.icon}</span><span>${f.msg}</span></div>`
+  ).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  GOOGLE MAPS INTEGRATION
+// ══════════════════════════════════════════════════════
+
+function loadGoogleMaps(key) {
+  const existing = document.getElementById('gmaps-script');
+  if (existing) existing.remove();
+  const s = document.createElement('script');
+  s.id  = 'gmaps-script';
+  s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&callback=initMap&libraries=visualization`;
+  s.async = true;
+  document.head.appendChild(s);
+}
+
+window.initMap = function() {
+  document.getElementById('map').innerHTML = '';
+  gmap = new google.maps.Map(document.getElementById('map'), {
+    center: HONIARA_CENTER,
+    zoom: 14,
+    mapTypeId: 'satellite',
+    tilt: 0,
+    styles: [],
+    mapTypeControl: true,
+    mapTypeControlOptions: { style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR, position: google.maps.ControlPosition.BOTTOM_CENTER },
+    streetViewControl: false,
+    fullscreenControl: true,
+  });
+  document.getElementById('api-badge').textContent = '✓ Map loaded';
+  document.getElementById('api-badge').classList.remove('missing');
+  refreshMap();
+};
+
+function refreshMap() {
+  if (!gmap) return;
+  const showSurveys = document.getElementById('layer-surveys').checked;
+  const showCells   = document.getElementById('layer-cells').checked;
+  const showSignal  = document.getElementById('layer-signal').checked;
+  const colMode     = document.getElementById('colour-mode').value;
+
+  // Clear existing markers
+  markers.forEach(m => m.setMap(null));
+  markers = [];
+  if (heatmap) { heatmap.setMap(null); heatmap = null; }
+
+  const src = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
+
+  // Signal heatmap
+  if (showSignal && window.google) {
+    const hData = src.filter(p => p.type === 'survey' && p.rsrp).map(p => ({
+      location: new google.maps.LatLng(p.lat, p.lng),
+      weight: Math.max(0, (parseFloat(p.rsrp) + 140) / 60)
+    }));
+    if (hData.length) {
+      heatmap = new google.maps.visualization.HeatmapLayer({
+        data: hData,
+        map: gmap,
+        radius: 40,
+        opacity: 0.45,
+        gradient: ['rgba(163,45,45,0)', 'rgba(163,45,45,1)', 'rgba(186,117,23,1)', 'rgba(99,153,34,1)', 'rgba(39,80,10,1)']
+      });
+    }
+  }
+
+  // Survey markers
+  if (showSurveys && window.google) {
+    src.filter(p => p.type === 'survey').forEach(p => {
+      const col = colMode === 'signal' ? rsrpColor(p.rsrp) : colMode === 'speed' ? speedColor(p.dl) : opColor(p.op);
+      const marker = new google.maps.Marker({
+        position: { lat: p.lat, lng: p.lng },
+        map: gmap,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: col,
+          fillOpacity: 0.9,
+          strokeColor: '#ffffff',
+          strokeWeight: 1.5,
+        },
+        title: `${p.id} — ${p.ward} (${rsrpLabel(p.rsrp)})`,
+        zIndex: 10,
+      });
+      const info = new google.maps.InfoWindow({
+        content: infoWindowHTML(p),
+        maxWidth: 260,
+      });
+      marker.addListener('click', () => { markers.forEach(m => m.infoWindow && m.infoWindow.close()); info.open(gmap, marker); });
+      marker.infoWindow = info;
+      markers.push(marker);
+    });
+  }
+
+  // Cell site markers
+  if (showCells && window.google) {
+    src.filter(p => p.type === 'cell').forEach(p => {
+      const marker = new google.maps.Marker({
+        position: { lat: p.lat, lng: p.lng },
+        map: gmap,
+        icon: {
+          path: 'M -1,-8 L 1,-8 L 1,0 L 6,8 L -6,8 L -1,0 Z',
+          fillColor: '#BA7517',
+          fillOpacity: 0.9,
+          strokeColor: '#ffffff',
+          strokeWeight: 1.5,
+          scale: 1.4,
+        },
+        title: `Cell site — ${p.ward} (${p.op})`,
+        zIndex: 20,
+      });
+      const info = new google.maps.InfoWindow({
+        content: cellInfoWindowHTML(p),
+        maxWidth: 240,
+      });
+      marker.addListener('click', () => { markers.forEach(m => m.infoWindow && m.infoWindow.close()); info.open(gmap, marker); });
+      marker.infoWindow = info;
+      markers.push(marker);
+    });
+  }
+
+  updateLegend(colMode);
+}
+
+function infoWindowHTML(p) {
+  const col = rsrpColor(p.rsrp);
+  return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:220px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Survey ${p.id} — ${p.ward}</div>
+    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.zone} Honiara · ${p.date}</div>
+    <div style="background:#f8f9fa;border-radius:6px;padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px">
+      <div><div style="color:#666">RSRP</div><div style="font-weight:600;color:${col}">${p.rsrp} dBm (${rsrpLabel(p.rsrp)})</div></div>
+      <div><div style="color:#666">Download</div><div style="font-weight:600;color:${+p.dl>=1?'#27500A':'#A32D2D'}">${p.dl} Mbps</div></div>
+      <div><div style="color:#666">Ping</div><div style="font-weight:600">${p.ping} ms</div></div>
+      <div><div style="color:#666">Jitter</div><div style="font-weight:600">${p.jitter} ms</div></div>
+      <div><div style="color:#666">Browsing</div><div style="font-weight:600;color:${p.browse>=70?'#27500A':p.browse>=50?'#BA7517':'#A32D2D'}">${p.browse}%</div></div>
+      <div><div style="color:#666">Streaming</div><div style="font-weight:600;color:${p.stream>=70?'#27500A':p.stream>=50?'#BA7517':'#A32D2D'}">${p.stream}%</div></div>
+    </div>
+  </div>`;
+}
+
+function cellInfoWindowHTML(p) {
+  return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:200px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Cell site — ${p.ward}</div>
+    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.date}</div>
+    <div style="background:#f8f9fa;border-radius:6px;padding:8px;font-size:11px">
+      <div style="margin-bottom:4px"><span style="color:#666">eNB-LCID: </span><strong style="font-family:'JetBrains Mono',monospace">${p.enb||'—'}</strong></div>
+      <div><span style="color:#666">TAC-ECI: </span><strong style="font-family:'JetBrains Mono',monospace">${p.taceci||'—'}</strong></div>
+    </div>
+  </div>`;
+}
+
+function updateLegend(mode) {
+  const legend = document.getElementById('sig-legend');
+  const title  = document.getElementById('legend-title');
+  if (mode === 'speed') {
+    title.textContent = 'Download speed';
+    legend.innerHTML = `<div class="sig-legend-title">Download speed</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#27500A"></div>Above 1 Mbps</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#A32D2D"></div>Below 1 Mbps</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#888"></div>No reading</div>`;
+  } else if (mode === 'operator') {
+    legend.innerHTML = `<div class="sig-legend-title">Operator</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#1C3557"></div>Our Telekom</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#BA7517"></div>BMobile</div>`;
+  } else {
+    legend.innerHTML = `<div class="sig-legend-title">Signal strength (RSRP)</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#27500A"></div>Excellent (&gt; -80 dBm)</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#639922"></div>Good (-80 to -90)</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#BA7517"></div>Fair (-90 to -100)</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#D85A30"></div>Poor (-100 to -110)</div>
+      <div class="sig-row"><div class="sig-dot" style="background:#A32D2D"></div>Very poor (&lt; -110)</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  API KEY MODAL
+// ══════════════════════════════════════════════════════
+
+function showApiModal() { document.getElementById('api-modal').classList.remove('hidden'); }
+function hideApiModal() { document.getElementById('api-modal').classList.add('hidden'); }
+
+function applyApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) { alert('Please enter an API key'); return; }
+  apiKey = key;
+  hideApiModal();
+  loadGoogleMaps(key);
+}
+
+// ══════════════════════════════════════════════════════
+//  DASHBOARD VIEW
+// ══════════════════════════════════════════════════════
+
+function renderDashboard() {
+  const day   = selDay === 'all' ? null : selDay;
+  const src   = day ? points.filter(p => p.date <= day) : points;
+  const surv  = src.filter(p => p.type === 'survey');
+  const total = surv.length;
+  const pct   = Math.round(total / TOTAL_TARGET * 100);
+  const dlv   = surv.map(p => +p.dl).filter(v => !isNaN(v) && v > 0);
+  const avgDl = dlv.length ? (dlv.reduce((a,b) => a+b) / dlv.length).toFixed(2) : '—';
+  const b1    = dlv.filter(v => v < 1).length;
+  const over  = Object.keys(WARDS).filter(w => wardCount(w, day) / WARDS[w].target > 1.3).length;
+
+  document.getElementById('dash-metrics').innerHTML = [
+    {v: total,  l: 'Total surveys', c: ''},
+    {v: pct+'%',l: 'Of 150 target', c: ''},
+    {v: avgDl,  l: 'Avg DL (Mbps)', c: +avgDl >= 1 ? 'var(--green)' : 'var(--red)'},
+    {v: over,   l: 'Over-surveyed wards', c: over > 0 ? 'var(--red)' : ''},
+  ].map(m => `<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 20px;box-shadow:var(--shadow)">
+    <div style="font-size:28px;font-weight:600;color:${m.c||'var(--text)'}">${m.v}</div>
+    <div style="font-size:12px;color:var(--gray-600);margin-top:3px">${m.l}</div>
+  </div>`).join('');
+
+  const bz = {West:[], Central:[], East:[]};
+  Object.entries(WARDS).forEach(([w,i]) => bz[i.zone].push(w));
+  let zoneHTML = '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:12px">Zone & ward progress</div>';
+  ['West','Central','East'].forEach(zone => {
+    const zc = zoneCount(zone, day);
+    const zt = Object.values(WARDS).filter(w => w.zone === zone).reduce((a,w) => a+w.target, 0);
+    const zp = Math.min(100, Math.round(zc/zt*100));
+    const zcol = zc/zt > 1.2 ? '#E24B4A' : zc/zt >= .8 ? '#639922' : '#378ADD';
+    zoneHTML += `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${zone} Honiara</span><span style="color:var(--gray-600)">${zc}/${zt} — ${zp}%</span></div>
+      <div style="background:var(--gray-200);border-radius:3px;height:8px;overflow:hidden"><div style="width:${zp}%;height:100%;background:${zcol};border-radius:3px;transition:width .3s"></div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px">
+        ${bz[zone].map(w => {
+          const c = wardCount(w,day), t = WARDS[w].target;
+          const st = wardStatus(w,day);
+          const bdg = st==='over'?'badge-red':st==='ok'?'badge-ok':st==='empty'?'badge-blue':'badge-warn';
+          return `<span class="badge ${bdg}">${w}: ${c}/${t}</span>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+  document.getElementById('dash-zone-bars').innerHTML = zoneHTML;
+
+  const flags = [];
+  Object.entries(WARDS).forEach(([w,i]) => {
+    const c = wardCount(w,day), t = i.target;
+    if (!c)          flags.push({cls:'blue',  msg:`${w} — not yet started (target: ${t})`});
+    else if (c/t>1.3) flags.push({cls:'red',   msg:`${w} — over-surveyed: ${c} done, target ${t}`});
+    else if (c<t*.5 && total>15) flags.push({cls:'amber', msg:`${w} — behind: ${c}/${t} done`});
+  });
+  if (!flags.length && total > 5) flags.push({cls:'green', msg:'All wards progressing on track'});
+  document.getElementById('dash-flags').innerHTML =
+    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">Coverage flags</div>' +
+    (flags.map(f => `<div class="flag-item ${f.cls}"><span>${f.msg}</span></div>`).join('') || '<p style="color:var(--gray-400);font-size:12px">Add surveys to see flags</p>');
+
+  renderWardBars();
+}
+
+// ══════════════════════════════════════════════════════
+//  DATA TABLE
+// ══════════════════════════════════════════════════════
+
+function renderDataTable() {
+  const fw   = document.getElementById('dt-ward').value;
+  const fo   = document.getElementById('dt-op').value;
+  const ft   = document.getElementById('dt-type').value;
+  let rows   = points;
+  if (fw) rows = rows.filter(p => p.ward === fw);
+  if (fo) rows = rows.filter(p => p.op === fo);
+  if (ft) rows = rows.filter(p => p.type === ft);
+
+  document.getElementById('data-count').textContent = `${rows.length} of ${points.length} records`;
+
+  const tbody = document.getElementById('dt-body');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(p => {
+    const rsrpNum = (p.rsrp !== '' && p.rsrp != null) ? parseFloat(p.rsrp) : null;
+    const dlNum   = (p.dl   !== '' && p.dl   != null) ? parseFloat(p.dl)   : null;
+    const sigCol  = rsrpColor(rsrpNum);
+    const dlCol   = dlNum != null ? (dlNum >= 1 ? 'var(--green)' : 'var(--red)') : 'var(--gray-400)';
+    const brCol   = +p.browse >= 70 ? 'var(--green)' : +p.browse >= 50 ? 'var(--amber)' : 'var(--red)';
+    const stCol   = +p.stream >= 70 ? 'var(--green)' : +p.stream >= 50 ? 'var(--amber)' : 'var(--red)';
+    const typeBdg = p.type === 'cell' ? 'badge-warn' : 'badge-blue';
+    const latStr  = (p.lat != null && p.lat !== '') ? parseFloat(p.lat).toFixed(5) : '\u2014';
+    const lngStr  = (p.lng != null && p.lng !== '') ? parseFloat(p.lng).toFixed(5) : '\u2014';
+    const mono    = "font-family:'JetBrains Mono',monospace";
+    return `<tr>
+      <td style="${mono};font-weight:500">${p.id || '\u2014'}</td>
+      <td><span class="badge ${typeBdg}">${p.type === 'cell' ? 'Cell site' : 'Survey'}</span></td>
+      <td style="color:var(--gray-600)">${p.date || '\u2014'}</td>
+      <td style="font-weight:500">${p.ward || '\u2014'}</td>
+      <td style="color:var(--gray-600)">${p.zone || '\u2014'}</td>
+      <td>${p.op || '\u2014'}</td>
+      <td style="${mono};font-size:11px">${latStr}</td>
+      <td style="${mono};font-size:11px">${lngStr}</td>
+      <td style="color:${sigCol};font-weight:500">${rsrpNum != null ? rsrpNum : '\u2014'}</td>
+      <td><span class="badge" style="background:#EAF3DE;color:${sigCol}">${rsrpLabel(rsrpNum)}</span></td>
+      <td style="color:${dlCol};font-weight:500">${dlNum != null ? dlNum : '\u2014'}</td>
+      <td>${p.ul || '\u2014'}</td>
+      <td>${p.ping || '\u2014'}</td>
+      <td style="color:${brCol}">${p.browse || '\u2014'}</td>
+      <td style="color:${stCol}">${p.stream || '\u2014'}</td>
+      <td>${p.jitter || '\u2014'}</td>
+      <td style="${mono};font-size:11px">${p.enb || '\u2014'}</td>
+      <td style="${mono};font-size:11px">${p.taceci || '\u2014'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  CSV EXPORT
+// ══════════════════════════════════════════════════════
+
+function exportCSV() {
+  if (!points.length) return;
+  const hdrs = ['ID','Type','Date','Ward','Zone','Operator','Lat','Lng',
+    'RSRP_dBm','RSRQ_dB','RSSNR_dB','Signal','Band',
+    'TAC','ECI','eNB','LCID','PCI',
+    'DL_Mbps_Ookla','UL_Mbps_Ookla','Ping_ms_Ookla','Jitter_ms_Ookla',
+    'DL_Mbps_NCIL','DL_Mbps_nPerf',
+    'Tower_Lat','Tower_Lng','Tower_Operator','Tower_Type',
+    'B1_Signal','C5_DataSpeed','Browsing_pct','Streaming_pct',
+    'eNB_LCID','TAC_ECI'];
+  const keys = ['id','type','date','ward','zone','op','lat','lng',
+    'rsrp','rsrq','rssnr','','band',
+    'tac','eci','enb_raw','lcid','pci',
+    'dl','ul','ping','jitter',
+    'ncil_dl','nperf_dl',
+    'tower_lat','tower_lng','tower_op','tower_type',
+    'b1','c5','browse','stream',
+    'enb','taceci'];
+  const csv = [
+    hdrs.join(','),
+    ...points.map(p => keys.map((k,i) => {
+      if (k === '') return `"${rsrpLabel(p.rsrp)}"`;
+      return `"${p[k]??''}"`;
+    }).join(','))
+  ].join('\n');
+  const a    = document.createElement('a');
+  a.href     = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'honiara_survey_data.csv';
+  a.click();
+}
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════
+//  SURVEY FORM LOGIC
+// ══════════════════════════════════════════════════════
+
+// Ward tick toggle — must intercept on the label, not the input,
+// because the hidden radio input never receives direct user clicks.
+// We track whether the ward was already selected via a data attribute,
+// prevent the default label behaviour, and manually set/clear the input.
+function wardLabelClick(e, inputId) {
+  e.preventDefault();
+  const input = document.getElementById(inputId);
+  if (input.checked) {
+    input.checked = false;
+    generateRespondentId('');
+  } else {
+    document.querySelectorAll('input[name="sf-a1"]').forEach(r => r.checked = false);
+    input.checked = true;
+    generateRespondentId(input.value);
+  }
+  sfProgress();
+}
+
+const SF_REQUIRED = ['sf-a1','sf-a2','sf-a3','sf-b1','sf-c1','sf-c5','sf-d1','sf-e1'];
+
+function sfProgress() {
+  let done = 0;
+  SF_REQUIRED.forEach(f => { if (document.querySelector(`input[name="${f}"]:checked`)) done++; });
+  const pct = Math.round(done / SF_REQUIRED.length * 100);
+  document.getElementById('sf-prog-fill').style.width = pct + '%';
+  document.getElementById('sf-prog-txt').textContent  = `${done} of ${SF_REQUIRED.length} required fields`;
+  document.getElementById('sf-hint').textContent      = pct === 100 ? 'Ready to submit' : `${SF_REQUIRED.length - done} required field(s) remaining`;
+}
+
+function sfToggle(id, show) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('show', show);
+}
+
+function sfGetData() {
+  const g = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const r = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
+  const c = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value).join(';');
+  const ward = r('sf-a1');
+  const zones = {'Nggossi':'West','Mbumburu':'West','Rove/Lengakiki':'West','Cruz':'Central','Vavaea':'Central','Vuhokesa':'Central','Mataniko':'Central',"Kola'a":'Central','Kukum':'East','Naha':'East','Vura':'East','Panatina':'East'};
+  const a3val = r('sf-a3') === 'Other' ? (g('sf-a3-other-text') || 'Other') : r('sf-a3');
+  return {
+    // Header
+    respondentId: g('sf-respondent-id'), date: g('sf-date'), time: g('sf-time'),
+    // Step 1 — DEVICE+SIM
+    fd_s1_op: (g('fd-s1-op') === 'Other' ? g('fd-s1-op-other') : g('fd-s1-op')),
+    fd_s1_simstate: g('fd-s1-simstate'), fd_s1_svcstate: g('fd-s1-svcstate'), fd_s1_roaming: g('fd-s1-roaming'),
+    // Step 2A — RAW SIM1
+    fd_s2a_mcc: g('fd-s2a-mcc'), fd_s2a_mnc: g('fd-s2a-mnc'), fd_s2a_band: g('fd-s2a-band'),
+    fd_s2a_rsrp: g('fd-s2a-rsrp'), fd_s2a_rsrq: g('fd-s2a-rsrq'), fd_s2a_rssnr: g('fd-s2a-rssnr'),
+    fd_s2a_tac: g('fd-s2a-tac'), fd_s2a_eci: g('fd-s2a-eci'), fd_s2a_enb: g('fd-s2a-enb'),
+    fd_s2a_lcid: g('fd-s2a-lcid'), fd_s2a_pci: g('fd-s2a-pci'), fd_s2a_scr: g('fd-s2a-scr'),
+    // Step 2B — RAW SIM2
+    fd_s2b_mcc: g('fd-s2b-mcc'), fd_s2b_mnc: g('fd-s2b-mnc'), fd_s2b_band: g('fd-s2b-band'),
+    fd_s2b_rsrp: g('fd-s2b-rsrp'), fd_s2b_rsrq: g('fd-s2b-rsrq'), fd_s2b_rssnr: g('fd-s2b-rssnr'),
+    fd_s2b_tac: g('fd-s2b-tac'), fd_s2b_eci: g('fd-s2b-eci'), fd_s2b_enb: g('fd-s2b-enb'),
+    fd_s2b_lcid: g('fd-s2b-lcid'), fd_s2b_pci: g('fd-s2b-pci'), fd_s2b_scr: g('fd-s2b-scr'),
+    // Steps 3-5 Speed SIM1
+    fd_s1_ncil_type: g('fd-s1-ncil-type'), fd_s1_ookla_type: g('fd-s1-ookla-type'), fd_s1_nperf_type: g('fd-s1-nperf-type'),
+    fd_s1_ncil_dl: g('fd-s1-ncil-dl') + ' ' + (g('fd-s1-ncil-dl-unit')||'Mbps'),
+    fd_s1_ookla_dl: g('fd-s1-ookla-dl') + ' ' + (g('fd-s1-ookla-dl-unit')||'Mbps'),
+    fd_s1_ncil_ul: g('fd-s1-ncil-ul') + ' ' + (g('fd-s1-ncil-ul-unit')||'Mbps'),
+    fd_s1_ookla_ul: g('fd-s1-ookla-ul') + ' ' + (g('fd-s1-ookla-ul-unit')||'Mbps'),
+    fd_s1_nperf_ul: g('fd-s1-nperf-ul') + ' ' + (g('fd-s1-nperf-ul-unit')||'Mbps'),
+    fd_s1_ncil_ping: g('fd-s1-ncil-ping'), fd_s1_ookla_ping: g('fd-s1-ookla-ping'), fd_s1_nperf_ping: g('fd-s1-nperf-ping'),
+    fd_s1_ncil_jitter: g('fd-s1-ncil-jitter'), fd_s1_ookla_jitter: g('fd-s1-ookla-jitter'), fd_s1_nperf_jitter: g('fd-s1-nperf-jitter'),
+    fd_s1_nperf_dl_avg: g('fd-s1-nperf-dl-avg') + ' ' + (g('fd-s1-nperf-dl-avg-unit')||'Mbps'),
+    fd_s1_nperf_dl_max: g('fd-s1-nperf-dl-max') + ' ' + (g('fd-s1-nperf-dl-max-unit')||'Mbps'),
+    fd_s1_nperf_ul_avg: g('fd-s1-nperf-ul-avg') + ' ' + (g('fd-s1-nperf-ul-avg-unit')||'Mbps'),
+    fd_s1_nperf_ul_max: g('fd-s1-nperf-ul-max') + ' ' + (g('fd-s1-nperf-ul-max-unit')||'Mbps'),
+    fd_s1_nperf_lat_avg: g('fd-s1-nperf-lat-avg'),
+    fd_s1_nperf_browse: g('fd-s1-nperf-browse'), fd_s1_nperf_stream: g('fd-s1-nperf-stream'),
+    fd_s2_nperf_dl_avg: g('fd-s2-nperf-dl-avg') + ' ' + (g('fd-s2-nperf-dl-avg-unit')||'Mbps'),
+    fd_s2_nperf_dl_max: g('fd-s2-nperf-dl-max') + ' ' + (g('fd-s2-nperf-dl-max-unit')||'Mbps'),
+    fd_s2_nperf_ul_avg: g('fd-s2-nperf-ul-avg') + ' ' + (g('fd-s2-nperf-ul-avg-unit')||'Mbps'),
+    fd_s2_nperf_ul_max: g('fd-s2-nperf-ul-max') + ' ' + (g('fd-s2-nperf-ul-max-unit')||'Mbps'),
+    fd_s2_nperf_lat_avg: g('fd-s2-nperf-lat-avg'),
+    fd_s2_nperf_browse: g('fd-s2-nperf-browse'), fd_s2_nperf_stream: g('fd-s2-nperf-stream'), fd_s1_anomaly: g('fd-s1-anomaly'), fd_s1_anomaly_note: g('fd-s1-anomaly-note'),
+    fd_s2_anomaly: g('fd-s2-anomaly'), fd_s2_anomaly_note: g('fd-s2-anomaly-note'),
+    // Steps 3-5 Speed SIM2
+    fd_s2_ncil_type: g('fd-s2-ncil-type'), fd_s2_ookla_type: g('fd-s2-ookla-type'), fd_s2_nperf_type: g('fd-s2-nperf-type'),
+    fd_s2_ncil_dl: g('fd-s2-ncil-dl') + ' ' + (g('fd-s2-ncil-dl-unit')||'Mbps'),
+    fd_s2_ookla_dl: g('fd-s2-ookla-dl') + ' ' + (g('fd-s2-ookla-dl-unit')||'Mbps'),
+    fd_s2_ncil_ul: g('fd-s2-ncil-ul') + ' ' + (g('fd-s2-ncil-ul-unit')||'Mbps'),
+    fd_s2_ookla_ul: g('fd-s2-ookla-ul') + ' ' + (g('fd-s2-ookla-ul-unit')||'Mbps'),
+    fd_s2_nperf_ul: g('fd-s2-nperf-ul') + ' ' + (g('fd-s2-nperf-ul-unit')||'Mbps'),
+    fd_s2_ncil_ping: g('fd-s2-ncil-ping'), fd_s2_ookla_ping: g('fd-s2-ookla-ping'), fd_s2_nperf_ping: g('fd-s2-nperf-ping'),
+    fd_s2_ncil_jitter: g('fd-s2-ncil-jitter'), fd_s2_ookla_jitter: g('fd-s2-ookla-jitter'), fd_s2_nperf_jitter: g('fd-s2-nperf-jitter'),
+    // Step 6 — GPS
+    lat: g('sf-lat'), lng: g('sf-lon'), fd_s6_scr: g('fd-s6-scr'),
+    // Step 7 — Tower
+    fd_s7_tlat: g('fd-s7-tlat'), fd_s7_tlon: g('fd-s7-tlon'),
+    fd_s7_top: (g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top')), fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: g('fd-s7-newenb'),
+    fd_s7_photo: g('fd-s7-photo'), fd_s7_access: g('fd-s7-access'), fd_s7_scr: g('fd-s7-scr'),
+    // Survey form A-E
+    name: g('sf-name'), ward, zone: zones[ward] || '',
+    a2: r('sf-a2'), a3: a3val, a4: r('sf-a4'), a5: r('sf-a5'), a6: r('sf-a6'),
+    b1: r('sf-b1'), b2: r('sf-b2'), b3: r('sf-b3'), b3_detail: g('sf-b3-det'), b4: c('sf-b4'),
+    c1: r('sf-c1'), c2: r('sf-c2'), c3: r('sf-c3'), c4: c('sf-c4'),
+    c5: r('sf-c5'), c6: c('sf-c6'), c7: r('sf-c7'), c8: c('sf-c8'),
+    d1: r('sf-d1'), d2: r('sf-d2'), d3: r('sf-d3'), d4: r('sf-d4'),
+    e1: r('sf-e1'), e1_yes_reason: g('sf-e1-yr'), e1_no: r('sf-e1n'),
+    e2: r('sf-e2'), e3: r('sf-e3'), e4: g('sf-e4'),
+    notes: g('sf-notes'),
+    // Derived for map/dashboard
+    type: 'survey', op: a3val || 'Our Telekom', operator: a3val || 'Our Telekom',
+    rsrp: g('fd-s2a-rsrp'), dl: g('fd-s1-ookla-dl'), ul: g('fd-s1-ookla-ul'),
+    ping: g('fd-s1-ookla-ping'), jitter: g('fd-s1-ookla-jitter'),
+    enb: g('fd-s2a-enb') + (g('fd-s2a-lcid') ? '-' + g('fd-s2a-lcid') : ''),
+    taceci: g('fd-s2a-tac') + (g('fd-s2a-eci') ? '-' + g('fd-s2a-eci') : ''),
+    band: g('fd-s2a-band'),
+  };
+}
+
+// ── Orientation change handler ──────────────────────────────────────
+window.addEventListener('orientationchange', () => {
+  // Small delay lets the browser finish rotating before we recalc
+  setTimeout(() => {
+    document.body.style.display = 'none';
+    document.body.offsetHeight; // force reflow
+    document.body.style.display = '';
+  }, 200);
+});
+
+// ── Time spinner ──
+function sfTimeSync() {
+  const hh = parseInt(document.getElementById('sf-time-hh').value);
+  const mm = document.getElementById('sf-time-mm').value;
+  const ampm = document.getElementById('sf-time-ampm').value;
+  let h24 = hh % 12;
+  if (ampm === 'PM') h24 += 12;
+  document.getElementById('sf-time').value = String(h24).padStart(2,'0') + ':' + mm;
+}
+
+// ── Time field format helpers ───────────────────────────────────────
+function sfTimeFormat(el) {
+  let v = el.value.replace(/[^0-9]/g, '');
+  if (v.length > 2) v = v.slice(0,2) + ':' + v.slice(2,4);
+  el.value = v;
+}
+function sfTimeBlur(el) {
+  const parts = el.value.split(':');
+  if (parts.length === 2) {
+    const hh = Math.min(23, parseInt(parts[0]||0)).toString().padStart(2,'0');
+    const mm = Math.min(59, parseInt(parts[1]||0)).toString().padStart(2,'0');
+    el.value = hh + ':' + mm;
+  } else if (el.value.length > 0) {
+    el.value = '';
+  }
+}
+
+// ── Band "Other" toggle ──────────────────────────────────────────────
+function bandOtherToggle(selId, inputId) {
+  const sel = document.getElementById(selId);
+  const inp = document.getElementById(inputId);
+  inp.style.display = sel.value === 'Other' ? 'block' : 'none';
+  if (sel.value === 'Other') inp.focus();
+}
+
+// ── Auto-generate Respondent ID from ward selection ─────────────────
+const WARD_CODES = {
+  'Nggossi':        'WH-NG',
+  'Mbumburu':       'WH-MB',
+  'Rove/Lengakiki': 'WH-RL',
+  'Cruz':           'CH-CR',
+  'Vavaea':         'CH-VA',
+  'Vuhokesa':       'CH-VU',
+  'Mataniko':       'CH-MA',
+  "Kola'a":         'CH-KO',
+  'Kukum':          'EH-KU',
+  'Naha':           'EH-NA',
+  'Vura':           'EH-VR',
+  'Panatina':       'EH-PA',
+};
+
+function generateRespondentId(ward) {
+  const el = document.getElementById('sf-respondent-id');
+  if (!el) return;
+  if (!ward || !WARD_CODES[ward]) { el.value = ''; return; }
+  const prefix = WARD_CODES[ward];
+  const existing = points.filter(p => p.ward === ward && p.type === 'survey').length;
+  const num = String(existing + 1).padStart(3, '0');
+  const id = `${prefix}-${num}`;
+  el.value = id;
+}
+
+// ── Step 1: operator "Other" text field ──────────────────────────────
+function s1OpChange() {
+  const sel = document.getElementById('fd-s1-op').value;
+  const txt = document.getElementById('fd-s1-op-other');
+  txt.style.display = sel === 'Other' ? 'block' : 'none';
+  // Auto-fill MNC in lookup
+  const mncEl = document.getElementById('ocid-mnc');
+  const mccEl = document.getElementById('ocid-mcc');
+  if (mccEl && !mccEl.value) mccEl.value = '540';
+  if (mncEl && !mncEl.value) {
+    if (sel === 'Our Telekom') mncEl.value = '1';
+    if (sel === 'BMobile') mncEl.value = '2';
+  }
+}
+
+// ── Step 7: accessible gate ───────────────────────────────────────────
+function checkTowerAccess() {
+  const val = document.getElementById('fd-s7-access').value;
+  const fields = document.getElementById('tower-fields');
+  const noReason = document.getElementById('fd-s7-noaccess-reason');
+  const isYes = val === 'yes';
+  fields.style.opacity = isYes ? '1' : '0.35';
+  fields.style.pointerEvents = isYes ? 'all' : 'none';
+  noReason.style.opacity = val === 'no' ? '1' : '0.4';
+}
+
+// ── Step 7: tower operator "Other" ───────────────────────────────────
+function s7OpChange() {
+  const sel = document.getElementById('fd-s7-top').value;
+  const txt = document.getElementById('fd-s7-top-other');
+  txt.style.display = sel === 'Other' ? 'block' : 'none';
+}
+
+// ── SIM 2 toggle ──────────────────────────────────────────────────
+function toggleSim2() {
+  const block = document.getElementById('sim2-block');
+  const speedHdr = document.getElementById('sim2-speed-hdr');
+  const speedBlock = document.getElementById('sim2-speed-block');
+  const label = document.getElementById('sim2-toggle-label');
+  const isOpen = block.style.display !== 'none';
+  block.style.display = isOpen ? 'none' : 'block';
+  speedHdr.style.display = isOpen ? 'none' : 'block';
+  speedBlock.style.display = isOpen ? 'none' : 'block';
+  label.textContent = isOpen ? '(tap to expand — only if respondent uses Both operators)' : '(tap to collapse)';
+}
+
+function toggleSim2Auto() {
+  const val = document.querySelector('input[name="sf-a3"]:checked')?.value;
+  const block = document.getElementById('sim2-block');
+  const speedHdr = document.getElementById('sim2-speed-hdr');
+  const speedBlock = document.getElementById('sim2-speed-block');
+  const label = document.getElementById('sim2-toggle-label');
+  const show = val === 'Both';
+  block.style.display = show ? 'block' : 'none';
+  speedHdr.style.display = show ? 'block' : 'none';
+  speedBlock.style.display = show ? 'block' : 'none';
+  if (label) label.textContent = show ? '(tap to collapse)' : '(tap to expand — only if respondent uses Both operators)';
+}
+
+async function sfSubmit() {
+  const missing = SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
+  if (missing.length) { alert('Please complete all required fields before submitting.'); return; }
+  const data = sfGetData();
+  const btn  = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+  if (btn) { btn.textContent = 'Submitting…'; btn.disabled = true; }
+
+  // DEMO MODE — store locally, skip API
+  if (DEMO_MODE) {
+    if (data.ward && WARDS[data.ward]) {
+      const base = WARDS[data.ward];
+      points.push({
+        id: data.respondentId || (points.length+1).toString().padStart(3,'0'),
+        ward: data.ward, zone: data.zone, op: data.a3 || '',
+        date: data.date || new Date().toISOString().split('T')[0],
+        type: 'survey',
+        lat: parseFloat(data.lat) || base.lat + (Math.random()-.5)*.006,
+        lng: parseFloat(data.lng) || base.lng + (Math.random()-.5)*.008,
+        r: data.rsrp, rsrp: data.rsrp, dl: data.dl, ul: data.ul,
+        ping: data.ping, browse: data.browse, stream: data.stream,
+        jitter: 200, b1: data.b1, c5: data.c5,
+      });
+    }
+    document.getElementById('sf-form-body').classList.add('hide');
+    document.getElementById('sf-success').classList.add('show');
+    localStorage.removeItem('honiara_sf_draft');
+  document.getElementById('sf-success-txt').textContent =
+      `[DEMO] Survey ${data.respondentId||''} — ${data.ward} — stored locally. Not saved to database.`;
+    updateTopBadge();
+    if (btn) { btn.textContent = 'Submit survey'; btn.disabled = false; }
+    return;
+  }
+  try {
+    const res = await apiCall('POST', '/api/surveys', data);
+    if (!res) return;
+    const result = await res.json();
+    if (!res.ok) { alert('Submission failed: ' + (result.error || 'Unknown error')); return; }
+    if (data.ward && WARDS[data.ward]) {
+      const base = WARDS[data.ward];
+      points.push({
+        id: data.respondentId || result.survey?._id || (points.length+1).toString().padStart(3,'0'),
+        _id: result.survey?._id,
+        ward: data.ward, zone: data.zone, op: data.a3 || '',
+        date: data.date || new Date().toISOString().split('T')[0],
+        type: 'survey',
+        lat: parseFloat(data.lat) || base.lat + (Math.random()-.5)*.006,
+        lng: parseFloat(data.lng) || base.lng + (Math.random()-.5)*.008,
+        r: data.rsrp, rsrp: data.rsrp, dl: data.dl, ul: data.ul,
+        ping: data.ping, browse: data.browse, stream: data.stream,
+        jitter: 200, b1: data.b1, c5: data.c5,
+      });
+    }
+    document.getElementById('sf-form-body').classList.add('hide');
+    document.getElementById('sf-success').classList.add('show');
+    localStorage.removeItem('honiara_sf_draft');
+    document.getElementById('sf-success-txt').textContent =
+      `Survey ${data.respondentId || ''} — ${data.ward} — saved to database. Point added to Live Map.`;
+    updateTopBadge();
+    // Reload all surveys from server so table and map stay in sync with MongoDB
+    await loadSurveysFromAPI();
+  } catch (err) {
+    alert('Network error. Check your connection and try again.');
+    console.error('Submit error:', err);
+  } finally {
+    if (btn) { btn.textContent = 'Submit survey'; btn.disabled = false; }
+  }
+}
+
+function sfSaveDraft() {
+  const data = sfGetData();
+  data._savedAt = new Date().toISOString();
+  localStorage.setItem('honiara_sf_draft', JSON.stringify(data));
+  const btn = document.querySelector('.sf-submit-bar .btn:not(.btn-primary)');
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '\u2713 Draft saved';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+  }
+}
+
+function sfRestoreDraft() {
+  try {
+    const raw = localStorage.getItem('honiara_sf_draft');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data || !data.respondentId) return;
+    const savedAt = data._savedAt ? new Date(data._savedAt).toLocaleTimeString() : 'earlier';
+    if (!confirm('A draft from ' + savedAt + ' was found. Restore it?')) {
+      localStorage.removeItem('honiara_sf_draft');
+      return;
+    }
+    // Map data keys to HTML element IDs
+    // Keys are camelCase or snake_case, IDs use hyphens
+    // Build a direct field ID list
+    const fieldMap = {
+      respondentId: 'sf-respondent-id',
+      date: 'sf-date',
+      time: 'sf-time',
+      name: 'sf-name',
+      notes: 'sf-notes',
+      // Step 1
+      fd_s1_op: 'fd-s1-op', fd_s1_simstate: 'fd-s1-simstate',
+      fd_s1_svcstate: 'fd-s1-svcstate', fd_s1_roaming: 'fd-s1-roaming',
+      // Step 2A
+      fd_s2a_mcc: 'fd-s2a-mcc', fd_s2a_mnc: 'fd-s2a-mnc', fd_s2a_band: 'fd-s2a-band',
+      fd_s2a_rsrp: 'fd-s2a-rsrp', fd_s2a_rsrq: 'fd-s2a-rsrq', fd_s2a_rssnr: 'fd-s2a-rssnr',
+      fd_s2a_tac: 'fd-s2a-tac', fd_s2a_eci: 'fd-s2a-eci', fd_s2a_enb: 'fd-s2a-enb',
+      fd_s2a_lcid: 'fd-s2a-lcid', fd_s2a_pci: 'fd-s2a-pci',
+      // Step 2B
+      fd_s2b_mcc: 'fd-s2b-mcc', fd_s2b_mnc: 'fd-s2b-mnc', fd_s2b_band: 'fd-s2b-band',
+      fd_s2b_rsrp: 'fd-s2b-rsrp', fd_s2b_rsrq: 'fd-s2b-rsrq', fd_s2b_rssnr: 'fd-s2b-rssnr',
+      fd_s2b_tac: 'fd-s2b-tac', fd_s2b_eci: 'fd-s2b-eci', fd_s2b_enb: 'fd-s2b-enb',
+      fd_s2b_lcid: 'fd-s2b-lcid', fd_s2b_pci: 'fd-s2b-pci',
+      // Speed SIM1
+      fd_s1_ncil_type: 'fd-s1-ncil-type', fd_s1_ookla_type: 'fd-s1-ookla-type', fd_s1_nperf_type: 'fd-s1-nperf-type',
+      fd_s1_ncil_ping: 'fd-s1-ncil-ping', fd_s1_ookla_ping: 'fd-s1-ookla-ping', fd_s1_nperf_ping: 'fd-s1-nperf-ping',
+      fd_s1_ncil_jitter: 'fd-s1-ncil-jitter', fd_s1_ookla_jitter: 'fd-s1-ookla-jitter', fd_s1_nperf_jitter: 'fd-s1-nperf-jitter',
+      fd_s1_nperf_lat_avg: 'fd-s1-nperf-lat-avg', fd_s1_nperf_browse: 'fd-s1-nperf-browse', fd_s1_nperf_stream: 'fd-s1-nperf-stream',
+      fd_s1_anomaly: 'fd-s1-anomaly', fd_s1_anomaly_note: 'fd-s1-anomaly-note',
+      // GPS
+      lat: 'sf-lat', lng: 'sf-lon', 
+      // Tower
+      fd_s7_tlat: 'fd-s7-tlat', fd_s7_tlon: 'fd-s7-tlon',
+      fd_s7_top: 'fd-s7-top', fd_s7_ttype: 'fd-s7-ttype',
+      fd_s7_enb_conf: 'fd-s7-enb-conf', fd_s7_newenb: 'fd-s7-newenb',
+      fd_s7_access: 'fd-s7-access', fd_s7_photo: 'fd-s7-photo',
+      // Survey sections
+      b3_detail: 'sf-b3-det', e1_yes_reason: 'sf-e1-yr', e4: 'sf-e4',
+    };
+
+    Object.entries(fieldMap).forEach(([key, id]) => {
+      const val = data[key];
+      if (!val) return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      // For selects, verify the option exists before setting
+      if (el.tagName === 'SELECT') {
+        const opts = Array.from(el.options).map(o => o.value);
+        if (opts.includes(val)) {
+          el.value = val;
+          el.dispatchEvent(new Event('change'));
+        }
+      } else {
+        el.value = val;
+      }
+    });
+
+    // Restore radio buttons
+    ['sf-a1','sf-a2','sf-a3','sf-a4','sf-a5','sf-a6',
+     'sf-b1','sf-b2','sf-b3','sf-c1','sf-c2','sf-c3','sf-c5','sf-c7',
+     'sf-d1','sf-d2','sf-d3','sf-d4','sf-e1','sf-e2','sf-e3'].forEach(name => {
+      const key = name.replace('sf-','').replace(/-/g,'');
+      const val = data[key];
+      if (!val) return;
+      const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
+      if (el) { el.checked = true; el.dispatchEvent(new Event('change')); }
+    });
+
+    // Restore checkboxes
+    ['sf-b4','sf-c4','sf-c6','sf-c8'].forEach(name => {
+      const key = name.replace('sf-','').replace(/-/g,'');
+      const vals = (data[key] || '').split(';');
+      vals.forEach(v => {
+        const el = document.querySelector(`input[name="${name}"][value="${v}"]`);
+        if (el) el.checked = true;
+      });
+    });
+
+    // Trigger SIM2 visibility if operator = Both
+    if (data.a3 === 'Both') toggleSim2Auto();
+
+    sfProgress();
+    console.log('Draft restored successfully');
+  } catch(e) { console.error('Draft restore error:', e); }
+}
+
+function sfReset() {
+  document.getElementById('sf-form-body').classList.remove('hide');
+  document.getElementById('sf-success').classList.remove('show');
+  document.querySelectorAll('#view-survey input[type=radio], #view-survey input[type=checkbox]').forEach(i => i.checked = false);
+  document.querySelectorAll('#view-survey input[type=text], #view-survey input[type=number], #view-survey textarea, #view-survey select').forEach(i => { i.value = ''; }); document.getElementById('sf-time-hh').value='01'; document.getElementById('sf-time-mm').value='00'; document.getElementById('sf-time-ampm').value='AM'; sfTimeSync();
+  const towerFields = document.getElementById('tower-fields');
+  if (towerFields) { towerFields.style.opacity = '0.35'; towerFields.style.pointerEvents = 'none'; }
+  const simWarn = document.getElementById('sim-not-ready-warn');
+  if (simWarn) simWarn.style.display = 'none';
+  const opOther = document.getElementById('fd-s1-op-other');
+  if (opOther) opOther.style.display = 'none';
+  const s7OpOther = document.getElementById('fd-s7-top-other');
+  if (s7OpOther) s7OpOther.style.display = 'none';
+  document.querySelectorAll('#view-survey .sf-cond').forEach(c => c.classList.remove('show'));
+  // Reset SIM2 blocks
+  document.getElementById('sim2-block').style.display = 'none';
+  document.getElementById('sim2-speed-hdr').style.display = 'none';
+  document.getElementById('sim2-speed-block').style.display = 'none';
+  document.getElementById('view-survey').scrollTop = 0;
+  sfProgress();
+}
+
+// ══════════════════════════════════════════════════════
+//  OPENCELLID TOWER LOOKUP
+// ══════════════════════════════════════════════════════
+
+let lastTowerResult = null;
+
+async function lookupTower() {
+  const key     = document.getElementById('ocid-key').value.trim();
+  const mcc     = document.getElementById('ocid-mcc').value.trim();
+  const mnc     = document.getElementById('ocid-mnc').value.trim();
+  const enb     = document.getElementById('ocid-enb').value.trim();
+  const btn     = document.getElementById('lookup-btn');
+  const loading = document.getElementById('lookup-loading');
+  const errEl   = document.getElementById('lookup-error');
+  const result  = document.getElementById('tower-result');
+
+  errEl.classList.remove('show');
+  result.classList.remove('show');
+  if (!key) { showLookupError('Please enter your OpenCelliD API key.'); return; }
+  if (!mcc) { showLookupError('Please enter the MCC (540 for Solomon Islands).'); return; }
+  if (!mnc) { showLookupError('Please enter the MNC (1 = Our Telekom, 2 = BMobile).'); return; }
+  if (!enb) { showLookupError('Please enter the eNB number from NCIL RAW tab.'); return; }
+
+  sessionStorage.setItem('ocid_key', key);
+  btn.disabled = true;
+  loading.classList.add('show');
+
+  try {
+    // CID = eNB * 256 + sector (use 0 for basic lookup)
+    const cid = parseInt(enb) * 256;
+    const tryFetch = async (cellid) => {
+      const url = `https://opencellid.org/cell/get?key=${key}&mcc=${mcc}&mnc=${mnc}&lac=0&cellid=${cellid}&format=json&radio=LTE`;
+      const res  = await fetch(url);
+      return res.json();
+    };
+
+    let data = await tryFetch(cid);
+    if (!data.lat) data = await tryFetch(enb); // fallback: use raw eNB as CID
+    if (!data.lat) {
+      showLookupError('Tower not found in OpenCelliD. This eNB may not yet be in the database. Record the GPS waypoint manually at the tower instead.');
+      return;
+    }
+    displayTowerResult(data);
+  } catch (err) {
+    showLookupError('Could not reach OpenCelliD. Check internet connection and API key.');
+  } finally {
+    btn.disabled = false;
+    loading.classList.remove('show');
+  }
+}
+
+function displayTowerResult(data) {
+  lastTowerResult = data;
+  document.getElementById('tr-lat').textContent     = parseFloat(data.lat).toFixed(6);
+  document.getElementById('tr-lon').textContent     = parseFloat(data.lon).toFixed(6);
+  document.getElementById('tr-radio').textContent   = data.radio || 'LTE';
+  document.getElementById('tr-cid').textContent     = data.cellid || '—';
+  document.getElementById('tr-range').textContent   = data.range ? data.range + ' m' : '—';
+  document.getElementById('tr-samples').textContent = data.samples || '—';
+  document.getElementById('tower-result').classList.add('show');
+}
+
+function showLookupError(msg) {
+  const el = document.getElementById('lookup-error');
+  el.textContent = msg; el.classList.add('show');
+}
+
+function addTowerToMap() {
+  if (!lastTowerResult) return;
+  const mcc  = document.getElementById('ocid-mcc').value.trim();
+  const mnc  = document.getElementById('ocid-mnc').value.trim();
+  const enb  = document.getElementById('ocid-enb').value.trim();
+  const ward = document.querySelector('input[name="sf-a1"]:checked')?.value || 'Unknown';
+  const op   = mcc === '540' && mnc === '1' ? 'Our Telekom' :
+               mcc === '540' && mnc === '2' ? 'BMobile' : 'Unknown';
+  // Auto-fill tower coordinates into Step 7 fields
+  const tlatEl = document.getElementById('fd-s7-tlat');
+  const tlonEl = document.getElementById('fd-s7-tlon');
+  if (tlatEl && !tlatEl.value) tlatEl.value = parseFloat(lastTowerResult.lat).toFixed(6);
+  if (tlonEl && !tlonEl.value) tlonEl.value = parseFloat(lastTowerResult.lon).toFixed(6);
+  points.push({
+    id: 'CS-' + enb, ward,
+    zone: WARDS[ward]?.zone || '', op, type: 'cell',
+    date: document.getElementById('sf-date').value || new Date().toISOString().split('T')[0],
+    lat: parseFloat(lastTowerResult.lat),
+    lng: parseFloat(lastTowerResult.lon),
+    r: -90, rsrp: -90, dl: 0,
+    enb: enb + '-0',
+    taceci: (document.getElementById('fd-s2a-tac')?.value || '') + '-' + (document.getElementById('fd-s2a-eci')?.value || ''),
+  });
+  const mapBtn = document.querySelector('.tnav[onclick*="\'map\'"]');
+  if (mapBtn) switchView('map', mapBtn);
+  refresh();
+  alert(`Tower CS-${enb} added to Live Map at ${parseFloat(lastTowerResult.lat).toFixed(5)}, ${parseFloat(lastTowerResult.lon).toFixed(5)}`);
+}
+
+function copyTowerCoords() {
+  if (!lastTowerResult) return;
+  const text = `${parseFloat(lastTowerResult.lat).toFixed(6)}, ${parseFloat(lastTowerResult.lon).toFixed(6)}`;
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      const btn = document.querySelector('.tower-result-actions .btn:last-child');
+      if (btn) { const o = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = o, 1500); }
+    })
+    .catch(() => alert('Coordinates: ' + text));
+}
+
+// Auto-fill lookup fields from form data as user types
+document.addEventListener('DOMContentLoaded', () => {
+  // Auto-fill Step 2A MCC/MNC from Step 1 operator selection
+  document.getElementById('fd-s1-op').addEventListener('change', function() {
+  
+    const mncEl2a = document.getElementById('fd-s2a-mnc');
+    if (!mncEl2a || mncEl2a.value) return;
+    if (this.value === 'Our Telekom') mncEl2a.value = '1';
+    if (this.value === 'BMobile') mncEl2a.value = '2';
+  });
+
+  const savedKey = sessionStorage.getItem('ocid_key');
+  const keyEl    = document.getElementById('ocid-key');
+  if (savedKey && keyEl) keyEl.value = savedKey;
+
+  // Auto-fill OpenCelliD lookup from Step 2A eNB field
+  const enbEl = document.getElementById('fd-s2a-enb');
+  if (enbEl) {
+    enbEl.addEventListener('input', () => {
+      const ocidEnb = document.getElementById('ocid-enb');
+      if (ocidEnb && !ocidEnb.value) ocidEnb.value = enbEl.value;
+    });
+  }
+  // Auto-fill MCC/MNC in lookup from Step 2A
+  const mccEl = document.getElementById('fd-s2a-mccmnc');
+  if (mccEl) {
+    mccEl.addEventListener('input', () => {
+      const val = mccEl.value;
+      const ocidMcc = document.getElementById('ocid-mcc');
+      const ocidMnc = document.getElementById('ocid-mnc');
+      if (val.includes('/')) {
+        const parts = val.split('/').map(s => s.trim());
+        if (ocidMcc && !ocidMcc.value) ocidMcc.value = parts[0];
+        if (ocidMnc && !ocidMnc.value) ocidMnc.value = parts[1];
+      }
+    });
+  }
+  document.querySelectorAll('input[name="sf-a3"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const mncEl = document.getElementById('ocid-mnc');
+      const mccEl = document.getElementById('ocid-mcc');
+      if (!mncEl) return;
+      if (mccEl && !mccEl.value) mccEl.value = '540';
+      if (!mncEl.value) {
+        if (r.value === 'Our Telekom') mncEl.value = '1';
+        if (r.value === 'BMobile')    mncEl.value = '2';
+      }
+    });
+  });
+});
+
+// ══════════════════════════════════════════════════════
+//  AUTH FUNCTIONS
+// ══════════════════════════════════════════════════════
+
+async function doLogin() {
+  if (DEMO_MODE) { showApp(); return; }
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn      = document.getElementById('login-btn');
+  const errEl    = document.getElementById('login-error');
+  if (!username || !password) { showLoginError('Please enter your username and password.'); return; }
+  btn.textContent = 'Signing in…'; btn.disabled = true;
+  errEl.classList.remove('show');
+  try {
+    btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px">&#9696;</span>Connecting to server…';
+    // Add timeout for slow Render cold start
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+    const res  = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const data = await res.json();
+    if (!res.ok) { showLoginError(data.error || 'Login failed.'); btn.innerHTML = 'Sign in'; btn.disabled = false; return; }
+    authToken = data.token; currentUser = data.user;
+    btn.innerHTML = '\u2713 Signed in';
+    // Keep button disabled after success — login screen will hide
+    showApp();
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      showLoginError('Server is starting up — this can take up to 60 seconds on first use. Please try again.');
+    } else {
+      showLoginError('Cannot reach the server. Check your internet connection.');
+    }
+    btn.innerHTML = 'Sign in'; btn.disabled = false;
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.classList.add('show');
+}
+
+function doLogout() {
+  authToken = null; currentUser = null;
+  localStorage.removeItem('honiara_token');
+  localStorage.removeItem('honiara_user');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app').style.flexDirection = 'column';
+  if (DEMO_MODE) {
+    document.getElementById('demo-banner').style.display = 'block';
+    document.getElementById('topbar-username').textContent = 'Demo User';
+    document.getElementById('topbar-role').textContent = 'Admin';
+    currentUser = { username: 'demo', fullName: 'Demo User', role: 'admin' };
+    seedDemoData();
+  } else {
+    document.getElementById('topbar-username').textContent = currentUser?.fullName || currentUser?.username || '';
+    document.getElementById('topbar-role').textContent =
+      currentUser?.role === 'admin' ? 'Admin' :
+      currentUser?.role === 'leader' ? 'Field Leader' : 'Field Assistant';
+    loadSurveysFromAPI();
+  }
+  refresh();
+  // Check for saved draft after login
+  if (!DEMO_MODE) setTimeout(sfRestoreDraft, 500);
+}
+
+// Seed realistic demo data across all wards and multiple days
+function seedDemoData() {
+  if (points.length > 0) return; // already seeded
+  const wards = Object.keys(WARDS);
+  const today = new Date();
+  const ops   = ['Our Telekom', 'BMobile'];
+  // Spread 45 surveys across last 5 days
+  for (let d = 4; d >= 0; d--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - d);
+    const dateStr = date.toISOString().split('T')[0];
+    const count   = d === 0 ? 6 : 8 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < count; i++) {
+      const ward = wards[Math.floor(Math.random() * wards.length)];
+      const base = WARDS[ward];
+      const rsrp = -78 - Math.floor(Math.random() * 42);
+      points.push({
+        id: (points.length + 1).toString().padStart(3, '0'),
+        ward, zone: base.zone,
+        op: ops[Math.floor(Math.random() * 2)],
+        date: dateStr, type: 'survey',
+        lat: base.lat + (Math.random() - .5) * .007,
+        lng: base.lng + (Math.random() - .5) * .009,
+        r: rsrp, rsrp,
+        dl: +(0.3 + Math.random() * 8.5).toFixed(2),
+        ul: +(0.2 + Math.random() * 2.8).toFixed(2),
+        ping: 30 + Math.floor(Math.random() * 200),
+        browse: Math.round(38 + Math.random() * 57),
+        stream: Math.round(32 + Math.random() * 57),
+        jitter: Math.round(60 + Math.random() * 1100),
+        b1: 1 + Math.floor(Math.random() * 5),
+        c5: 1 + Math.floor(Math.random() * 5),
+      });
+    }
+  }
+  // Add a few cell site markers
+  wards.slice(0, 6).forEach(ward => {
+    const base = WARDS[ward];
+    points.push({
+      id: 'CS-' + (points.length + 1).toString().padStart(2, '0'),
+      ward, zone: base.zone,
+      op: ops[Math.floor(Math.random() * 2)],
+      date: today.toISOString().split('T')[0], type: 'cell',
+      lat: base.lat + (Math.random() - .5) * .003,
+      lng: base.lng + (Math.random() - .5) * .004,
+      r: -90, rsrp: -90, dl: 0, enb: (10000 + Math.floor(Math.random() * 5000)) + '-' + Math.floor(Math.random() * 255),
+      taceci: (6000 + Math.floor(Math.random() * 1000)) + '-' + (3000000 + Math.floor(Math.random() * 100000)),
+    });
+  });
+}
+
+async function apiCall(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(`${API_URL}${path}`, opts);
+  if (res.status === 401) { doLogout(); return null; }
+  return res;
+}
+
+async function loadSurveysFromAPI() {
+  if (DEMO_MODE) return; // demo data already seeded in showApp
+  try {
+    const res = await apiCall('GET', '/api/surveys');
+    if (!res) return;
+    const data = await res.json();
+    if (!data.surveys) return;
+    points = data.surveys.map(s => ({
+      id: s.respondentId || s._id, _id: s._id,
+      ward: s.ward, zone: s.zone,
+      op: s.operator || s.op || s.a3 || '',
+      date: s.date, type: s.type || 'survey',
+      lat: (s.lat != null && s.lat !== '') ? parseFloat(s.lat) : (WARDS[s.ward]?.lat ? WARDS[s.ward].lat + (Math.random()-.5)*.006 : null),
+      lng: (s.lng != null && s.lng !== '') ? parseFloat(s.lng) : (WARDS[s.ward]?.lng ? WARDS[s.ward].lng + (Math.random()-.5)*.008 : null),
+      r: s.rsrp != null ? parseFloat(s.rsrp) : null,
+      rsrp: s.rsrp != null ? parseFloat(s.rsrp) : null,
+      dl: s.dl != null ? parseFloat(s.dl) : null,
+      ul: s.ul != null ? parseFloat(s.ul) : null,
+      ping: s.ping || null, browse: s.browse || null, stream: s.stream || null,
+      jitter: s.jitter || null, b1: s.b1, c5: s.c5,
+      enb: s.enb || '', taceci: s.taceci || '',
+    }));
+    refresh();
+  } catch (err) { console.error('Load surveys error:', err); }
+}
+
+async function checkAuth() {
+  if (DEMO_MODE) { showApp(); return; }
+  if (!authToken) return;
+  try {
+    const res = await fetch(`${API_URL}/api/auth/me`, { headers: { 'Authorization': `Bearer ${authToken}` } });
+    if (res.ok) { const data = await res.json(); currentUser = data.user; showApp(); }
+    else doLogout();
+  } catch (err) { doLogout(); }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+
+document.getElementById('f-date').value  = new Date().toISOString().split('T')[0];
+document.getElementById('view-map').style.display = 'none';
+document.getElementById('view-survey').classList.add('on');
+// Check if already logged in, otherwise show login screen
+// Clear stale demo tokens on load
+if (!DEMO_MODE) {
+  const storedToken = localStorage.getItem('honiara_token');
+  // Validate token is real (not from demo session)
+  if (storedToken === 'demo-token-admin' || storedToken === 'demo-token') {
+    localStorage.removeItem('honiara_token');
+    localStorage.removeItem('honiara_user');
+  }
+}
+checkAuth();
+</script>
+</body>
+</html>
