@@ -2268,59 +2268,123 @@ async function dtRestore(deletedId) {
   } catch (err) { alert('Restore failed: ' + err.message); }
 }
 
+// editingId tracks which MongoDB record we are editing (null = new submission)
+let editingId = null;
+
 async function dtEdit(mongoId) {
   if (!mongoId || mongoId === 'undefined') { alert('Cannot edit — record has no database ID.'); return; }
-  const p = points.find(p => p._id === mongoId);
-  if (!p) return;
-  const existing = document.getElementById('dt-edit-modal');
-  if (existing) existing.remove();
-  const modal = document.createElement('div');
-  modal.id = 'dt-edit-modal';
-  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
-  modal.innerHTML = `<div style="background:#fff;border-radius:12px;padding:24px;width:90%;max-width:500px;max-height:80vh;overflow-y:auto">
-    <h3 style="margin:0 0 16px;font-size:16px;color:var(--navy)">Edit Survey — ${p.id || mongoId}</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">WARD</label><input id="edit-ward" value="${p.ward||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">OPERATOR</label><input id="edit-op" value="${p.op||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">DATE</label><input id="edit-date" value="${p.date||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">TIME</label><input id="edit-time" value="${p.time||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">RSRP (dBm)</label><input id="edit-rsrp" value="${p.rsrp||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">DL (Mbps)</label><input id="edit-dl" value="${p.dl||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">UL (Mbps)</label><input id="edit-ul" value="${p.ul||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">PING (ms)</label><input id="edit-ping" value="${p.ping||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">LAT</label><input id="edit-lat" value="${p.lat||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">LNG</label><input id="edit-lng" value="${p.lng||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
-      <button onclick="document.getElementById('dt-edit-modal').remove()" style="border:1px solid var(--border);background:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px">Cancel</button>
-      <button onclick="dtSaveEdit('${mongoId}')" style="border:none;background:var(--navy);color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">Save changes</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
+
+  // Fetch full record from server
+  let survey;
+  try {
+    const data = await apiCall('GET', '/api/surveys/' + mongoId);
+    survey = data.survey;
+  } catch(e) {
+    // Fall back to local points cache
+    survey = points.find(p => p._id === mongoId);
+  }
+  if (!survey) { alert('Could not load survey data.'); return; }
+
+  // Reset form then populate with existing data
+  sfReset();
+  editingId = mongoId;
+
+  // Helper to set a field value safely
+  const s = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+
+  // Header fields
+  s('sf-respondent-id', survey.respondentId);
+  s('sf-name', survey.name);
+  s('sf-date', survey.date);
+
+  // Time
+  if (survey.time) {
+    const parts = survey.time.split(':');
+    let h = parseInt(parts[0]||0), m = parseInt(parts[1]||0);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    s('sf-time-hh', h); s('sf-time-mm', String(m).padStart(2,'0'));
+    s('sf-time-ampm', ampm); sfTimeSync();
+  }
+
+  // Ward — tick the right radio
+  if (survey.ward) {
+    document.querySelectorAll('#view-survey input[name="sf-ward"]').forEach(r => {
+      if (r.value === survey.ward) { r.checked = true; generateRespondentId(survey.ward); }
+    });
+  }
+
+  // Section A
+  s('sf-a2', survey.a2); s('sf-a4', survey.a4); s('sf-a5', survey.a5); s('sf-a6', survey.a6);
+
+  // Section B
+  const setRadio = (name, val) => {
+    document.querySelectorAll('#view-survey input[name="' + name + '"]').forEach(r => { if (r.value === val) r.checked = true; });
+  };
+  setRadio('sf-b1', survey.b1); setRadio('sf-b2', survey.b2); setRadio('sf-b3', survey.b3);
+  s('sf-b3-detail', survey.b3_detail); setRadio('sf-b4', survey.b4);
+
+  // Section C
+  setRadio('sf-c1', survey.c1); setRadio('sf-c2', survey.c2); setRadio('sf-c3', survey.c3);
+  setRadio('sf-c4', survey.c4); s('sf-c5', survey.c5); setRadio('sf-c6', survey.c6);
+  setRadio('sf-c7', survey.c7); setRadio('sf-c8', survey.c8);
+
+  // Section D
+  setRadio('sf-d1', survey.d1); setRadio('sf-d2', survey.d2);
+  setRadio('sf-d3', survey.d3); setRadio('sf-d4', survey.d4);
+
+  // Section E
+  setRadio('sf-e1', survey.e1); s('sf-e1-yes-reason', survey.e1_yes_reason);
+  s('sf-e1-no', survey.e1_no); s('sf-e2', survey.e2);
+  s('sf-e3', survey.e3); s('sf-e4', survey.e4);
+
+  // Field data steps
+  s('fd-s1-op', survey.fd_s1_op || survey.operator || survey.op);
+  s('fd-s2a-mcc', survey.fd_s2a_mcc); s('fd-s2a-mnc', survey.fd_s2a_mnc);
+  s('fd-s2a-band', survey.fd_s2a_band); s('fd-s2a-rsrp', survey.fd_s2a_rsrp);
+  s('fd-s2a-rsrq', survey.fd_s2a_rsrq); s('fd-s2a-rssnr', survey.fd_s2a_rssnr);
+  s('fd-s2a-tac', survey.fd_s2a_tac); s('fd-s2a-eci', survey.fd_s2a_eci);
+  s('fd-s2a-enb', survey.fd_s2a_enb); s('fd-s2a-lcid', survey.fd_s2a_lcid);
+  s('fd-s2a-pci', survey.fd_s2a_pci);
+
+  // GPS
+  s('fd-gps-lat', survey.lat); s('fd-gps-lng', survey.lng);
+
+  // Notes
+  s('sf-notes', survey.notes);
+
+  // Switch to survey tab and show edit banner
+  showView('survey');
+  document.getElementById('view-survey').scrollTop = 0;
+
+  // Change submit button to "Save changes"
+  const submitBtn = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+  if (submitBtn) {
+    submitBtn.textContent = 'Save changes';
+    submitBtn.style.background = 'var(--amber)';
+  }
+
+  // Show edit banner
+  let banner = document.getElementById('sf-edit-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'sf-edit-banner';
+    banner.style.cssText = 'background:#FEF3C7;border:1px solid #F59E0B;border-radius:6px;padding:10px 14px;margin:10px 14px;font-size:12px;color:#92400E;display:flex;align-items:center;justify-content:space-between';
+    const formBody = document.getElementById('sf-form-body');
+    formBody.insertBefore(banner, formBody.firstChild);
+  }
+  banner.innerHTML = '<span>✏️ <strong>Editing:</strong> ' + (survey.respondentId || mongoId) + ' — make changes then click Save changes</span>' +
+    '<button onclick="sfCancelEdit()" style="border:none;background:transparent;color:#92400E;cursor:pointer;font-weight:600;font-size:12px">✕ Cancel edit</button>';
+  banner.style.display = 'flex';
 }
 
-async function dtSaveEdit(mongoId) {
-  const updates = {
-    ward: document.getElementById('edit-ward').value,
-    op: document.getElementById('edit-op').value,
-    operator: document.getElementById('edit-op').value,
-    date: document.getElementById('edit-date').value,
-    time: document.getElementById('edit-time').value,
-    rsrp: document.getElementById('edit-rsrp').value,
-    dl: document.getElementById('edit-dl').value,
-    ul: document.getElementById('edit-ul').value,
-    ping: document.getElementById('edit-ping').value,
-    lat: document.getElementById('edit-lat').value,
-    lng: document.getElementById('edit-lng').value,
-  };
-  try {
-    await apiCall('PUT', '/api/surveys/' + mongoId, updates);
-    const idx = points.findIndex(p => p._id === mongoId);
-    if (idx !== -1) points[idx] = { ...points[idx], ...updates };
-    document.getElementById('dt-edit-modal').remove();
-    renderDataTable(); renderMap();
-    alert('Survey updated successfully.');
-  } catch (err) { alert('Save failed: ' + err.message); }
+function sfCancelEdit() {
+  editingId = null;
+  const banner = document.getElementById('sf-edit-banner');
+  if (banner) banner.style.display = 'none';
+  const submitBtn = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+  if (submitBtn) { submitBtn.textContent = 'Submit survey'; submitBtn.style.background = ''; }
+  sfReset();
 }
 
 // ══════════════════════════════════════════════════════
@@ -2794,6 +2858,11 @@ function sfRestoreDraft() {
 }
 
 function sfReset() {
+  editingId = null;
+  const banner = document.getElementById('sf-edit-banner');
+  if (banner) banner.style.display = 'none';
+  const submitBtn = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+  if (submitBtn) { submitBtn.textContent = 'Submit survey'; submitBtn.style.background = ''; }
   document.getElementById('sf-form-body').classList.remove('hide');
   document.getElementById('sf-success').classList.remove('show');
   document.querySelectorAll('#view-survey input[type=radio], #view-survey input[type=checkbox]').forEach(i => i.checked = false);
