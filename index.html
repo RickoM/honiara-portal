@@ -2299,10 +2299,21 @@ async function dtEdit(btn) {
   sfReset();
   editingId = mongoId;
 
-  // Helper to set a field value safely
-  const s = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+  // Helper: set text/number/select/textarea value
+  const s = (id, val) => { const el = document.getElementById(id); if (el && val != null && val !== '') el.value = val; };
+  // Helper: check a radio by name+value
+  const setRadio = (name, val) => {
+    if (!val) return;
+    document.querySelectorAll('#view-survey input[name="' + name + '"]').forEach(r => { if (r.value === val) r.checked = true; });
+  };
+  // Helper: check a checkbox by value
+  const setCheck = (name, vals) => {
+    if (!vals) return;
+    const arr = Array.isArray(vals) ? vals : [vals];
+    document.querySelectorAll('#view-survey input[name="' + name + '"]').forEach(r => { if (arr.includes(r.value)) r.checked = true; });
+  };
 
-  // Header fields
+  // ── Header ──────────────────────────────────
   s('sf-respondent-id', survey.respondentId);
   s('sf-name', survey.name);
   s('sf-date', survey.date);
@@ -2317,38 +2328,53 @@ async function dtEdit(btn) {
     s('sf-time-ampm', ampm); sfTimeSync();
   }
 
-  // Ward — tick the right radio
+  // ── Section A ───────────────────────────────
+  // A1 Ward
   if (survey.ward) {
-    document.querySelectorAll('#view-survey input[name="sf-ward"]').forEach(r => {
+    document.querySelectorAll('#view-survey input[name="sf-a1"]').forEach(r => {
       if (r.value === survey.ward) { r.checked = true; generateRespondentId(survey.ward); }
     });
   }
+  setRadio('sf-a2', survey.a2);  // How long lived here
+  setRadio('sf-a3', survey.a3);  // Operator
+  setRadio('sf-a4', survey.a4);  // Preferred operator
+  setRadio('sf-a5', survey.a5);  // Plan type
+  setRadio('sf-a6', survey.a6);  // Devices
 
-  // Section A
-  s('sf-a2', survey.a2); s('sf-a4', survey.a4); s('sf-a5', survey.a5); s('sf-a6', survey.a6);
+  // ── Section B ───────────────────────────────
+  setRadio('sf-b1', survey.b1);  // Signal quality rating
+  setRadio('sf-b2', survey.b2);  // Call drops
+  setRadio('sf-b3', survey.b3);  // Dead zones
+  s('sf-b3-det', survey.b3_detail);
+  setCheck('sf-b4', survey.b4);  // When problems occur (checkboxes)
 
-  // Section B
-  const setRadio = (name, val) => {
-    document.querySelectorAll('#view-survey input[name="' + name + '"]').forEach(r => { if (r.value === val) r.checked = true; });
-  };
-  setRadio('sf-b1', survey.b1); setRadio('sf-b2', survey.b2); setRadio('sf-b3', survey.b3);
-  s('sf-b3-detail', survey.b3_detail); setRadio('sf-b4', survey.b4);
+  // ── Section C ───────────────────────────────
+  setRadio('sf-c1', survey.c1);
+  setRadio('sf-c2', survey.c2);
+  setRadio('sf-c3', survey.c3);
+  setRadio('sf-c4', survey.c4);
+  setRadio('sf-c5', survey.c5);
+  setRadio('sf-c6', survey.c6);
+  setRadio('sf-c7', survey.c7);
+  setRadio('sf-c8', survey.c8);
 
-  // Section C
-  setRadio('sf-c1', survey.c1); setRadio('sf-c2', survey.c2); setRadio('sf-c3', survey.c3);
-  setRadio('sf-c4', survey.c4); s('sf-c5', survey.c5); setRadio('sf-c6', survey.c6);
-  setRadio('sf-c7', survey.c7); setRadio('sf-c8', survey.c8);
+  // ── Section D ───────────────────────────────
+  setRadio('sf-d1', survey.d1);
+  setRadio('sf-d2', survey.d2);
+  setRadio('sf-d3', survey.d3);
+  setRadio('sf-d4', survey.d4);
 
-  // Section D
-  setRadio('sf-d1', survey.d1); setRadio('sf-d2', survey.d2);
-  setRadio('sf-d3', survey.d3); setRadio('sf-d4', survey.d4);
+  // ── Section E ───────────────────────────────
+  setRadio('sf-e1', survey.e1);
+  setRadio('sf-e2', survey.e2);
+  setRadio('sf-e3', survey.e3);
+  s('sf-e4', survey.e4);
 
-  // Section E
-  setRadio('sf-e1', survey.e1); s('sf-e1-yes-reason', survey.e1_yes_reason);
-  s('sf-e1-no', survey.e1_no); s('sf-e2', survey.e2);
-  s('sf-e3', survey.e3); s('sf-e4', survey.e4);
+  // ── GPS ─────────────────────────────────────
+  s('sf-lat', survey.lat);
+  s('sf-lon', survey.lng);
 
-  // Field data steps
+  // ── Field Data Steps ─────────────────────────
   s('fd-s1-op', survey.fd_s1_op || survey.operator || survey.op);
   s('fd-s2a-mcc', survey.fd_s2a_mcc); s('fd-s2a-mnc', survey.fd_s2a_mnc);
   s('fd-s2a-band', survey.fd_s2a_band); s('fd-s2a-rsrp', survey.fd_s2a_rsrp);
@@ -2357,10 +2383,7 @@ async function dtEdit(btn) {
   s('fd-s2a-enb', survey.fd_s2a_enb); s('fd-s2a-lcid', survey.fd_s2a_lcid);
   s('fd-s2a-pci', survey.fd_s2a_pci);
 
-  // GPS
-  s('fd-gps-lat', survey.lat); s('fd-gps-lng', survey.lng);
-
-  // Notes
+  // ── Notes ────────────────────────────────────
   s('sf-notes', survey.notes);
 
   // Switch to survey tab and show edit banner
