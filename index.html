@@ -710,7 +710,7 @@
               <th>Lat</th><th>Lng</th><th>RSRP dBm</th><th>Signal</th>
               <th>DL Mbps</th><th>UL Mbps</th><th>Ping ms</th>
               <th>Browsing %</th><th>Streaming %</th><th>Jitter ms</th>
-              <th>eNB-LCID</th><th>TAC-ECI</th>
+              <th>eNB-LCID</th><th>TAC-ECI</th><th>Actions</th>
             </tr>
           </thead>
           <tbody id="dt-body"></tbody>
@@ -1805,6 +1805,7 @@ function switchView(id, btn) {
   document.getElementById('view-survey').classList.toggle('on',    id === 'survey');
   if (id === 'dashboard') renderDashboard();
   if (id === 'data')      renderDataTable();
+  if (id === 'deleted')   loadDeletedSurveys();
 }
 
 // ══════════════════════════════════════════════════════
@@ -2182,7 +2183,7 @@ function renderDataTable() {
 
   const tbody = document.getElementById('dt-body');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="18" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="19" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(p => {
@@ -2215,8 +2216,111 @@ function renderDataTable() {
       <td>${p.jitter || '\u2014'}</td>
       <td style="${mono};font-size:11px">${p.enb || '\u2014'}</td>
       <td style="${mono};font-size:11px">${p.taceci || '\u2014'}</td>
+      <td style="white-space:nowrap">
+        <button onclick="dtEdit('${p._id}')" style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>
+        <button onclick="dtDelete('${p._id}','${p.id}')" style="border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Delete</button>
+      </td>
     </tr>`;
   }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  EDIT & DELETE SURVEY RECORDS
+// ══════════════════════════════════════════════════════
+
+async function dtDelete(mongoId, displayId) {
+  if (!mongoId || mongoId === 'undefined') { alert('Cannot delete — record has no database ID.'); return; }
+  if (!confirm('Move survey ' + displayId + ' to Deleted Records?\nYou can restore it later from the Deleted tab.')) return;
+  try {
+    await apiCall('DELETE', '/api/surveys/' + mongoId);
+    points = points.filter(p => p._id !== mongoId);
+    renderDataTable(); renderMap(); updateTopBadge();
+    alert('Survey ' + displayId + ' moved to Deleted Records.');
+  } catch (err) { alert('Delete failed: ' + err.message); }
+}
+
+async function loadDeletedSurveys() {
+  try {
+    const data = await apiCall('GET', '/api/surveys/deleted/all');
+    const tbody = document.getElementById('deleted-tbody');
+    if (!data.deleted || !data.deleted.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:2rem">No deleted records</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.deleted.map(d => `<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${d.respondentId || '—'}</td>
+      <td>${d.ward || '—'}</td>
+      <td>${d.operator || d.op || '—'}</td>
+      <td>${d.date || '—'}</td>
+      <td style="color:var(--gray-600);font-size:11px">${d.deletedBy || '—'} @ ${d.deletedAt ? new Date(d.deletedAt).toLocaleString() : '—'}</td>
+      <td><button onclick="dtRestore('${d._id}')" style="border:none;background:var(--green);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Restore</button></td>
+    </tr>`).join('');
+  } catch (err) { console.error('Load deleted error:', err); }
+}
+
+async function dtRestore(deletedId) {
+  if (!confirm('Restore this survey back to active records?')) return;
+  try {
+    await apiCall('POST', '/api/surveys/restore/' + deletedId);
+    alert('Survey restored successfully.');
+    loadDeletedSurveys();
+    await loadSurveysFromAPI();
+  } catch (err) { alert('Restore failed: ' + err.message); }
+}
+
+async function dtEdit(mongoId) {
+  if (!mongoId || mongoId === 'undefined') { alert('Cannot edit — record has no database ID.'); return; }
+  const p = points.find(p => p._id === mongoId);
+  if (!p) return;
+  const existing = document.getElementById('dt-edit-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'dt-edit-modal';
+  modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML = `<div style="background:#fff;border-radius:12px;padding:24px;width:90%;max-width:500px;max-height:80vh;overflow-y:auto">
+    <h3 style="margin:0 0 16px;font-size:16px;color:var(--navy)">Edit Survey — ${p.id || mongoId}</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">WARD</label><input id="edit-ward" value="${p.ward||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">OPERATOR</label><input id="edit-op" value="${p.op||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">DATE</label><input id="edit-date" value="${p.date||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">TIME</label><input id="edit-time" value="${p.time||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">RSRP (dBm)</label><input id="edit-rsrp" value="${p.rsrp||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">DL (Mbps)</label><input id="edit-dl" value="${p.dl||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">UL (Mbps)</label><input id="edit-ul" value="${p.ul||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">PING (ms)</label><input id="edit-ping" value="${p.ping||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">LAT</label><input id="edit-lat" value="${p.lat||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">LNG</label><input id="edit-lng" value="${p.lng||''}" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:13px;box-sizing:border-box"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end">
+      <button onclick="document.getElementById('dt-edit-modal').remove()" style="border:1px solid var(--border);background:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px">Cancel</button>
+      <button onclick="dtSaveEdit('${mongoId}')" style="border:none;background:var(--navy);color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">Save changes</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function dtSaveEdit(mongoId) {
+  const updates = {
+    ward: document.getElementById('edit-ward').value,
+    op: document.getElementById('edit-op').value,
+    operator: document.getElementById('edit-op').value,
+    date: document.getElementById('edit-date').value,
+    time: document.getElementById('edit-time').value,
+    rsrp: document.getElementById('edit-rsrp').value,
+    dl: document.getElementById('edit-dl').value,
+    ul: document.getElementById('edit-ul').value,
+    ping: document.getElementById('edit-ping').value,
+    lat: document.getElementById('edit-lat').value,
+    lng: document.getElementById('edit-lng').value,
+  };
+  try {
+    await apiCall('PUT', '/api/surveys/' + mongoId, updates);
+    const idx = points.findIndex(p => p._id === mongoId);
+    if (idx !== -1) points[idx] = { ...points[idx], ...updates };
+    document.getElementById('dt-edit-modal').remove();
+    renderDataTable(); renderMap();
+    alert('Survey updated successfully.');
+  } catch (err) { alert('Save failed: ' + err.message); }
 }
 
 // ══════════════════════════════════════════════════════
@@ -2543,7 +2647,12 @@ async function sfSubmit() {
     const res = await apiCall('POST', '/api/surveys', data);
     if (!res) return;
     const result = await res.json();
-    if (!res.ok) { alert('Submission failed: ' + (result.error || 'Unknown error')); return; }
+    if (!res.ok) {
+      const errMsg = result.error || result.message || JSON.stringify(result);
+      console.error('Server rejected survey:', res.status, result);
+      alert('Submission failed: ' + errMsg + '\n\nCheck browser console (F12) for full details.');
+      return;
+    }
     if (data.ward && WARDS[data.ward]) {
       const base = WARDS[data.ward];
       points.push({
