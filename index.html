@@ -2360,7 +2360,7 @@ async function dtEdit(btn) {
   s('sf-notes', survey.notes);
 
   // Switch to survey tab and show edit banner
-  showView('survey');
+  switchView('survey', document.getElementById('tnav-survey'));
   document.getElementById('view-survey').scrollTop = 0;
 
   // Change submit button to "Save changes"
