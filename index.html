@@ -2217,8 +2217,8 @@ function renderDataTable() {
       <td style="${mono};font-size:11px">${p.enb || '\u2014'}</td>
       <td style="${mono};font-size:11px">${p.taceci || '\u2014'}</td>
       <td style="white-space:nowrap">
-        <button onclick="dtEdit('${p._id}')" style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>
-        <button onclick="dtDelete('${p._id}','${p.id}')" style="border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Delete</button>
+        <button onclick="dtEdit(this)" data-id="${p._id}" style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>
+        <button onclick="dtDelete(this)" data-id="${p._id}" data-display="${p.id}" style="border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Delete</button>
       </td>
     </tr>`;
   }).join('');
@@ -2228,7 +2228,9 @@ function renderDataTable() {
 //  EDIT & DELETE SURVEY RECORDS
 // ══════════════════════════════════════════════════════
 
-async function dtDelete(mongoId, displayId) {
+async function dtDelete(btnOrId, displayId) {
+  const mongoId = typeof btnOrId === "string" ? btnOrId : btnOrId.dataset.id;
+  displayId = displayId || (typeof btnOrId === "object" ? btnOrId.dataset.display : mongoId);
   if (!mongoId || mongoId === 'undefined') { alert('Cannot delete — record has no database ID.'); return; }
   if (!confirm('Move survey ' + displayId + ' to Deleted Records?\nYou can restore it later from the Deleted tab.')) return;
   try {
@@ -2271,7 +2273,8 @@ async function dtRestore(deletedId) {
 // editingId tracks which MongoDB record we are editing (null = new submission)
 let editingId = null;
 
-async function dtEdit(mongoId) {
+async function dtEdit(btnOrId) {
+  const mongoId = typeof btnOrId === "string" ? btnOrId : btnOrId.dataset.id;
   if (!mongoId || mongoId === 'undefined') { alert('Cannot edit — record has no database ID.'); return; }
 
   // Load from local cache first, then fall back to server
@@ -3188,7 +3191,8 @@ async function loadSurveysFromAPI() {
     const data = await res.json();
     if (!data.surveys) return;
     points = data.surveys.map(s => ({
-      id: s.respondentId || s._id, _id: s._id,
+      // Summary fields for map/table
+      id: s.respondentId || s._id, _id: String(s._id),
       ward: s.ward, zone: s.zone,
       op: s.operator || s.op || s.a3 || '',
       date: s.date, type: s.type || 'survey',
@@ -3201,6 +3205,9 @@ async function loadSurveysFromAPI() {
       ping: s.ping || null, browse: s.browse || null, stream: s.stream || null,
       jitter: s.jitter || null, b1: s.b1, c5: s.c5,
       enb: s.enb || '', taceci: s.taceci || '',
+      // Full raw survey data for edit form
+      ...s,
+      _id: String(s._id),
     }));
     refresh();
   } catch (err) { console.error('Load surveys error:', err); }
