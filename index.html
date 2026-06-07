@@ -2217,8 +2217,8 @@ function renderDataTable() {
       <td style="${mono};font-size:11px">${p.enb || '\u2014'}</td>
       <td style="${mono};font-size:11px">${p.taceci || '\u2014'}</td>
       <td style="white-space:nowrap">
-        <button onclick="dtEdit(${JSON.stringify(p._id)})" style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>
-        <button onclick="dtDelete(${JSON.stringify(p._id)},${JSON.stringify(p.id)})" style="border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Delete</button>
+        <button onclick='dtEdit(this)' data-mid='${p._id}' style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>
+        <button onclick='dtDelete(this)' data-mid='${p._id}' data-did='${p.id}' style="border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Delete</button>
       </td>
     </tr>`;
   }).join('');
@@ -2228,7 +2228,9 @@ function renderDataTable() {
 //  EDIT & DELETE SURVEY RECORDS
 // ══════════════════════════════════════════════════════
 
-async function dtDelete(mongoId, displayId) {
+async function dtDelete(btn, displayId) {
+  const mongoId = btn.getAttribute('data-mid');
+  displayId = btn.getAttribute('data-did') || mongoId;
   if (!mongoId || mongoId === 'undefined') { alert('Cannot delete — record has no database ID.'); return; }
   if (!confirm('Move survey ' + displayId + ' to Deleted Records?\nYou can restore it later from the Deleted tab.')) return;
   try {
@@ -2271,9 +2273,9 @@ async function dtRestore(deletedId) {
 // editingId tracks which MongoDB record we are editing (null = new submission)
 let editingId = null;
 
-async function dtEdit(mongoId) {
-  console.log('dtEdit called with:', mongoId, typeof mongoId);
-  alert('Edit clicked — ID: ' + mongoId);
+async function dtEdit(btn) {
+  const mongoId = btn.getAttribute('data-mid');
+  console.log('dtEdit called with:', mongoId);
   if (!mongoId || mongoId === 'undefined') { alert('Cannot edit — record has no database ID.'); return; }
 
   // Load from local cache first, then fall back to server
