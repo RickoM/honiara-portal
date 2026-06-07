@@ -2287,18 +2287,25 @@ async function dtEdit(btn) {
   // Always fetch full record from server to get all fields
   let survey;
   try {
-    const res = await fetch(API_URL + '/api/surveys/' + mongoId, {
+    const url = API_URL + '/api/surveys/' + mongoId;
+    console.log('Fetching:', url);
+    const res = await fetch(url, {
       headers: { 'Authorization': 'Bearer ' + authToken }
     });
-    if (res.ok) {
-      const data = await res.json();
-      survey = data.survey;
-    }
+    console.log('Response status:', res.status);
+    const data = await res.json();
+    console.log('Response data:', data);
+    if (res.ok) survey = data.survey;
+    else console.error('Server error:', data);
   } catch(e) {
     console.error('Fetch error:', e);
   }
   // Fall back to local cache if server fetch failed
-  if (!survey) survey = points.find(p => p._id === mongoId);
+  if (!survey) {
+    console.log('Falling back to local cache, points count:', points.length);
+    survey = points.find(p => p._id === mongoId);
+    console.log('Found in cache:', survey ? 'yes' : 'no');
+  }
   if (!survey) { alert('Could not load survey data.'); return; }
 
   // Reset form then populate with existing data
