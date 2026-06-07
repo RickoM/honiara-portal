@@ -474,7 +474,7 @@
       <button class="tnav on" id="tnav-survey" onclick="switchView('survey', this)">Submit Survey</button>
       <button class="tnav" onclick="switchView('map', this)">Live Map</button>
       <button class="tnav" onclick="switchView('dashboard', this)">Dashboard</button>
-      <button class="tnav" onclick="switchView('data', this)">Data Table</button>
+      <button class="tnav" id="tnav-data" onclick="switchView('data', this)">Data Table</button>
     </div>
     <div class="topbar-right">
       <div class="user-badge">
@@ -1554,8 +1554,8 @@
       <div class="sf-submit-bar">
         <span style="font-size:11px;color:var(--gray-600)" id="sf-hint">Complete required fields to submit</span>
         <div style="display:flex;gap:8px">
-          <button class="btn" onclick="sfSaveDraft()">Save draft</button>
-          <button class="btn btn-primary" onclick="sfSubmit()">Submit survey</button>
+          <button class="btn" id="sf-draft-btn" onclick="sfSaveDraft()">Save draft</button>
+          <button class="btn btn-primary" id="sf-submit-btn" onclick="sfSubmit()">Submit survey</button>
         </div>
       </div>
 
@@ -2407,8 +2407,10 @@ async function dtEdit(btn) {
   // ── Notes ────────────────────────────────────
   s('sf-notes', survey.notes);
 
-  // Set submit button to Save changes
-  const submitBtn2 = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+  // Hide Save draft, change Submit to Save changes
+  const draftBtn = document.getElementById('sf-draft-btn');
+  const submitBtn2 = document.getElementById('sf-submit-btn');
+  if (draftBtn) draftBtn.style.display = 'none';
   if (submitBtn2) { submitBtn2.textContent = 'Save changes'; submitBtn2.style.background = 'var(--amber)'; }
 
   // Switch to survey tab and show edit banner
@@ -2440,9 +2442,13 @@ function sfCancelEdit() {
   editingId = null;
   const banner = document.getElementById('sf-edit-banner');
   if (banner) banner.style.display = 'none';
-  const submitBtn = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+  const draftBtn = document.getElementById('sf-draft-btn');
+  const submitBtn = document.getElementById('sf-submit-btn');
+  if (draftBtn) draftBtn.style.display = '';
   if (submitBtn) { submitBtn.textContent = 'Submit survey'; submitBtn.style.background = ''; }
   sfReset();
+  // Go back to Data Table
+  switchView('data', document.getElementById('tnav-data'));
 }
 
 // ══════════════════════════════════════════════════════
@@ -2949,8 +2955,12 @@ function sfReset(keepEditingId) {
   if (!keepEditingId) editingId = null;
   const banner = document.getElementById('sf-edit-banner');
   if (banner && !keepEditingId) banner.style.display = 'none';
-  const submitBtn = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
-  if (submitBtn && !keepEditingId) { submitBtn.textContent = 'Submit survey'; submitBtn.style.background = ''; }
+  const draftBtn = document.getElementById('sf-draft-btn');
+  const submitBtn = document.getElementById('sf-submit-btn');
+  if (!keepEditingId) {
+    if (draftBtn) draftBtn.style.display = '';
+    if (submitBtn) { submitBtn.textContent = 'Submit survey'; submitBtn.style.background = ''; }
+  }
   document.getElementById('sf-form-body').classList.remove('hide');
   document.getElementById('sf-success').classList.remove('show');
   document.querySelectorAll('#view-survey input[type=radio], #view-survey input[type=checkbox]').forEach(i => i.checked = false);
