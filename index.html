@@ -2319,10 +2319,10 @@ async function dtEdit(btn) {
     if (!val) return;
     document.querySelectorAll('#view-survey input[name="' + name + '"]').forEach(r => { if (r.value === val) r.checked = true; });
   };
-  // Helper: check a checkbox by value
+  // Helper: check checkboxes — handles semicolon-joined strings from DB
   const setCheck = (name, vals) => {
     if (!vals) return;
-    const arr = Array.isArray(vals) ? vals : [vals];
+    const arr = Array.isArray(vals) ? vals : String(vals).split(';').map(v => v.trim());
     document.querySelectorAll('#view-survey input[name="' + name + '"]').forEach(r => { if (arr.includes(r.value)) r.checked = true; });
   };
 
@@ -2365,11 +2365,11 @@ async function dtEdit(btn) {
   setRadio('sf-c1', survey.c1);
   setRadio('sf-c2', survey.c2);
   setRadio('sf-c3', survey.c3);
-  setRadio('sf-c4', survey.c4);
+  setCheck('sf-c4', survey.c4);  // checkboxes — time of day
   setRadio('sf-c5', survey.c5);
-  setRadio('sf-c6', survey.c6);
+  setCheck('sf-c6', survey.c6);  // checkboxes — streaming time
   setRadio('sf-c7', survey.c7);
-  setRadio('sf-c8', survey.c8);
+  setCheck('sf-c8', survey.c8);  // checkboxes — apps used
 
   // ── Section D ───────────────────────────────
   setRadio('sf-d1', survey.d1);
@@ -2515,6 +2515,7 @@ function sfToggle(id, show) {
 }
 
 function sfGetData() {
+  sfTimeSync(); // ensure hidden sf-time is up to date before reading
   const g = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
   const r = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
   const c = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value).join(';');
