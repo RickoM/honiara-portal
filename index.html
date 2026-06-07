@@ -2440,15 +2440,17 @@ async function dtEdit(btn) {
 
 function sfCancelEdit() {
   editingId = null;
-  const banner = document.getElementById('sf-edit-banner');
-  if (banner) banner.style.display = 'none';
-  const draftBtn = document.getElementById('sf-draft-btn');
-  const submitBtn = document.getElementById('sf-submit-btn');
-  if (draftBtn) draftBtn.style.display = '';
-  if (submitBtn) { submitBtn.textContent = 'Submit survey'; submitBtn.style.background = ''; }
-  sfReset();
+  sfReset(); // clears form and resets buttons
   // Go back to Data Table
-  switchView('data', document.getElementById('tnav-data'));
+  const dataTnav = document.getElementById('tnav-data');
+  if (dataTnav) {
+    switchView('data', dataTnav);
+  } else {
+    // fallback — find the Data Table button by text
+    document.querySelectorAll('.tnav').forEach(btn => {
+      if (btn.textContent.trim() === 'Data Table') switchView('data', btn);
+    });
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -2964,7 +2966,18 @@ function sfReset(keepEditingId) {
   document.getElementById('sf-form-body').classList.remove('hide');
   document.getElementById('sf-success').classList.remove('show');
   document.querySelectorAll('#view-survey input[type=radio], #view-survey input[type=checkbox]').forEach(i => i.checked = false);
-  document.querySelectorAll('#view-survey input[type=text], #view-survey input[type=number], #view-survey textarea, #view-survey select').forEach(i => { i.value = ''; }); document.getElementById('sf-time-hh').value='01'; document.getElementById('sf-time-mm').value='00'; document.getElementById('sf-time-ampm').value='AM'; sfTimeSync();
+  document.querySelectorAll('#view-survey input[type=text], #view-survey input[type=number], #view-survey textarea, #view-survey select').forEach(i => { i.value = ''; });
+  // Clear date and time fields explicitly
+  const dateEl = document.getElementById('sf-date');
+  if (dateEl) dateEl.value = '';
+  const hhEl = document.getElementById('sf-time-hh');
+  const mmEl = document.getElementById('sf-time-mm');
+  const apEl = document.getElementById('sf-time-ampm');
+  if (hhEl) hhEl.value = '01';
+  if (mmEl) mmEl.value = '00';
+  if (apEl) apEl.value = 'AM';
+  const hiddenTime = document.getElementById('sf-time');
+  if (hiddenTime) hiddenTime.value = '';
   const towerFields = document.getElementById('tower-fields');
   if (towerFields) { towerFields.style.opacity = '0.35'; towerFields.style.pointerEvents = 'none'; }
   const simWarn = document.getElementById('sim-not-ready-warn');
