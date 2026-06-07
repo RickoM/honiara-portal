@@ -2287,12 +2287,18 @@ async function dtEdit(btn) {
   // Always fetch full record from server to get all fields
   let survey;
   try {
-    const data = await apiCall('GET', '/api/surveys/' + mongoId);
-    survey = data.survey;
+    const res = await fetch(API_URL + '/api/surveys/' + mongoId, {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      survey = data.survey;
+    }
   } catch(e) {
-    // Fall back to local cache
-    survey = points.find(p => p._id === mongoId);
+    console.error('Fetch error:', e);
   }
+  // Fall back to local cache if server fetch failed
+  if (!survey) survey = points.find(p => p._id === mongoId);
   if (!survey) { alert('Could not load survey data.'); return; }
 
   // Reset form then populate with existing data
