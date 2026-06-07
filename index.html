@@ -1797,7 +1797,7 @@ function handleCSV(input) {
 
 function switchView(id, btn) {
   document.querySelectorAll('.tnav').forEach(t => t.classList.remove('on'));
-  btn.classList.add('on');
+  if (btn) btn.classList.add('on');
   activeView = id;
   document.getElementById('view-map').style.display         = id === 'map'      ? 'flex'  : 'none';
   document.getElementById('view-dashboard').classList.toggle('on', id === 'dashboard');
@@ -2360,7 +2360,7 @@ async function dtEdit(btn) {
   s('sf-notes', survey.notes);
 
   // Switch to survey tab and show edit banner
-  switchView('survey', document.getElementById('tnav-survey'));
+  switchView('survey', document.querySelector('.tnav'));
   document.getElementById('view-survey').scrollTop = 0;
 
   // Change submit button to "Save changes"
