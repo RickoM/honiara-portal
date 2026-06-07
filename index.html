@@ -2272,6 +2272,8 @@ async function dtRestore(deletedId) {
 let editingId = null;
 
 async function dtEdit(mongoId) {
+  console.log('dtEdit called with:', mongoId, typeof mongoId);
+  alert('Edit clicked — ID: ' + mongoId);
   if (!mongoId || mongoId === 'undefined') { alert('Cannot edit — record has no database ID.'); return; }
 
   // Load from local cache first, then fall back to server
