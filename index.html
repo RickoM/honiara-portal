@@ -2283,7 +2283,7 @@ function renderDataTable() {
       <td style="${mono};font-size:11px">${p.taceci || '\u2014'}</td>
       <td style="white-space:nowrap">
         <button onclick='dtEdit(this)' data-mid='${p._id}' style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>
-        <button onclick='dtDelete(this)' data-mid='${p._id}' data-did='${p.id}' style="border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Delete</button>
+        ${currentUser && currentUser.role === 'admin' ? '<button onclick="dtDelete(this)" data-mid="' + p._id + '" data-did="' + p.id + '" style="border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Delete</button>' : ''}
       </td>
     </tr>`;
   }).join('');
