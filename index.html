@@ -2564,6 +2564,7 @@ function sfGetData() {
   const c = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value).join(';');
   const ward = r('sf-a1');
   const zones = {'Nggossi':'West','Mbumburu':'West','Rove/Lengakiki':'West','Cruz':'Central','Vavaea':'Central','Vuhokesa':'Central','Mataniko':'Central',"Kola'a":'Central','Kukum':'East','Naha':'East','Vura':'East','Panatina':'East'};
+  const constituency = zones[ward] ? `${zones[ward]} Honiara` : '';
   const a3val = r('sf-a3') === 'Other' ? (g('sf-a3-other-text') || 'Other') : r('sf-a3');
   return {
     // Header
@@ -2619,7 +2620,7 @@ function sfGetData() {
     fd_s7_top: (g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top')), fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: g('fd-s7-newenb'),
     fd_s7_photo: g('fd-s7-photo'), fd_s7_access: g('fd-s7-access'), fd_s7_scr: g('fd-s7-scr'),
     // Survey form A-E
-    name: g('sf-name'), ward, zone: zones[ward] || '',
+    name: g('sf-name'), ward, zone: zones[ward] || '', constituency,
     a2: r('sf-a2'), a3: a3val, a4: r('sf-a4'), a5: r('sf-a5'), a6: r('sf-a6'),
     b1: r('sf-b1'), b2: r('sf-b2'), b3: r('sf-b3'), b3_detail: g('sf-b3-det'), b4: c('sf-b4'),
     c1: r('sf-c1'), c2: r('sf-c2'), c3: r('sf-c3'), c4: c('sf-c4'),
