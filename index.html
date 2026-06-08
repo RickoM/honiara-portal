@@ -3382,6 +3382,7 @@ function showApp() {
     document.getElementById('topbar-username').textContent = currentUser?.fullName || currentUser?.username || '';
     // Show admin tab only for admin role
     const adminTab = document.getElementById('tnav-admin');
+    alert('Logged in as: ' + currentUser?.username + ' | Role: ' + currentUser?.role);
     if (adminTab) adminTab.style.display = currentUser?.role === 'admin' ? '' : 'none';
     document.getElementById('topbar-role').textContent =
       currentUser?.role === 'admin' ? 'Admin' :
