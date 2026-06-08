@@ -475,6 +475,7 @@
       <button class="tnav" onclick="switchView('map', this)">Live Map</button>
       <button class="tnav" onclick="switchView('dashboard', this)">Dashboard</button>
       <button class="tnav" id="tnav-data" onclick="switchView('data', this)">Data Table</button>
+      <button class="tnav" id="tnav-admin" onclick="switchView('admin', this)" style="display:none">⚙ Admin</button>
     </div>
     <div class="topbar-right">
       <div class="user-badge">
@@ -662,7 +663,58 @@
       </div>
 
     </div>
-  </div><!-- end workspace -->
+  <div class="view-panel" id="view-admin" style="display:none">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="font-weight:600;color:var(--navy);font-size:15px">⚙ Admin Panel</div>
+      <div style="font-size:12px;color:var(--gray-600);margin-top:2px">Manage user accounts and access</div>
+    </div>
+    <button class="btn btn-primary" onclick="showAddUserForm()">+ Add User</button>
+  </div>
+
+  <!-- Add User Form (hidden by default) -->
+  <div id="admin-add-form" style="display:none;background:var(--gray-50);border-bottom:1px solid var(--border);padding:16px 20px">
+    <div style="font-weight:600;font-size:13px;color:var(--navy);margin-bottom:12px">New User</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">FULL NAME</label>
+        <input id="new-fullname" type="text" placeholder="e.g. Tony Mana" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">USERNAME</label>
+        <input id="new-username" type="text" placeholder="e.g. tony" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">PASSWORD</label>
+        <input id="new-password" type="password" placeholder="Min 6 characters" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">ROLE</label>
+        <select id="new-role" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box">
+          <option value="field_assistant">Field Assistant</option>
+          <option value="leader">Field Leader</option>
+          <option value="admin">Admin</option>
+        </select></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="adminCreateUser()">Create user</button>
+      <button class="btn" onclick="document.getElementById('admin-add-form').style.display='none'">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div style="padding:16px 20px;overflow-x:auto">
+    <div id="admin-msg" style="display:none;padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:12px"></div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="background:var(--gray-50)">
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Full Name</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Username</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Role</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="admin-users-tbody">
+        <tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- end workspace -->
 
   <!-- DASHBOARD VIEW -->
   <div class="view-panel" id="view-dashboard">
@@ -1812,6 +1864,8 @@ function switchView(id, btn) {
   if (id === 'data')      { document.getElementById('view-data').classList.add('on'); renderDataTable(); }
   if (id === 'survey')    { document.getElementById('view-survey').classList.add('on'); }
   if (id === 'deleted')   { loadDeletedSurveys(); }
+  if (id === 'admin')     { document.getElementById('view-admin').style.display = 'block'; loadAdminUsers(); }
+  else                    { document.getElementById('view-admin').style.display = 'none'; }
 }
 
 // ══════════════════════════════════════════════════════
@@ -2611,6 +2665,112 @@ function sfGetData() {
   };
 }
 
+// ── Admin Panel ─────────────────────────────────────────────────────
+function showAddUserForm() {
+  document.getElementById('admin-add-form').style.display = 'block';
+  document.getElementById('new-fullname').focus();
+}
+
+function adminMsg(msg, ok) {
+  const el = document.getElementById('admin-msg');
+  el.style.display = 'block';
+  el.style.background = ok ? '#D1FAE5' : '#FEE2E2';
+  el.style.color = ok ? '#065F46' : '#991B1B';
+  el.textContent = msg;
+  setTimeout(() => el.style.display = 'none', 4000);
+}
+
+async function loadAdminUsers() {
+  try {
+    const data = await apiCall('GET', '/api/users');
+    const tbody = document.getElementById('admin-users-tbody');
+    if (!data.users || !data.users.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem">No users found</td></tr>';
+      return;
+    }
+    const roleLabel = r => r === 'admin' ? 'Admin' : r === 'leader' ? 'Field Leader' : 'Field Assistant';
+    const roleColor = r => r === 'admin' ? '#1C3557' : r === 'leader' ? '#D97706' : '#059669';
+    tbody.innerHTML = data.users.map(function(u) {
+      const col = roleColor(u.role);
+      const badge = '<span style="background:' + col + '20;color:' + col + ';padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600">' + roleLabel(u.role) + '</span>';
+      const delBtn = u.username !== 'admin'
+        ? '<button data-uid="' + u._id + '" data-uname="' + u.username + '" onclick="adminDeleteUser(this.dataset.uid,this.dataset.uname)" style="border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">Delete</button>'
+        : '';
+      return '<tr style="border-bottom:1px solid var(--border)">'
+        + '<td style="padding:10px 12px;font-weight:500">' + (u.fullName || '—') + '</td>'
+        + '<td style="padding:10px 12px;font-family:monospace;font-size:12px">' + u.username + '</td>'
+        + '<td style="padding:10px 12px">' + badge + '</td>'
+        + '<td style="padding:10px 12px">'
+        + '<select data-uid="' + u._id + '" onchange="adminChangeRole(this.dataset.uid,this.value)" style="border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;margin-right:6px;cursor:pointer">'
+        + '<option value="">Change role...</option>'
+        + '<option value="field_assistant">Field Assistant</option>'
+        + '<option value="leader">Field Leader</option>'
+        + '<option value="admin">Admin</option>'
+        + '</select>'
+        + '<button data-uid="' + u._id + '" data-uname="' + u.username + '" onclick="adminResetPassword(this.dataset.uid,this.dataset.uname)" style="border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;margin-right:4px">Reset pwd</button>'
+        + delBtn
+        + '</td></tr>';
+    }).join('');
+  } catch(err) {
+    adminMsg('Failed to load users: ' + err.message, false);
+  }
+}
+
+async function adminCreateUser() {
+  const fullName = document.getElementById('new-fullname').value.trim();
+  const username = document.getElementById('new-username').value.trim().toLowerCase();
+  const password = document.getElementById('new-password').value;
+  const role     = document.getElementById('new-role').value;
+  if (!username || !password) { adminMsg('Username and password are required', false); return; }
+  if (password.length < 6)   { adminMsg('Password must be at least 6 characters', false); return; }
+  try {
+    await apiCall('POST', '/api/users', { username, password, role, fullName });
+    adminMsg('User ' + username + ' created successfully', true);
+    document.getElementById('admin-add-form').style.display = 'none';
+    document.getElementById('new-fullname').value = '';
+    document.getElementById('new-username').value = '';
+    document.getElementById('new-password').value = '';
+    loadAdminUsers();
+  } catch(err) {
+    adminMsg('Failed to create user: ' + err.message, false);
+  }
+}
+
+async function adminChangeRole(userId, newRole) {
+  if (!newRole) return;
+  if (!confirm('Change role to ' + newRole + '?')) return;
+  try {
+    await apiCall('PUT', '/api/users/' + userId, { role: newRole });
+    adminMsg('Role updated successfully', true);
+    loadAdminUsers();
+  } catch(err) {
+    adminMsg('Failed to update role: ' + err.message, false);
+  }
+}
+
+async function adminResetPassword(userId, username) {
+  const newPwd = prompt('Enter new password for ' + username + ' (min 6 characters):');
+  if (!newPwd) return;
+  if (newPwd.length < 6) { adminMsg('Password must be at least 6 characters', false); return; }
+  try {
+    await apiCall('PUT', '/api/users/' + userId, { password: newPwd });
+    adminMsg('Password reset for ' + username, true);
+  } catch(err) {
+    adminMsg('Failed to reset password: ' + err.message, false);
+  }
+}
+
+async function adminDeleteUser(userId, username) {
+  if (!confirm('Delete user ' + username + '? This cannot be undone.')) return;
+  try {
+    await apiCall('DELETE', '/api/users/' + userId);
+    adminMsg('User ' + username + ' deleted', true);
+    loadAdminUsers();
+  } catch(err) {
+    adminMsg('Failed to delete user: ' + err.message, false);
+  }
+}
+
 // ── Orientation change handler ──────────────────────────────────────
 window.addEventListener('orientationchange', () => {
   // Small delay lets the browser finish rotating before we recalc
@@ -3220,6 +3380,9 @@ function showApp() {
     seedDemoData();
   } else {
     document.getElementById('topbar-username').textContent = currentUser?.fullName || currentUser?.username || '';
+    // Show admin tab only for admin role
+    const adminTab = document.getElementById('tnav-admin');
+    if (adminTab) adminTab.style.display = currentUser?.role === 'admin' ? '' : 'none';
     document.getElementById('topbar-role').textContent =
       currentUser?.role === 'admin' ? 'Admin' :
       currentUser?.role === 'leader' ? 'Field Leader' : 'Field Assistant';
