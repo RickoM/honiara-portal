@@ -472,8 +472,8 @@
     </div>
     <div class="topbar-nav">
       <button class="tnav on" id="tnav-survey" onclick="switchView('survey', this)">Submit Survey</button>
-      <button class="tnav" onclick="switchView('map', this)">Live Map</button>
-      <button class="tnav" onclick="switchView('dashboard', this)">Dashboard</button>
+      <button class="tnav" id="tnav-map" onclick="switchView('map', this)">Live Map</button>
+      <button class="tnav" id="tnav-dashboard" onclick="switchView('dashboard', this)">Dashboard</button>
       <button class="tnav" id="tnav-data" onclick="switchView('data', this)">Data Table</button>
       <button class="tnav" id="tnav-admin" onclick="switchView('admin', this)" style="display:none">⚙ Admin</button>
     </div>
@@ -509,7 +509,7 @@
       </div>
 
       <!-- ADD SURVEY (SIMULATE UPLOAD) -->
-      <div class="sidebar-section">
+      <div class="sidebar-section" id="sidebar-admin-tools">
         <div class="ssec-title">Simulate data upload</div>
         <div class="form-grid" style="margin-bottom:8px">
           <div class="form-field">
@@ -753,7 +753,7 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV
         </button>
-        <button class="btn btn-sm btn-primary" onclick="addBatch()">+ Add 10 random</button>
+        <button class="btn btn-sm btn-primary" id="dt-add-random-btn" onclick="addBatch()">+ Add 10 random</button>
       </div>
       <div style="overflow-x:auto">
         <table id="data-table">
@@ -3376,9 +3376,14 @@ function doLogout() {
   authToken = null; currentUser = null;
   localStorage.removeItem('honiara_token');
   localStorage.removeItem('honiara_user');
-  // Hide admin tab and panel completely
+  // Hide admin-only tabs and tools
   const adminTab = document.getElementById('tnav-admin');
   if (adminTab) adminTab.style.display = 'none';
+  const sidebarTools2 = document.getElementById('sidebar-admin-tools');
+  if (sidebarTools2) sidebarTools2.style.display = 'none';
+  const dtAddBtn2 = document.getElementById('dt-add-random-btn');
+  if (dtAddBtn2) dtAddBtn2.style.display = 'none';
+
   const adminPanel = document.getElementById('view-admin');
   if (adminPanel) adminPanel.classList.remove('on');
   if (adminPanel) adminPanel.style.cssText = 'display:none';
@@ -3410,20 +3415,25 @@ function showApp() {
     seedDemoData();
   } else {
     document.getElementById('topbar-username').textContent = currentUser?.fullName || currentUser?.username || '';
-    // Show admin tab and API badge only for admin role
+    // Show admin-only tabs and tools based on role
+    const isAdmin = currentUser?.role === 'admin';
     const adminTab = document.getElementById('tnav-admin');
-    if (adminTab) adminTab.style.display = currentUser?.role === 'admin' ? '' : 'none';
+    if (adminTab) adminTab.style.display = isAdmin ? '' : 'none';
     const apiBadge = document.getElementById('api-badge');
-    if (apiBadge) apiBadge.style.display = currentUser?.role === 'admin' ? '' : 'none';
+    if (apiBadge) apiBadge.style.display = isAdmin ? '' : 'none';
+    // Map sidebar admin tools — view only for non-admin
+    const sidebarTools = document.getElementById('sidebar-admin-tools');
+    if (sidebarTools) sidebarTools.style.display = isAdmin ? '' : 'none';
+    const dtAddBtn = document.getElementById('dt-add-random-btn');
+    if (dtAddBtn) dtAddBtn.style.display = isAdmin ? '' : 'none';
+
     document.getElementById('topbar-role').textContent =
       currentUser?.role === 'admin' ? 'Admin' :
       currentUser?.role === 'leader' ? 'Field Leader' : 'Field Assistant';
     loadSurveysFromAPI();
-    // Auto-load saved Google Maps API key (admin only)
-    if (currentUser?.role === 'admin') {
-      const savedKey = localStorage.getItem('honiara_gmaps_key');
-      if (savedKey) { apiKey = savedKey; loadGoogleMaps(savedKey); }
-    }
+    // Auto-load saved Google Maps API key
+    const savedKey = localStorage.getItem('honiara_gmaps_key');
+    if (savedKey) { apiKey = savedKey; loadGoogleMaps(savedKey); }
   }
   refresh();
   // Check for saved draft after login
