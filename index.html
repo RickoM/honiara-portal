@@ -2690,7 +2690,6 @@ async function loadAdminUsers() {
     const res = await apiCall('GET', '/api/users');
     if (!res) { adminMsg('No response from server', false); return; }
     const data = await res.json();
-    alert('API returned: status=' + res.status + ' data=' + JSON.stringify(data).substring(0,200));
     const tbody = document.getElementById('admin-users-tbody');
     if (!data.users || !data.users.length) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem">No users found</td></tr>';
