@@ -2686,13 +2686,8 @@ function adminMsg(msg, ok) {
 }
 
 async function loadAdminUsers() {
-  console.log('loadAdminUsers called');
-  const tbody = document.getElementById('admin-users-tbody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:1rem;color:red">Loading users...</td></tr>';
   try {
-    console.log('Calling /api/users');
     const data = await apiCall('GET', '/api/users');
-    console.log('API response:', data);
     const tbody = document.getElementById('admin-users-tbody');
     if (!data.users || !data.users.length) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem">No users found</td></tr>';
