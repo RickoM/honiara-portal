@@ -1863,8 +1863,14 @@ function switchView(id, btn) {
   if (id === 'data')      { document.getElementById('view-data').classList.add('on'); renderDataTable(); }
   if (id === 'survey')    { document.getElementById('view-survey').classList.add('on'); }
   if (id === 'deleted')   { loadDeletedSurveys(); }
-  if (id === 'admin')     { document.getElementById('view-admin').classList.add('on'); loadAdminUsers(); }
-  else                    { document.getElementById('view-admin').classList.remove('on'); }
+  if (id === 'admin') {
+    const ap = document.getElementById('view-admin');
+    ap.style.cssText = 'display:block !important; flex:1; overflow-y:auto; padding:20px; background:var(--gray-100); min-height:400px;';
+    loadAdminUsers();
+  } else {
+    const ap = document.getElementById('view-admin');
+    ap.style.cssText = 'display:none';
+  }
 }
 
 // ══════════════════════════════════════════════════════
