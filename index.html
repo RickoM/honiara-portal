@@ -2687,7 +2687,9 @@ function adminMsg(msg, ok) {
 
 async function loadAdminUsers() {
   try {
-    const data = await apiCall('GET', '/api/users');
+    const res = await apiCall('GET', '/api/users');
+    if (!res) return;
+    const data = await res.json();
     const tbody = document.getElementById('admin-users-tbody');
     if (!data.users || !data.users.length) {
       tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem">No users found</td></tr>';
@@ -2729,7 +2731,10 @@ async function adminCreateUser() {
   if (!username || !password) { adminMsg('Username and password are required', false); return; }
   if (password.length < 6)   { adminMsg('Password must be at least 6 characters', false); return; }
   try {
-    await apiCall('POST', '/api/users', { username, password, role, fullName });
+    const res2 = await apiCall('POST', '/api/users', { username, password, role, fullName });
+    if (!res2) return;
+    const result2 = await res2.json();
+    if (!res2.ok) { adminMsg('Failed: ' + (result2.error || 'Unknown error'), false); return; }
     adminMsg('User ' + username + ' created successfully', true);
     document.getElementById('admin-add-form').style.display = 'none';
     document.getElementById('new-fullname').value = '';
@@ -2745,7 +2750,8 @@ async function adminChangeRole(userId, newRole) {
   if (!newRole) return;
   if (!confirm('Change role to ' + newRole + '?')) return;
   try {
-    await apiCall('PUT', '/api/users/' + userId, { role: newRole });
+    const res3 = await apiCall('PUT', '/api/users/' + userId, { role: newRole });
+    if (!res3) return;
     adminMsg('Role updated successfully', true);
     loadAdminUsers();
   } catch(err) {
@@ -2758,7 +2764,8 @@ async function adminResetPassword(userId, username) {
   if (!newPwd) return;
   if (newPwd.length < 6) { adminMsg('Password must be at least 6 characters', false); return; }
   try {
-    await apiCall('PUT', '/api/users/' + userId, { password: newPwd });
+    const res4 = await apiCall('PUT', '/api/users/' + userId, { password: newPwd });
+    if (!res4) return;
     adminMsg('Password reset for ' + username, true);
   } catch(err) {
     adminMsg('Failed to reset password: ' + err.message, false);
@@ -2768,7 +2775,8 @@ async function adminResetPassword(userId, username) {
 async function adminDeleteUser(userId, username) {
   if (!confirm('Delete user ' + username + '? This cannot be undone.')) return;
   try {
-    await apiCall('DELETE', '/api/users/' + userId);
+    const res5 = await apiCall('DELETE', '/api/users/' + userId);
+    if (!res5) return;
     adminMsg('User ' + username + ' deleted', true);
     loadAdminUsers();
   } catch(err) {
