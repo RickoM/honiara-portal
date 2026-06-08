@@ -1691,7 +1691,7 @@ const TOTAL_TARGET   = 150;
 
 let points   = [];   // all survey & cell site data points
 let selDay   = 'all';
-let apiKey   = '';
+let apiKey   = 'AIzaSyDTQZWZb7YxaIl2sBAk7P50SqTorOe6zl8';
 let gmap     = null;
 let markers  = [];
 let heatmap  = null;
@@ -3431,9 +3431,8 @@ function showApp() {
       currentUser?.role === 'admin' ? 'Admin' :
       currentUser?.role === 'leader' ? 'Field Leader' : 'Field Assistant';
     loadSurveysFromAPI();
-    // Auto-load saved Google Maps API key
-    const savedKey = localStorage.getItem('honiara_gmaps_key');
-    if (savedKey) { apiKey = savedKey; loadGoogleMaps(savedKey); }
+    // Load Google Maps with hardcoded key
+    loadGoogleMaps(apiKey);
   }
   refresh();
   // Check for saved draft after login
