@@ -483,7 +483,7 @@
         <span class="user-role" id="topbar-role"></span>
       </div>
       <span style="font-size:11px;color:rgba(255,255,255,0.4)" id="total-badge">0 / 150 surveys</span>
-      <div class="api-badge missing" id="api-badge" onclick="showApiModal()" style="display:none">⚠ API Key Required</div>
+
       <button class="logout-btn" onclick="doLogout()">Sign out</button>
     </div>
   </div>
@@ -649,8 +649,7 @@
         <div class="map-placeholder">
           <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
           <h3>Google Maps satellite view</h3>
-          <p>Add your Google Maps API key to load the live satellite map of Honiara. Survey points, cell sites, and signal overlays will plot automatically once the key is set.</p>
-          <p>Click <code>⚠ API Key Required</code> in the top right to add your key.</p>
+          <p>Loading satellite map of Honiara...</p>
           <div style="background:rgba(255,255,255,0.07);border-radius:10px;padding:16px 20px;margin-top:8px;text-align:left;max-width:400px">
             <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">What will appear on the map</div>
             <div style="font-size:12px;color:rgba(255,255,255,0.7);display:flex;flex-direction:column;gap:6px">
@@ -1624,26 +1623,7 @@
 
   </div>
 </div>
-<!-- API KEY MODAL -->
-<div class="modal-overlay hidden" id="api-modal">
-  <div class="modal">
-    <h2>Google Maps API Key</h2>
-    <p>You need a Google Maps JavaScript API key to load the satellite map of Honiara. The key is free for up to 28,000 map loads per month — well within your fieldwork needs.</p>
-    <div class="modal-steps">
-      <div class="modal-step">1. Go to <strong>console.cloud.google.com</strong></div>
-      <div class="modal-step">2. Create a new project (e.g. "Honiara Survey Portal")</div>
-      <div class="modal-step">3. Go to <strong>APIs &amp; Services → Library</strong> and enable <strong>Maps JavaScript API</strong></div>
-      <div class="modal-step">4. Go to <strong>APIs &amp; Services → Credentials</strong> → Create API Key</div>
-      <div class="modal-step">5. Copy the key and paste it below</div>
-    </div>
-    <div class="modal-input-row">
-      <input type="text" id="api-key-input" placeholder="AIzaSy..." autocomplete="off">
-      <button class="btn btn-primary" onclick="applyApiKey()">Apply key</button>
-      <button class="btn" onclick="hideApiModal()">Cancel</button>
-    </div>
-    <p style="margin-top:10px;font-size:11px;color:var(--gray-400)">The key is stored in your browser session only and never sent anywhere except to Google Maps.</p>
-  </div>
-</div>
+
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -1858,7 +1838,11 @@ function switchView(id, btn) {
   const delPanel = document.getElementById('sf-deleted-panel');
   if (delPanel) delPanel.classList.remove('on');
   // Show selected view
-  if (id === 'map')       { document.getElementById('view-map').style.display = 'flex'; }
+  if (id === 'map') {
+    document.getElementById('view-map').style.display = 'flex';
+    if (!gmap && apiKey) loadGoogleMaps(apiKey);
+    else if (gmap) refreshMap();
+  }
   if (id === 'dashboard') { document.getElementById('view-dashboard').classList.add('on'); renderDashboard(); }
   if (id === 'data')      { document.getElementById('view-data').classList.add('on'); renderDataTable(); }
   if (id === 'survey')    { document.getElementById('view-survey').classList.add('on'); }
@@ -2009,9 +1993,10 @@ window.initMap = function() {
     streetViewControl: false,
     fullscreenControl: true,
   });
-  document.getElementById('api-badge').textContent = '✓ Map loaded';
-  document.getElementById('api-badge').classList.remove('missing');
-  refreshMap();
+  const apiBadgeEl = document.getElementById('api-badge');
+  if (apiBadgeEl) { apiBadgeEl.textContent = '✓ Map loaded'; apiBadgeEl.classList.remove('missing'); }
+  // Only refresh map visuals if Live Map tab is currently active
+  if (activeView === 'map') refreshMap();
 };
 
 function refreshMap() {
@@ -2153,21 +2138,7 @@ function updateLegend(mode) {
   }
 }
 
-// ══════════════════════════════════════════════════════
-//  API KEY MODAL
-// ══════════════════════════════════════════════════════
-
-function showApiModal() { document.getElementById('api-modal').classList.remove('hidden'); }
-function hideApiModal() { document.getElementById('api-modal').classList.add('hidden'); }
-
-function applyApiKey() {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (!key) { alert('Please enter an API key'); return; }
   apiKey = key;
-  localStorage.setItem('honiara_gmaps_key', key);
-  hideApiModal();
-  loadGoogleMaps(key);
-}
 
 // ══════════════════════════════════════════════════════
 //  DASHBOARD VIEW
@@ -3419,8 +3390,7 @@ function showApp() {
     const isAdmin = currentUser?.role === 'admin';
     const adminTab = document.getElementById('tnav-admin');
     if (adminTab) adminTab.style.display = isAdmin ? '' : 'none';
-    const apiBadge = document.getElementById('api-badge');
-    if (apiBadge) apiBadge.style.display = isAdmin ? '' : 'none';
+
     // Map sidebar admin tools — view only for non-admin
     const sidebarTools = document.getElementById('sidebar-admin-tools');
     if (sidebarTools) sidebarTools.style.display = isAdmin ? '' : 'none';
@@ -3431,8 +3401,7 @@ function showApp() {
       currentUser?.role === 'admin' ? 'Admin' :
       currentUser?.role === 'leader' ? 'Field Leader' : 'Field Assistant';
     loadSurveysFromAPI();
-    // Load Google Maps with hardcoded key
-    loadGoogleMaps(apiKey);
+    // Google Maps loads when Live Map tab is clicked
   }
   refresh();
   // Check for saved draft after login
