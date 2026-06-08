@@ -483,7 +483,7 @@
         <span class="user-role" id="topbar-role"></span>
       </div>
       <span style="font-size:11px;color:rgba(255,255,255,0.4)" id="total-badge">0 / 150 surveys</span>
-      <div class="api-badge missing" id="api-badge" onclick="showApiModal()">⚠ API Key Required</div>
+      <div class="api-badge missing" id="api-badge" onclick="showApiModal()" style="display:none">⚠ API Key Required</div>
       <button class="logout-btn" onclick="doLogout()">Sign out</button>
     </div>
   </div>
@@ -2164,6 +2164,7 @@ function applyApiKey() {
   const key = document.getElementById('api-key-input').value.trim();
   if (!key) { alert('Please enter an API key'); return; }
   apiKey = key;
+  localStorage.setItem('honiara_gmaps_key', key);
   hideApiModal();
   loadGoogleMaps(key);
 }
@@ -3409,13 +3410,18 @@ function showApp() {
     seedDemoData();
   } else {
     document.getElementById('topbar-username').textContent = currentUser?.fullName || currentUser?.username || '';
-    // Show admin tab only for admin role
+    // Show admin tab and API badge only for admin role
     const adminTab = document.getElementById('tnav-admin');
     if (adminTab) adminTab.style.display = currentUser?.role === 'admin' ? '' : 'none';
+    const apiBadge = document.getElementById('api-badge');
+    if (apiBadge) apiBadge.style.display = currentUser?.role === 'admin' ? '' : 'none';
     document.getElementById('topbar-role').textContent =
       currentUser?.role === 'admin' ? 'Admin' :
       currentUser?.role === 'leader' ? 'Field Leader' : 'Field Assistant';
     loadSurveysFromAPI();
+    // Auto-load saved Google Maps API key
+    const savedKey = localStorage.getItem('honiara_gmaps_key');
+    if (savedKey) { apiKey = savedKey; loadGoogleMaps(savedKey); }
   }
   refresh();
   // Check for saved draft after login
