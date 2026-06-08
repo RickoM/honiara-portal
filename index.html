@@ -3379,6 +3379,10 @@ function doLogout() {
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
+  const btn = document.getElementById('login-btn');
+  btn.innerHTML = 'Sign in';
+  btn.disabled = false;
+  document.getElementById('login-error').classList.remove('show');
 }
 
 function showApp() {
