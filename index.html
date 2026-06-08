@@ -273,6 +273,10 @@
   .sf-submit-bar { position: sticky; bottom: 0; background: #fff; border-top: 1px solid var(--border); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; z-index: 30; }
   .sf-success { text-align: center; padding: 48px 20px; background: #fff; border: 1px solid var(--border); border-radius: 8px; margin-top: 12px; display: none; }
   .sf-success.show { display: block; }
+  .screenshot-preview { margin-top:6px; padding:6px; border:1px solid var(--border); border-radius:5px; background:#f8fafc; display:none; }
+  .screenshot-preview.show { display:flex; align-items:center; gap:8px; }
+  .screenshot-preview img { width:72px; height:54px; object-fit:cover; border-radius:4px; border:1px solid var(--border); }
+  .screenshot-preview a { font-size:11px; font-weight:600; color:var(--blue-mid); }
   .sf-form-body.hide { display: none; }
   /* ── LOGIN SCREEN ── */
   .login-screen { position: fixed; inset: 0; background: var(--navy-dark); display: flex; align-items: center; justify-content: center; z-index: 200; }
@@ -1337,7 +1341,7 @@
           <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-ncil-ul" style="flex:1;min-width:0"><select id="fd-s1-ncil-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
           <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-ookla-ul" style="flex:1;min-width:0"><select id="fd-s1-ookla-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
           <div class="sf-fcell" style="padding:4px 8px">
-            <div style="display:flex;gap:4px;margin-bottom:4px"><input type="number" step="0.01" id="fd-s1-nperf-ul" placeholder="UL" style="flex:1;min-width:0"><select id="fd-s1-nperf-ul-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+            <div style="display:flex;gap:4px;margin-bottom:4px"><input type="number" step="0.01" id="fd-s1-nperf-ul" placeholder="UL" style="flex:1;min-width:0"><select id="fd-s1-nperf-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
             <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-nperf-ul-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s1-nperf-ul-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
           </div>
         </div>
@@ -1425,7 +1429,7 @@
             <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-ncil-ul" style="flex:1;min-width:0"><select id="fd-s2-ncil-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
             <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-ookla-ul" style="flex:1;min-width:0"><select id="fd-s2-ookla-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
             <div class="sf-fcell" style="padding:4px 8px">
-              <div style="display:flex;gap:4px;margin-bottom:4px"><input type="number" step="0.01" id="fd-s2-nperf-ul" placeholder="UL" style="flex:1;min-width:0"><select id="fd-s2-nperf-ul-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
+              <div style="display:flex;gap:4px;margin-bottom:4px"><input type="number" step="0.01" id="fd-s2-nperf-ul" placeholder="UL" style="flex:1;min-width:0"><select id="fd-s2-nperf-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
               <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-nperf-ul-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s2-nperf-ul-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
             </div>
           </div>
@@ -2305,6 +2309,100 @@ async function dtRestore(deletedId) {
 // editingId tracks which MongoDB record we are editing (null = new submission)
 let editingId = null;
 
+const SCREENSHOT_FIELDS = [
+  'fd-s2a-scr', 'fd-s2b-scr',
+  'fd-s1-ncil-scr', 'fd-s1-ookla-scr', 'fd-s1-nperf-scr',
+  'fd-s2-ncil-scr', 'fd-s2-ookla-scr', 'fd-s2-nperf-scr',
+  'fd-s6-scr', 'fd-s7-scr'
+];
+
+function screenshotValue(id) {
+  return document.getElementById(id)?.dataset.uploadId || '';
+}
+
+function screenshotPreviewBox(input) {
+  let box = document.getElementById(input.id + '-preview');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = input.id + '-preview';
+    box.className = 'screenshot-preview';
+    input.insertAdjacentElement('afterend', box);
+  }
+  return box;
+}
+
+function showScreenshotPreview(input, src, label) {
+  const box = screenshotPreviewBox(input);
+  box.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = label || 'Survey screenshot';
+  const link = document.createElement('a');
+  link.href = src;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.textContent = 'View full screenshot';
+  box.append(img, link);
+  box.classList.add('show');
+}
+
+async function showStoredScreenshot(input, screenshotId) {
+  if (!input || !screenshotId) return;
+  input.dataset.uploadId = screenshotId;
+  const box = screenshotPreviewBox(input);
+  box.innerHTML = '<span style="font-size:11px;color:var(--gray-600)">Loading saved screenshot...</span>';
+  box.classList.add('show');
+  try {
+    const res = await fetch(API_URL + '/api/screenshots/' + encodeURIComponent(screenshotId), {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (!res.ok) throw new Error('Screenshot unavailable');
+    showScreenshotPreview(input, URL.createObjectURL(await res.blob()), 'Saved survey screenshot');
+  } catch (err) {
+    box.innerHTML = '<span style="font-size:11px;color:var(--red)">Saved screenshot could not be loaded.</span>';
+  }
+}
+
+function restoreSurveyScreenshots(data) {
+  SCREENSHOT_FIELDS.forEach(id => {
+    const value = data[id.replace(/-/g, '_')];
+    if (value) showStoredScreenshot(document.getElementById(id), value);
+  });
+}
+
+function initScreenshotInputs() {
+  SCREENSHOT_FIELDS.forEach(id => {
+    const input = document.getElementById(id);
+    if (!input || input.dataset.previewReady) return;
+    input.dataset.previewReady = 'true';
+    input.addEventListener('change', () => {
+      if (!input.files?.[0]) return;
+      delete input.dataset.uploadId;
+      showScreenshotPreview(input, URL.createObjectURL(input.files[0]), 'Selected screenshot');
+    });
+  });
+}
+
+async function uploadSurveyScreenshots() {
+  if (DEMO_MODE) return;
+  for (const id of SCREENSHOT_FIELDS) {
+    const input = document.getElementById(id);
+    const file = input?.files?.[0];
+    if (!file) continue;
+    const form = new FormData();
+    form.append('image', file);
+    const res = await fetch(API_URL + '/api/screenshots', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + authToken },
+      body: form
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error((result.error || 'Screenshot upload failed') + ': ' + file.name);
+    input.dataset.uploadId = result.screenshot.id;
+    input.value = '';
+  }
+}
+
 async function dtEdit(btn) {
   const mongoId = btn.getAttribute('data-mid');
   console.log('dtEdit called with:', mongoId);
@@ -2350,6 +2448,35 @@ async function dtEdit(btn) {
     if (!vals) return;
     const arr = Array.isArray(vals) ? vals : String(vals).split(';').map(v => v.trim());
     document.querySelectorAll('#view-survey input[name="' + name + '"]').forEach(r => { if (arr.includes(r.value)) r.checked = true; });
+  };
+  const restoreFieldData = () => {
+    Object.entries(survey).forEach(([key, rawVal]) => {
+      if (!key.startsWith('fd_') || rawVal == null || rawVal === '' || key.endsWith('_scr') || key === 'fd_s7_photo') return;
+      const id = key.replace(/_/g, '-');
+      const el = document.getElementById(id);
+      if (!el || el.type === 'file') return;
+      const value = String(rawVal);
+      const unitMatch = value.match(/\s+(Mbps|Kbps)$/);
+      const cleanValue = unitMatch ? value.slice(0, unitMatch.index) : value;
+      if (el.tagName === 'SELECT') {
+        if ([...el.options].some(o => o.value === cleanValue)) el.value = cleanValue;
+      } else {
+        el.value = cleanValue;
+      }
+      const unitEl = document.getElementById(id + '-unit');
+      if (unitMatch && unitEl) unitEl.value = unitMatch[1];
+    });
+  };
+  const restoreSelectOther = (selectId, otherId, value) => {
+    if (!value) return;
+    const select = document.getElementById(selectId);
+    const other = document.getElementById(otherId);
+    if (!select) return;
+    if ([...select.options].some(o => o.value === value)) select.value = value;
+    else {
+      select.value = 'Other';
+      if (other) other.value = value;
+    }
   };
 
   // ── Header ──────────────────────────────────
@@ -2413,6 +2540,7 @@ async function dtEdit(btn) {
 
   // ── Section E ───────────────────────────────
   setRadio('sf-e1', survey.e1);
+  setRadio('sf-e1n', survey.e1_no);
   setRadio('sf-e2', survey.e2);
   setRadio('sf-e3', survey.e3);
   s('sf-e4', survey.e4);
@@ -2422,13 +2550,13 @@ async function dtEdit(btn) {
   s('sf-lon', survey.lng);
 
   // ── Field Data Steps ─────────────────────────
-  s('fd-s1-op', survey.fd_s1_op || survey.operator || survey.op);
-  s('fd-s2a-mcc', survey.fd_s2a_mcc); s('fd-s2a-mnc', survey.fd_s2a_mnc);
-  s('fd-s2a-band', survey.fd_s2a_band); s('fd-s2a-rsrp', survey.fd_s2a_rsrp);
-  s('fd-s2a-rsrq', survey.fd_s2a_rsrq); s('fd-s2a-rssnr', survey.fd_s2a_rssnr);
-  s('fd-s2a-tac', survey.fd_s2a_tac); s('fd-s2a-eci', survey.fd_s2a_eci);
-  s('fd-s2a-enb', survey.fd_s2a_enb); s('fd-s2a-lcid', survey.fd_s2a_lcid);
-  s('fd-s2a-pci', survey.fd_s2a_pci);
+  restoreFieldData();
+  restoreSelectOther('fd-s1-op', 'fd-s1-op-other', survey.fd_s1_op || survey.operator || survey.op);
+  restoreSelectOther('fd-s7-top', 'fd-s7-top-other', survey.fd_s7_top);
+  restoreSurveyScreenshots(survey);
+  if (typeof s1OpChange === 'function') s1OpChange();
+  if (typeof checkTowerAccess === 'function') checkTowerAccess();
+  if (typeof s7OpChange === 'function') s7OpChange();
 
   // ── Notes ────────────────────────────────────
   s('sf-notes', survey.notes);
@@ -2575,16 +2703,17 @@ function sfGetData() {
     fd_s2a_mcc: g('fd-s2a-mcc'), fd_s2a_mnc: g('fd-s2a-mnc'), fd_s2a_band: g('fd-s2a-band'),
     fd_s2a_rsrp: g('fd-s2a-rsrp'), fd_s2a_rsrq: g('fd-s2a-rsrq'), fd_s2a_rssnr: g('fd-s2a-rssnr'),
     fd_s2a_tac: g('fd-s2a-tac'), fd_s2a_eci: g('fd-s2a-eci'), fd_s2a_enb: g('fd-s2a-enb'),
-    fd_s2a_lcid: g('fd-s2a-lcid'), fd_s2a_pci: g('fd-s2a-pci'), fd_s2a_scr: g('fd-s2a-scr'),
+    fd_s2a_lcid: g('fd-s2a-lcid'), fd_s2a_pci: g('fd-s2a-pci'), fd_s2a_scr: screenshotValue('fd-s2a-scr'),
     // Step 2B — RAW SIM2
     fd_s2b_mcc: g('fd-s2b-mcc'), fd_s2b_mnc: g('fd-s2b-mnc'), fd_s2b_band: g('fd-s2b-band'),
     fd_s2b_rsrp: g('fd-s2b-rsrp'), fd_s2b_rsrq: g('fd-s2b-rsrq'), fd_s2b_rssnr: g('fd-s2b-rssnr'),
     fd_s2b_tac: g('fd-s2b-tac'), fd_s2b_eci: g('fd-s2b-eci'), fd_s2b_enb: g('fd-s2b-enb'),
-    fd_s2b_lcid: g('fd-s2b-lcid'), fd_s2b_pci: g('fd-s2b-pci'), fd_s2b_scr: g('fd-s2b-scr'),
+    fd_s2b_lcid: g('fd-s2b-lcid'), fd_s2b_pci: g('fd-s2b-pci'), fd_s2b_scr: screenshotValue('fd-s2b-scr'),
     // Steps 3-5 Speed SIM1
     fd_s1_ncil_type: g('fd-s1-ncil-type'), fd_s1_ookla_type: g('fd-s1-ookla-type'), fd_s1_nperf_type: g('fd-s1-nperf-type'),
     fd_s1_ncil_dl: g('fd-s1-ncil-dl') + ' ' + (g('fd-s1-ncil-dl-unit')||'Mbps'),
     fd_s1_ookla_dl: g('fd-s1-ookla-dl') + ' ' + (g('fd-s1-ookla-dl-unit')||'Mbps'),
+    fd_s1_nperf_dl: g('fd-s1-nperf-dl') + ' ' + (g('fd-s1-nperf-dl-unit')||'Mbps'),
     fd_s1_ncil_ul: g('fd-s1-ncil-ul') + ' ' + (g('fd-s1-ncil-ul-unit')||'Mbps'),
     fd_s1_ookla_ul: g('fd-s1-ookla-ul') + ' ' + (g('fd-s1-ookla-ul-unit')||'Mbps'),
     fd_s1_nperf_ul: g('fd-s1-nperf-ul') + ' ' + (g('fd-s1-nperf-ul-unit')||'Mbps'),
@@ -2596,28 +2725,31 @@ function sfGetData() {
     fd_s1_nperf_ul_max: g('fd-s1-nperf-ul-max') + ' ' + (g('fd-s1-nperf-ul-max-unit')||'Mbps'),
     fd_s1_nperf_lat_avg: g('fd-s1-nperf-lat-avg'),
     fd_s1_nperf_browse: g('fd-s1-nperf-browse'), fd_s1_nperf_stream: g('fd-s1-nperf-stream'),
+    fd_s1_ncil_scr: screenshotValue('fd-s1-ncil-scr'), fd_s1_ookla_scr: screenshotValue('fd-s1-ookla-scr'), fd_s1_nperf_scr: screenshotValue('fd-s1-nperf-scr'),
     fd_s2_nperf_dl_avg: g('fd-s2-nperf-dl-avg') + ' ' + (g('fd-s2-nperf-dl-avg-unit')||'Mbps'),
     fd_s2_nperf_dl_max: g('fd-s2-nperf-dl-max') + ' ' + (g('fd-s2-nperf-dl-max-unit')||'Mbps'),
     fd_s2_nperf_ul_avg: g('fd-s2-nperf-ul-avg') + ' ' + (g('fd-s2-nperf-ul-avg-unit')||'Mbps'),
     fd_s2_nperf_ul_max: g('fd-s2-nperf-ul-max') + ' ' + (g('fd-s2-nperf-ul-max-unit')||'Mbps'),
     fd_s2_nperf_lat_avg: g('fd-s2-nperf-lat-avg'),
     fd_s2_nperf_browse: g('fd-s2-nperf-browse'), fd_s2_nperf_stream: g('fd-s2-nperf-stream'), fd_s1_anomaly: g('fd-s1-anomaly'), fd_s1_anomaly_note: g('fd-s1-anomaly-note'),
+    fd_s2_ncil_scr: screenshotValue('fd-s2-ncil-scr'), fd_s2_ookla_scr: screenshotValue('fd-s2-ookla-scr'), fd_s2_nperf_scr: screenshotValue('fd-s2-nperf-scr'),
     fd_s2_anomaly: g('fd-s2-anomaly'), fd_s2_anomaly_note: g('fd-s2-anomaly-note'),
     // Steps 3-5 Speed SIM2
     fd_s2_ncil_type: g('fd-s2-ncil-type'), fd_s2_ookla_type: g('fd-s2-ookla-type'), fd_s2_nperf_type: g('fd-s2-nperf-type'),
     fd_s2_ncil_dl: g('fd-s2-ncil-dl') + ' ' + (g('fd-s2-ncil-dl-unit')||'Mbps'),
     fd_s2_ookla_dl: g('fd-s2-ookla-dl') + ' ' + (g('fd-s2-ookla-dl-unit')||'Mbps'),
+    fd_s2_nperf_dl: g('fd-s2-nperf-dl') + ' ' + (g('fd-s2-nperf-dl-unit')||'Mbps'),
     fd_s2_ncil_ul: g('fd-s2-ncil-ul') + ' ' + (g('fd-s2-ncil-ul-unit')||'Mbps'),
     fd_s2_ookla_ul: g('fd-s2-ookla-ul') + ' ' + (g('fd-s2-ookla-ul-unit')||'Mbps'),
     fd_s2_nperf_ul: g('fd-s2-nperf-ul') + ' ' + (g('fd-s2-nperf-ul-unit')||'Mbps'),
     fd_s2_ncil_ping: g('fd-s2-ncil-ping'), fd_s2_ookla_ping: g('fd-s2-ookla-ping'), fd_s2_nperf_ping: g('fd-s2-nperf-ping'),
     fd_s2_ncil_jitter: g('fd-s2-ncil-jitter'), fd_s2_ookla_jitter: g('fd-s2-ookla-jitter'), fd_s2_nperf_jitter: g('fd-s2-nperf-jitter'),
     // Step 6 — GPS
-    lat: g('sf-lat'), lng: g('sf-lon'), fd_s6_scr: g('fd-s6-scr'),
+    lat: g('sf-lat'), lng: g('sf-lon'), fd_s6_scr: screenshotValue('fd-s6-scr'),
     // Step 7 — Tower
     fd_s7_tlat: g('fd-s7-tlat'), fd_s7_tlon: g('fd-s7-tlon'),
     fd_s7_top: (g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top')), fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: g('fd-s7-newenb'),
-    fd_s7_photo: g('fd-s7-photo'), fd_s7_access: g('fd-s7-access'), fd_s7_scr: g('fd-s7-scr'),
+    fd_s7_photo: g('fd-s7-photo'), fd_s7_access: g('fd-s7-access'), fd_s7_noaccess_reason: g('fd-s7-noaccess-reason'), fd_s7_scr: screenshotValue('fd-s7-scr'),
     // Survey form A-E
     name: g('sf-name'), ward, constituency,
     a2: r('sf-a2'), a3: a3val, a4: r('sf-a4'), a5: r('sf-a5'), a6: r('sf-a6'),
@@ -2885,8 +3017,18 @@ function toggleSim2Auto() {
 }
 
 async function sfSubmit() {
-  const data = sfGetData();
   const btn  = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+  const missing = editingId ? [] : SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
+  if (missing.length) { alert('Please complete all required fields before submitting.'); return; }
+  if (btn) { btn.textContent = 'Uploading screenshots...'; btn.disabled = true; }
+  try {
+    await uploadSurveyScreenshots();
+  } catch (err) {
+    alert('Submission stopped: ' + err.message);
+    if (btn) { btn.textContent = editingId ? 'Save changes' : 'Submit survey'; btn.disabled = false; }
+    return;
+  }
+  const data = sfGetData();
 
   // ── EDIT MODE — PUT to existing record ──────────────────
   if (editingId) {
@@ -2915,8 +3057,6 @@ async function sfSubmit() {
   }
 
   // ── NEW SUBMISSION ───────────────────────────────────────
-  const missing = SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
-  if (missing.length) { alert('Please complete all required fields before submitting.'); return; }
   if (btn) { btn.textContent = 'Submitting…'; btn.disabled = true; }
 
   // DEMO MODE — store locally, skip API
@@ -3065,6 +3205,39 @@ function sfRestoreDraft() {
       }
     });
 
+    // Restore every field-data value, including speed values stored with their units.
+    Object.entries(data).forEach(([key, rawVal]) => {
+      if (!key.startsWith('fd_') || rawVal == null || rawVal === '' || key.endsWith('_scr') || key === 'fd_s7_photo') return;
+      const id = key.replace(/_/g, '-');
+      const el = document.getElementById(id);
+      if (!el || el.type === 'file') return;
+      const value = String(rawVal);
+      const unitMatch = value.match(/\s+(Mbps|Kbps)$/);
+      const cleanValue = unitMatch ? value.slice(0, unitMatch.index) : value;
+      if (el.tagName === 'SELECT') {
+        if ([...el.options].some(o => o.value === cleanValue)) el.value = cleanValue;
+      } else {
+        el.value = cleanValue;
+      }
+      const unitEl = document.getElementById(id + '-unit');
+      if (unitMatch && unitEl) unitEl.value = unitMatch[1];
+    });
+
+    const restoreDraftSelectOther = (selectId, otherId, value) => {
+      if (!value) return;
+      const select = document.getElementById(selectId);
+      const other = document.getElementById(otherId);
+      if (!select) return;
+      if ([...select.options].some(o => o.value === value)) select.value = value;
+      else {
+        select.value = 'Other';
+        if (other) other.value = value;
+      }
+    };
+    restoreDraftSelectOther('fd-s1-op', 'fd-s1-op-other', data.fd_s1_op);
+    restoreDraftSelectOther('fd-s7-top', 'fd-s7-top-other', data.fd_s7_top);
+    restoreSurveyScreenshots(data);
+
     // Restore radio buttons
     ['sf-a1','sf-a2','sf-a3','sf-a4','sf-a5','sf-a6',
      'sf-b1','sf-b2','sf-b3','sf-c1','sf-c2','sf-c3','sf-c5','sf-c7',
@@ -3108,6 +3281,12 @@ function sfReset(keepEditingId) {
   document.getElementById('sf-success').classList.remove('show');
   document.querySelectorAll('#view-survey input[type=radio], #view-survey input[type=checkbox]').forEach(i => i.checked = false);
   document.querySelectorAll('#view-survey input[type=text], #view-survey input[type=number], #view-survey textarea, #view-survey select').forEach(i => { i.value = ''; });
+  SCREENSHOT_FIELDS.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) { input.value = ''; delete input.dataset.uploadId; }
+    const preview = document.getElementById(id + '-preview');
+    if (preview) { preview.innerHTML = ''; preview.classList.remove('show'); }
+  });
   // Clear date and time to blank
   const dateEl = document.getElementById('sf-date');
   if (dateEl) dateEl.value = '';
@@ -3510,6 +3689,7 @@ async function checkAuth() {
 // ── INIT ──────────────────────────────────────────────────────────
 
 document.getElementById('f-date').value  = new Date().toISOString().split('T')[0];
+initScreenshotInputs();
 document.getElementById('view-map').style.display = 'none';
 document.getElementById('view-survey').classList.add('on');
 // Check if already logged in, otherwise show login screen
