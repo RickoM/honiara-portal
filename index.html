@@ -3375,11 +3375,18 @@ function doLogout() {
   authToken = null; currentUser = null;
   localStorage.removeItem('honiara_token');
   localStorage.removeItem('honiara_user');
-  // Hide admin tab
+  // Hide admin tab and panel completely
   const adminTab = document.getElementById('tnav-admin');
   if (adminTab) adminTab.style.display = 'none';
-  // Switch back to survey view so no stale view shows
-  switchView('survey', document.getElementById('tnav-survey'));
+  const adminPanel = document.getElementById('view-admin');
+  if (adminPanel) adminPanel.classList.remove('on');
+  if (adminPanel) adminPanel.style.cssText = 'display:none';
+  // Switch back to survey view
+  const surveyTab = document.getElementById('tnav-survey');
+  document.querySelectorAll('.tnav').forEach(t => t.classList.remove('on'));
+  if (surveyTab) surveyTab.classList.add('on');
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('view-survey').classList.add('on');
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-username').value = '';
