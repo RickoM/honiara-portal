@@ -763,7 +763,7 @@
         <table id="data-table">
           <thead>
             <tr>
-              <th>ID</th><th>Type</th><th>Date</th><th>Ward</th><th>Zone</th><th>Operator</th>
+              <th>ID</th><th>Type</th><th>Date</th><th>Ward</th><th>Constituency</th><th>Operator</th>
               <th>Lat</th><th>Lng</th><th>RSRP dBm</th><th>Signal</th>
               <th>DL Mbps</th><th>UL Mbps</th><th>Ping ms</th>
               <th>Browsing %</th><th>Streaming %</th><th>Jitter ms</th>
@@ -1649,18 +1649,18 @@ let authToken = localStorage.getItem('honiara_token') || null;
 let currentUser = JSON.parse(localStorage.getItem('honiara_user') || 'null');
 
 const WARDS = {
-  'Nggossi':        {zone:'West',    target:20, lat:-9.405, lng:160.018},
-  'Mbumburu':       {zone:'West',    target:15, lat:-9.418, lng:160.028},
-  'Rove/Lengakiki': {zone:'West',    target:15, lat:-9.432, lng:160.012},
-  'Cruz':           {zone:'Central', target:5,  lat:-9.423, lng:160.042},
-  'Vavaea':         {zone:'Central', target:10, lat:-9.430, lng:160.048},
-  'Vuhokesa':       {zone:'Central', target:5,  lat:-9.416, lng:160.052},
-  'Mataniko':       {zone:'Central', target:10, lat:-9.438, lng:160.045},
-  "Kola'a":         {zone:'Central', target:20, lat:-9.445, lng:160.058},
-  'Kukum':          {zone:'East',    target:5,  lat:-9.424, lng:160.065},
-  'Naha':           {zone:'East',    target:5,  lat:-9.432, lng:160.072},
-  'Vura':           {zone:'East',    target:10, lat:-9.440, lng:160.079},
-  'Panatina':       {zone:'East',    target:30, lat:-9.448, lng:160.088},
+  'Nggossi':        {constituency:'West Honiara',    target:20, lat:-9.405, lng:160.018},
+  'Mbumburu':       {constituency:'West Honiara',    target:15, lat:-9.418, lng:160.028},
+  'Rove/Lengakiki': {constituency:'West Honiara',    target:15, lat:-9.432, lng:160.012},
+  'Cruz':           {constituency:'Central Honiara', target:5,  lat:-9.423, lng:160.042},
+  'Vavaea':         {constituency:'Central Honiara', target:10, lat:-9.430, lng:160.048},
+  'Vuhokesa':       {constituency:'Central Honiara', target:5,  lat:-9.416, lng:160.052},
+  'Mataniko':       {constituency:'Central Honiara', target:10, lat:-9.438, lng:160.045},
+  "Kola'a":         {constituency:'Central Honiara', target:20, lat:-9.445, lng:160.058},
+  'Kukum':          {constituency:'East Honiara',    target:5,  lat:-9.424, lng:160.065},
+  'Naha':           {constituency:'East Honiara',    target:5,  lat:-9.432, lng:160.072},
+  'Vura':           {constituency:'East Honiara',    target:10, lat:-9.440, lng:160.079},
+  'Panatina':       {constituency:'East Honiara',    target:30, lat:-9.448, lng:160.088},
 };
 
 const HONIARA_CENTER = { lat: -9.432, lng: 160.052 };
@@ -1708,9 +1708,9 @@ function wardCount(w, day) {
   const src = day && day !== 'all' ? points.filter(p => p.date <= day) : points;
   return src.filter(p => p.ward === w && p.type === 'survey').length;
 }
-function zoneCount(z, day) {
+function constituencyCount(constituency, day) {
   const src = day && day !== 'all' ? points.filter(p => p.date <= day) : points;
-  return src.filter(p => p.zone === z && p.type === 'survey').length;
+  return src.filter(p => p.constituency === constituency && p.type === 'survey').length;
 }
 function wardStatus(w, day) {
   const c = wardCount(w, day), t = WARDS[w].target, ratio = c / t;
@@ -1745,7 +1745,7 @@ function pushPoint(ward, op, date, type, base) {
   points.push({
     id:   (points.length + 1).toString().padStart(3, '0'),
     ward, op, date, type,
-    zone: WARDS[ward].zone,
+    constituency: WARDS[ward].constituency,
     lat:  base.lat + jitterLat,
     lng:  base.lng + jitterLng,
     rsrp, dl: +(0.4 + Math.random() * 9).toFixed(2),
@@ -1798,7 +1798,7 @@ function handleCSV(input) {
           id: (points.length + 1).toString().padStart(3, '0'),
           ward, op: obj['operator'] || obj['op'] || 'Our Telekom',
           date: obj['date'] || obj['d'] || new Date().toISOString().split('T')[0],
-          type: 'survey', zone: WARDS[ward].zone,
+          type: 'survey', constituency: WARDS[ward].constituency,
           lat: parseFloat(obj['lat']) || base.lat + jLat,
           lng: parseFloat(obj['lng'] || obj['lon']) || base.lng + jLng,
           rsrp: obj['rsrp'] || obj['r'] || '-100',
@@ -1916,14 +1916,14 @@ function updateSidebarMetrics() {
 }
 
 function renderWardBars() {
-  const bz = {West: [], Central: [], East: []};
-  Object.entries(WARDS).forEach(([w, i]) => bz[i.zone].push(w));
+  const byConstituency = {'West Honiara': [], 'Central Honiara': [], 'East Honiara': []};
+  Object.entries(WARDS).forEach(([w, info]) => byConstituency[info.constituency].push(w));
   let html = '';
-  ['West', 'Central', 'East'].forEach(zone => {
-    const zc = zoneCount(zone, selDay === 'all' ? null : selDay);
-    const zt = Object.values(WARDS).filter(w => w.zone === zone).reduce((a, w) => a + w.target, 0);
-    html += `<div class="zone-hdr"><span>${zone}</span><span style="font-weight:400;color:var(--gray-600)">${zc}/${zt}</span></div>`;
-    bz[zone].forEach(w => {
+  Object.keys(byConstituency).forEach(constituency => {
+    const zc = constituencyCount(constituency, selDay === 'all' ? null : selDay);
+    const zt = Object.values(WARDS).filter(w => w.constituency === constituency).reduce((a, w) => a + w.target, 0);
+    html += `<div class="zone-hdr"><span>${constituency}</span><span style="font-weight:400;color:var(--gray-600)">${zc}/${zt}</span></div>`;
+    byConstituency[constituency].forEach(w => {
       const c   = wardCount(w, selDay === 'all' ? null : selDay);
       const t   = WARDS[w].target;
       const fp  = Math.min(130, Math.round(c / t * 100));
@@ -2089,7 +2089,7 @@ function infoWindowHTML(p) {
   const col = rsrpColor(p.rsrp);
   return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:220px">
     <div style="font-weight:600;font-size:13px;margin-bottom:4px">Survey ${p.id} — ${p.ward}</div>
-    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.zone} Honiara · ${p.date}</div>
+    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.constituency} · ${p.date}</div>
     <div style="background:#f8f9fa;border-radius:6px;padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px">
       <div><div style="color:#666">RSRP</div><div style="font-weight:600;color:${col}">${p.rsrp} dBm (${rsrpLabel(p.rsrp)})</div></div>
       <div><div style="color:#666">Download</div><div style="font-weight:600;color:${+p.dl>=1?'#27500A':'#A32D2D'}">${p.dl} Mbps</div></div>
@@ -2160,19 +2160,19 @@ function renderDashboard() {
     <div style="font-size:12px;color:var(--gray-600);margin-top:3px">${m.l}</div>
   </div>`).join('');
 
-  const bz = {West:[], Central:[], East:[]};
-  Object.entries(WARDS).forEach(([w,i]) => bz[i.zone].push(w));
-  let zoneHTML = '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:12px">Zone & ward progress</div>';
-  ['West','Central','East'].forEach(zone => {
-    const zc = zoneCount(zone, day);
-    const zt = Object.values(WARDS).filter(w => w.zone === zone).reduce((a,w) => a+w.target, 0);
+  const byConstituency = {'West Honiara':[], 'Central Honiara':[], 'East Honiara':[]};
+  Object.entries(WARDS).forEach(([w,info]) => byConstituency[info.constituency].push(w));
+  let zoneHTML = '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:12px">Constituency & ward progress</div>';
+  Object.keys(byConstituency).forEach(constituency => {
+    const zc = constituencyCount(constituency, day);
+    const zt = Object.values(WARDS).filter(w => w.constituency === constituency).reduce((a,w) => a+w.target, 0);
     const zp = Math.min(100, Math.round(zc/zt*100));
     const zcol = zc/zt > 1.2 ? '#E24B4A' : zc/zt >= .8 ? '#639922' : '#378ADD';
     zoneHTML += `<div style="margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${zone} Honiara</span><span style="color:var(--gray-600)">${zc}/${zt} — ${zp}%</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${constituency}</span><span style="color:var(--gray-600)">${zc}/${zt} — ${zp}%</span></div>
       <div style="background:var(--gray-200);border-radius:3px;height:8px;overflow:hidden"><div style="width:${zp}%;height:100%;background:${zcol};border-radius:3px;transition:width .3s"></div></div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px">
-        ${bz[zone].map(w => {
+        ${byConstituency[constituency].map(w => {
           const c = wardCount(w,day), t = WARDS[w].target;
           const st = wardStatus(w,day);
           const bdg = st==='over'?'badge-red':st==='ok'?'badge-ok':st==='empty'?'badge-blue':'badge-warn';
@@ -2234,7 +2234,7 @@ function renderDataTable() {
       <td><span class="badge ${typeBdg}">${p.type === 'cell' ? 'Cell site' : 'Survey'}</span></td>
       <td style="color:var(--gray-600)">${p.date || '\u2014'}</td>
       <td style="font-weight:500">${p.ward || '\u2014'}</td>
-      <td style="color:var(--gray-600)">${p.zone || '\u2014'}</td>
+      <td style="color:var(--gray-600)">${p.constituency || '\u2014'}</td>
       <td>${p.op || '\u2014'}</td>
       <td style="${mono};font-size:11px">${latStr}</td>
       <td style="${mono};font-size:11px">${lngStr}</td>
@@ -2563,8 +2563,7 @@ function sfGetData() {
   const r = (name) => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
   const c = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value).join(';');
   const ward = r('sf-a1');
-  const zones = {'Nggossi':'West','Mbumburu':'West','Rove/Lengakiki':'West','Cruz':'Central','Vavaea':'Central','Vuhokesa':'Central','Mataniko':'Central',"Kola'a":'Central','Kukum':'East','Naha':'East','Vura':'East','Panatina':'East'};
-  const constituency = zones[ward] ? `${zones[ward]} Honiara` : '';
+  const constituency = WARDS[ward]?.constituency || '';
   const a3val = r('sf-a3') === 'Other' ? (g('sf-a3-other-text') || 'Other') : r('sf-a3');
   return {
     // Header
@@ -2620,7 +2619,7 @@ function sfGetData() {
     fd_s7_top: (g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top')), fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: g('fd-s7-newenb'),
     fd_s7_photo: g('fd-s7-photo'), fd_s7_access: g('fd-s7-access'), fd_s7_scr: g('fd-s7-scr'),
     // Survey form A-E
-    name: g('sf-name'), ward, zone: zones[ward] || '', constituency,
+    name: g('sf-name'), ward, constituency,
     a2: r('sf-a2'), a3: a3val, a4: r('sf-a4'), a5: r('sf-a5'), a6: r('sf-a6'),
     b1: r('sf-b1'), b2: r('sf-b2'), b3: r('sf-b3'), b3_detail: g('sf-b3-det'), b4: c('sf-b4'),
     c1: r('sf-c1'), c2: r('sf-c2'), c3: r('sf-c3'), c4: c('sf-c4'),
@@ -2926,7 +2925,7 @@ async function sfSubmit() {
       const base = WARDS[data.ward];
       points.push({
         id: data.respondentId || (points.length+1).toString().padStart(3,'0'),
-        ward: data.ward, zone: data.zone, op: data.a3 || '',
+        ward: data.ward, constituency: data.constituency, op: data.a3 || '',
         date: data.date || new Date().toISOString().split('T')[0],
         type: 'survey',
         lat: parseFloat(data.lat) || base.lat + (Math.random()-.5)*.006,
@@ -2960,7 +2959,7 @@ async function sfSubmit() {
       points.push({
         id: data.respondentId || result.survey?._id || (points.length+1).toString().padStart(3,'0'),
         _id: result.survey?._id,
-        ward: data.ward, zone: data.zone, op: data.a3 || '',
+        ward: data.ward, constituency: data.constituency, op: data.a3 || '',
         date: data.date || new Date().toISOString().split('T')[0],
         type: 'survey',
         lat: parseFloat(data.lat) || base.lat + (Math.random()-.5)*.006,
@@ -3219,7 +3218,7 @@ function addTowerToMap() {
   if (tlonEl && !tlonEl.value) tlonEl.value = parseFloat(lastTowerResult.lon).toFixed(6);
   points.push({
     id: 'CS-' + enb, ward,
-    zone: WARDS[ward]?.zone || '', op, type: 'cell',
+    constituency: WARDS[ward]?.constituency || '', op, type: 'cell',
     date: document.getElementById('sf-date').value || new Date().toISOString().split('T')[0],
     lat: parseFloat(lastTowerResult.lat),
     lng: parseFloat(lastTowerResult.lon),
@@ -3427,7 +3426,7 @@ function seedDemoData() {
       const rsrp = -78 - Math.floor(Math.random() * 42);
       points.push({
         id: (points.length + 1).toString().padStart(3, '0'),
-        ward, zone: base.zone,
+        ward, constituency: base.constituency,
         op: ops[Math.floor(Math.random() * 2)],
         date: dateStr, type: 'survey',
         lat: base.lat + (Math.random() - .5) * .007,
@@ -3449,7 +3448,7 @@ function seedDemoData() {
     const base = WARDS[ward];
     points.push({
       id: 'CS-' + (points.length + 1).toString().padStart(2, '0'),
-      ward, zone: base.zone,
+      ward, constituency: base.constituency,
       op: ops[Math.floor(Math.random() * 2)],
       date: today.toISOString().split('T')[0], type: 'cell',
       lat: base.lat + (Math.random() - .5) * .003,
@@ -3478,7 +3477,7 @@ async function loadSurveysFromAPI() {
     points = data.surveys.map(s => ({
       // Summary fields for map/table
       id: s.respondentId || s._id, _id: String(s._id),
-      ward: s.ward, zone: s.zone,
+      ward: s.ward, constituency: s.constituency || WARDS[s.ward]?.constituency || '',
       op: s.operator || s.op || s.a3 || '',
       date: s.date, type: s.type || 'survey',
       lat: (s.lat != null && s.lat !== '') ? parseFloat(s.lat) : (WARDS[s.ward]?.lat ? WARDS[s.ward].lat + (Math.random()-.5)*.006 : null),
