@@ -1571,12 +1571,9 @@
     </div>
 
   </div>
-</div>
 
 
-
-
-<div class="view-panel" id="view-admin" style="display:none;flex-direction:column">
+<div class="view-panel" id="view-admin">
   <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
     <div>
       <div style="font-weight:600;color:var(--navy);font-size:15px">⚙ Admin Panel</div>
@@ -1627,6 +1624,7 @@
   </div>
 </div>
 
+</div>
 <!-- API KEY MODAL -->
 <div class="modal-overlay hidden" id="api-modal">
   <div class="modal">
@@ -1866,8 +1864,8 @@ function switchView(id, btn) {
   if (id === 'data')      { document.getElementById('view-data').classList.add('on'); renderDataTable(); }
   if (id === 'survey')    { document.getElementById('view-survey').classList.add('on'); }
   if (id === 'deleted')   { loadDeletedSurveys(); }
-  if (id === 'admin')     { document.getElementById('view-admin').style.display = 'flex'; loadAdminUsers(); }
-  else                    { document.getElementById('view-admin').style.display = 'none'; }
+  if (id === 'admin')     { document.getElementById('view-admin').classList.add('on'); loadAdminUsers(); }
+  else                    { document.getElementById('view-admin').classList.remove('on'); }
 }
 
 // ══════════════════════════════════════════════════════
