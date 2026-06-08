@@ -1648,14 +1648,6 @@ const DEMO_MODE = false;
 let authToken = localStorage.getItem('honiara_token') || null;
 let currentUser = JSON.parse(localStorage.getItem('honiara_user') || 'null');
 
-// Clear any stale token on fresh page load — forces login every session
-if (!DEMO_MODE) {
-  localStorage.removeItem('honiara_token');
-  localStorage.removeItem('honiara_user');
-  authToken = null;
-  currentUser = null;
-}
-
 const WARDS = {
   'Nggossi':        {zone:'West',    target:20, lat:-9.405, lng:160.018},
   'Mbumburu':       {zone:'West',    target:15, lat:-9.418, lng:160.028},
@@ -1680,7 +1672,7 @@ let apiKey   = 'AIzaSyDTQZWZb7YxaIl2sBAk7P50SqTorOe6zl8';
 let gmap     = null;
 let markers  = [];
 let heatmap  = null;
-let activeView = 'map';
+let activeView = 'survey';
 
 // ══════════════════════════════════════════════════════
 //  HELPERS
@@ -2142,8 +2134,6 @@ function updateLegend(mode) {
       <div class="sig-row"><div class="sig-dot" style="background:#A32D2D"></div>Very poor (&lt; -110)</div>`;
   }
 }
-
-  apiKey = key;
 
 // ══════════════════════════════════════════════════════
 //  DASHBOARD VIEW
@@ -3331,6 +3321,8 @@ async function doLogin() {
     const data = await res.json();
     if (!res.ok) { showLoginError(data.error || 'Login failed.'); btn.innerHTML = 'Sign in'; btn.disabled = false; return; }
     authToken = data.token; currentUser = data.user;
+    localStorage.setItem('honiara_token', authToken);
+    localStorage.setItem('honiara_user', JSON.stringify(currentUser));
     btn.innerHTML = '\u2713 Signed in';
     // Keep button disabled after success — login screen will hide
     showApp();
@@ -3364,14 +3356,11 @@ function doLogout() {
   const adminPanel = document.getElementById('view-admin');
   if (adminPanel) adminPanel.classList.remove('on');
   if (adminPanel) adminPanel.style.cssText = 'display:none';
-  // Switch back to survey view
-  const surveyTab = document.getElementById('tnav-survey');
-  document.querySelectorAll('.tnav').forEach(t => t.classList.remove('on'));
-  if (surveyTab) surveyTab.classList.add('on');
-  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('on'));
-  document.getElementById('view-survey').classList.add('on');
+  switchView('survey', document.getElementById('tnav-survey'));
   document.getElementById('app').style.display = 'none';
-  document.getElementById('login-screen').classList.remove('hidden');
+  const loginScreen = document.getElementById('login-screen');
+  loginScreen.classList.remove('hidden');
+  loginScreen.style.display = 'flex';
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
   const btn = document.getElementById('login-btn');
@@ -3381,16 +3370,14 @@ function doLogout() {
 }
 
 function showApp() {
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('app').style.display = 'flex';
-  document.getElementById('app').style.flexDirection = 'column';
+  const loginScreen = document.getElementById('login-screen');
+  const app = document.getElementById('app');
+  loginScreen.classList.add('hidden');
+  loginScreen.style.display = 'none';
+  app.style.display = 'flex';
+  app.style.flexDirection = 'column';
   // Reset to Submit Survey and ensure map is hidden
   switchView('survey', document.getElementById('tnav-survey'));
-
-  //document.getElementById('app').style.display = 'none';
-  //document.getElementById('login-screen').classList.remove('hidden');
-  
-  
   if (DEMO_MODE) {
     document.getElementById('demo-banner').style.display = 'block';
     document.getElementById('topbar-username').textContent = 'Demo User';
@@ -3539,4 +3526,3 @@ checkAuth();
 </script>
 </body>
 </html>
-
