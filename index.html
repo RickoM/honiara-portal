@@ -677,6 +677,58 @@
     </div>
   </div>
 
+<div class="view-panel" id="view-admin">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div>
+      <div style="font-weight:600;color:var(--navy);font-size:15px">⚙ Admin Panel</div>
+      <div style="font-size:12px;color:var(--gray-600);margin-top:2px">Manage user accounts and access</div>
+    </div>
+    <button class="btn btn-primary" onclick="showAddUserForm()">+ Add User</button>
+  </div>
+
+  <!-- Add User Form (hidden by default) -->
+  <div id="admin-add-form" style="display:none;background:var(--gray-50);border-bottom:1px solid var(--border);padding:16px 20px">
+    <div style="font-weight:600;font-size:13px;color:var(--navy);margin-bottom:12px">New User</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px">
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">FULL NAME</label>
+        <input id="new-fullname" type="text" placeholder="e.g. Tony Mana" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">USERNAME</label>
+        <input id="new-username" type="text" placeholder="e.g. tony" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">PASSWORD</label>
+        <input id="new-password" type="password" placeholder="Min 6 characters" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box"></div>
+      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">ROLE</label>
+        <select id="new-role" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box">
+          <option value="field_assistant">Field Assistant</option>
+          <option value="leader">Field Leader</option>
+          <option value="admin">Admin</option>
+        </select></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="adminCreateUser()">Create user</button>
+      <button class="btn" onclick="document.getElementById('admin-add-form').style.display='none'">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div style="padding:16px 20px;overflow-x:auto">
+    <div id="admin-msg" style="display:none;padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:12px"></div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="background:var(--gray-50)">
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Full Name</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Username</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Role</th>
+          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="admin-users-tbody">
+        <tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
   <!-- DATA TABLE VIEW -->
   <div class="view-panel" id="view-data">
     <div class="data-card">
@@ -1571,59 +1623,6 @@
     </div>
 
   </div>
-
-
-<div class="view-panel" id="view-admin">
-  <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-    <div>
-      <div style="font-weight:600;color:var(--navy);font-size:15px">⚙ Admin Panel</div>
-      <div style="font-size:12px;color:var(--gray-600);margin-top:2px">Manage user accounts and access</div>
-    </div>
-    <button class="btn btn-primary" onclick="showAddUserForm()">+ Add User</button>
-  </div>
-
-  <!-- Add User Form (hidden by default) -->
-  <div id="admin-add-form" style="display:none;background:var(--gray-50);border-bottom:1px solid var(--border);padding:16px 20px">
-    <div style="font-weight:600;font-size:13px;color:var(--navy);margin-bottom:12px">New User</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px">
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">FULL NAME</label>
-        <input id="new-fullname" type="text" placeholder="e.g. Tony Mana" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">USERNAME</label>
-        <input id="new-username" type="text" placeholder="e.g. tony" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">PASSWORD</label>
-        <input id="new-password" type="password" placeholder="Min 6 characters" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box"></div>
-      <div><label style="font-size:11px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:4px">ROLE</label>
-        <select id="new-role" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;box-sizing:border-box">
-          <option value="field_assistant">Field Assistant</option>
-          <option value="leader">Field Leader</option>
-          <option value="admin">Admin</option>
-        </select></div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" onclick="adminCreateUser()">Create user</button>
-      <button class="btn" onclick="document.getElementById('admin-add-form').style.display='none'">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Users Table -->
-  <div style="padding:16px 20px;overflow-x:auto">
-    <div id="admin-msg" style="display:none;padding:10px 14px;border-radius:6px;font-size:12px;margin-bottom:12px"></div>
-    <table style="width:100%;border-collapse:collapse;font-size:13px">
-      <thead>
-        <tr style="background:var(--gray-50)">
-          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Full Name</th>
-          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Username</th>
-          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Role</th>
-          <th style="padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--gray-600);text-transform:uppercase">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="admin-users-tbody">
-        <tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:2rem">Loading...</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
 </div>
 <!-- API KEY MODAL -->
 <div class="modal-overlay hidden" id="api-modal">
