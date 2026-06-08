@@ -3419,9 +3419,11 @@ function showApp() {
       currentUser?.role === 'admin' ? 'Admin' :
       currentUser?.role === 'leader' ? 'Field Leader' : 'Field Assistant';
     loadSurveysFromAPI();
-    // Auto-load saved Google Maps API key
-    const savedKey = localStorage.getItem('honiara_gmaps_key');
-    if (savedKey) { apiKey = savedKey; loadGoogleMaps(savedKey); }
+    // Auto-load saved Google Maps API key (admin only)
+    if (currentUser?.role === 'admin') {
+      const savedKey = localStorage.getItem('honiara_gmaps_key');
+      if (savedKey) { apiKey = savedKey; loadGoogleMaps(savedKey); }
+    }
   }
   refresh();
   // Check for saved draft after login
