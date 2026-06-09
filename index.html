@@ -235,11 +235,19 @@
   .sf-prog-bar { flex: 1; height: 5px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
   .sf-prog-fill { height: 100%; background: var(--navy); border-radius: 3px; transition: width .3s; }
   .sf-prog-txt { font-size: 11px; color: var(--gray-600); white-space: nowrap; }
-  .sf-id-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .sf-id-row { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+  .sf-meta-row { display: grid; gap: 18px; align-items: start; }
+  .sf-meta-row + .sf-meta-row { border-top: 1px solid var(--gray-100); margin-top: 16px; padding-top: 16px; }
+  .sf-meta-primary { grid-template-columns: minmax(130px,1fr) minmax(190px,1.5fr) minmax(145px,1fr) minmax(170px,1.1fr); }
+  .sf-meta-responsibility { grid-template-columns: repeat(3,minmax(220px,1fr)); }
   .sf-id-row .sff { display: flex; flex-direction: column; gap: 3px; }
   .sff label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); }
   .sff input, .sff select { border: none; border-bottom: 1px solid var(--border); padding: 4px 0; font-size: 12px; font-family: 'Inter', sans-serif; background: transparent; outline: none; width: 100%; height: 26px; box-sizing: border-box; }
   .sff input:focus, .sff select:focus { border-bottom-color: var(--navy); }
+  .sf-time-row { display: flex; gap: 7px; align-items: center; padding: 2px 0; white-space: nowrap; }
+  .sf-time-row select { width: auto; min-width: 42px; flex: 1; }
+  .sf-same-person { display: flex !important; flex-direction: row; align-items: center; gap: 7px; margin-top: 8px; font-size: 11px !important; color: var(--gray-600); font-weight: 500 !important; text-transform: none !important; letter-spacing: 0 !important; cursor: pointer; }
+  .sf-same-person input { width: 16px !important; height: 16px !important; flex: 0 0 auto; }
   .sf-time-opt { padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: 'Inter', sans-serif; }
   .sf-time-opt:hover { background: var(--gray-50); color: var(--navy); }
 
@@ -343,6 +351,7 @@
   .step7-group .sf-fcell + .sf-fcell { margin-top: 7px; }
   @media (max-width: 768px) {
     .step7-primary-grid, .step7-secondary-grid, .step7-footer-grid { grid-template-columns: 1fr; }
+    .sf-meta-primary, .sf-meta-responsibility { grid-template-columns: 1fr 1fr; }
   }
   /* ════════════════════════════════════════════
      RESPONSIVE LAYOUT
@@ -390,8 +399,7 @@
     .sf-sec-hdr { font-size: 12px; padding: 8px 12px; }
 
     /* ID row: 2 cols */
-    .sf-id-row div[style*="grid-template-columns:1fr 1fr 1fr 1fr"],
-    div.sf-id-row { grid-template-columns: 1fr 1fr !important; }
+    .sf-meta-primary, .sf-meta-responsibility { grid-template-columns: 1fr 1fr; }
 
     /* Field grids: 2 cols */
     .sf-fgrid { grid-template-columns: 1fr 1fr !important; }
@@ -410,8 +418,8 @@
 
     /* Single column for all grids */
     .sf-fgrid { grid-template-columns: 1fr !important; }
-    .sf-id-row,
-    .sf-id-row div[style*="grid-template-columns"],
+    .sf-meta-primary,
+    .sf-meta-responsibility,
     div[style*="grid-template-columns:1fr 1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
 
     /* Larger text for readability */
@@ -430,6 +438,10 @@
     /* Progress bar */
     .sf-progress { padding: 8px; }
     .sf-progress span { font-size: 11px; }
+  }
+  @media (max-width: 620px) {
+    .sf-meta-primary, .sf-meta-responsibility { grid-template-columns: 1fr !important; }
+    .sf-id-row { padding: 14px; }
   }
 
   /* ── Login box ── */
@@ -821,22 +833,14 @@
     </div>
 
     <!-- ID ROW -->
-    <div class="sf-id-row" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px">
-      <div class="sff"><label>Respondent ID</label><input type="text" id="sf-respondent-id" placeholder="" style="background:var(--gray-50);color:var(--gray-600)" readonly></div>
-      <div class="sff"><label>Respondent Name <span style="font-size:10px;color:var(--gray-600);font-weight:400">(verification only)</span></label><input type="text" id="sf-name" placeholder="Full name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())"></div>
-      <div class="sff"><label>Survey questions conducted by <span style="color:var(--red)">*</span></label><input type="text" id="sf-interviewer" placeholder="Interviewer name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase());syncAppRecorder()"></div>
-      <div class="sff">
-        <label>App readings recorded by <span style="color:var(--red)">*</span></label>
-        <input type="text" id="sf-app-recorder" placeholder="Assistant recording app readings" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())">
-        <label style="display:flex;align-items:center;gap:5px;margin-top:5px;font-size:10px;color:var(--gray-600);font-weight:500;text-transform:none;letter-spacing:0">
-          <input type="checkbox" id="sf-app-recorder-same" onchange="syncAppRecorder()" style="width:auto"> Same as survey interviewer
-        </label>
-      </div>
-      <div class="sff"><label>Uploaded by</label><input type="text" id="sf-uploaded-by" placeholder="Set from signed-in account" style="background:var(--gray-50);color:var(--gray-600)" readonly></div>
-      <div class="sff"><label>Date</label><input type="date" id="sf-date"></div>
-      <div class="sff">
-        <label>Time</label>
-        <div style="display:flex;gap:4px;align-items:center;padding:2px 0">
+    <div class="sf-id-row">
+      <div class="sf-meta-row sf-meta-primary">
+        <div class="sff"><label>Respondent ID</label><input type="text" id="sf-respondent-id" placeholder="" style="background:var(--gray-50);color:var(--gray-600)" readonly></div>
+        <div class="sff"><label>Respondent Name <span style="font-size:10px;color:var(--gray-600);font-weight:400">(verification only)</span></label><input type="text" id="sf-name" placeholder="Full name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())"></div>
+        <div class="sff"><label>Date</label><input type="date" id="sf-date"></div>
+        <div class="sff">
+          <label>Time</label>
+          <div class="sf-time-row">
           <select id="sf-time-hh" onchange="sfTimeSync()" style="border:none;border-bottom:1px solid var(--border);background:transparent;font-size:12px;font-family:'Inter',sans-serif;padding:2px 0;outline:none;cursor:pointer">
             <option value="00">00</option><option value="01">01</option><option value="02">02</option><option value="03">03</option><option value="04">04</option><option value="05">05</option><option value="06">06</option><option value="07">07</option><option value="08">08</option><option value="09">09</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
           </select>
@@ -849,8 +853,17 @@
             <option value="PM">PM</option>
           </select>
           <input type="hidden" id="sf-time">
+          </div>
         </div>
       </div>
+      <div class="sf-meta-row sf-meta-responsibility">
+        <div class="sff"><label>Survey questions conducted by <span style="color:var(--red)">*</span></label><input type="text" id="sf-interviewer" placeholder="Interviewer name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase());syncAppRecorder()"></div>
+        <div class="sff">
+          <label>App readings recorded by <span style="color:var(--red)">*</span></label>
+          <input type="text" id="sf-app-recorder" placeholder="Assistant recording app readings" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())">
+          <label class="sf-same-person"><input type="checkbox" id="sf-app-recorder-same" onchange="syncAppRecorder()"> Same as survey interviewer</label>
+        </div>
+        <div class="sff"><label>Uploaded by</label><input type="text" id="sf-uploaded-by" placeholder="Set from signed-in account" style="background:var(--gray-50);color:var(--gray-600)" readonly></div>
       </div>
     </div>
 
