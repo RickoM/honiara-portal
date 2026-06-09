@@ -53,6 +53,9 @@
   .sidebar { width: 320px; flex-shrink: 0; background: #fff; border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
   .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
   .sidebar-section:last-child { border-bottom: none; }
+  #view-map #sidebar-admin-tools,
+  #view-map .sidebar-section:has(#flags-panel),
+  #view-map .sidebar-section:has(#ward-bars) { display: none !important; }
   .ssec-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 10px; }
   
   /* ── MAP ── */
@@ -607,13 +610,18 @@
 
       <!-- DAILY SUMMARY -->
       <div class="sidebar-section" id="daily-summary">
-        <div class="ssec-title">Daily summary</div>
+        <div class="ssec-title">Map overview</div>
         <div class="metric-grid" id="day-metrics">
-          <div class="metric-card"><div class="metric-val" id="m-today">0</div><div class="metric-lbl">Today's surveys</div></div>
-          <div class="metric-card"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Total surveys</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-today">0</div><div class="metric-lbl">Mapped waypoints</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Survey records</div></div>
           <div class="metric-card"><div class="metric-val" id="m-avgdl">—</div><div class="metric-lbl">Avg DL (Mbps)</div></div>
-          <div class="metric-card"><div class="metric-val" id="m-below1">0</div><div class="metric-lbl">Below 1 Mbps</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-below1">0</div><div class="metric-lbl">Missing GPS</div></div>
         </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="ssec-title">Map data summary</div>
+        <div id="map-quality" style="display:grid;gap:7px"></div>
       </div>
 
       <!-- FLAGS -->
@@ -644,24 +652,13 @@
         <label class="layer-toggle">
           <input type="checkbox" id="layer-surveys" checked onchange="refreshMap()">
           <svg width="14" height="16" viewBox="0 0 14 20" aria-hidden="true"><circle cx="7" cy="3" r="3" fill="#378ADD"/><path d="M3 7h8l3 6-3 1-1-3v9H8l-1-6-1 6H4v-9l-1 3-3-1z" fill="#378ADD"/></svg>
-          <span class="layer-toggle-label">Survey participant waypoints</span>
+          <span class="layer-toggle-label">Survey data points</span>
         </label>
         <label class="layer-toggle">
           <input type="checkbox" id="layer-cells" checked onchange="refreshMap()">
           <div class="layer-icon" style="background:#BA7517;border-radius:2px"></div>
-          <span class="layer-toggle-label">Cell sites</span>
+          <span class="layer-toggle-label">Mobile tower points</span>
         </label>
-        <label class="layer-toggle">
-          <input type="checkbox" id="layer-signal" checked onchange="refreshMap()">
-          <div class="layer-icon" style="background:linear-gradient(90deg,#A32D2D,#27500A);border-radius:0"></div>
-          <span class="layer-toggle-label">Signal quality</span>
-        </label>
-        <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
-          <div class="layer-ctrl-title" style="margin-bottom:6px">Colour by</div>
-          <select id="colour-mode" disabled style="width:100%;font-size:11px;padding:4px 6px">
-            <option value="signal">Signal strength (RSRP)</option>
-          </select>
-        </div>
         <button class="btn btn-sm" onclick="fitSurveyWaypoints()" style="width:100%;margin-top:8px">Fit survey waypoints</button>
       </div>
 
@@ -680,7 +677,7 @@
 
       <!-- SIGNAL LEGEND -->
       <div class="sig-legend" id="sig-legend">
-        <div class="sig-legend-title" id="legend-title">Signal strength (RSRP)</div>
+        <div class="sig-legend-title" id="legend-title">Survey waypoint colours (RSRP)</div>
         <div class="sig-row"><div class="sig-dot" style="background:#27500A"></div>Excellent (&gt; -80 dBm)</div>
         <div class="sig-row"><div class="sig-dot" style="background:#639922"></div>Good (-80 to -90)</div>
         <div class="sig-row"><div class="sig-dot" style="background:#BA7517"></div>Fair (-90 to -100)</div>
@@ -2025,19 +2022,34 @@ function renderDayStrip() {
 }
 
 function updateSidebarMetrics() {
-  const today = new Date().toISOString().split('T')[0];
   const src   = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
   const surveys = src.filter(p => p.type === 'survey');
-  const todaySurveys = points.filter(p => p.date === today && p.type === 'survey');
+  const mapped = surveys.filter(p => gpsStatus(p.lat, p.lng) !== 'Missing');
+  const missingGps = surveys.length - mapped.length;
   const dlVals = surveys.map(p => +p.dl).filter(v => !isNaN(v) && v > 0);
   const avgDl  = dlVals.length ? (dlVals.reduce((a, b) => a + b) / dlVals.length).toFixed(2) : '—';
-  const below1 = dlVals.filter(v => v < 1).length;
 
-  document.getElementById('m-today').textContent = todaySurveys.length;
+  document.getElementById('m-today').textContent = mapped.length;
   document.getElementById('m-total').textContent = surveys.length;
   document.getElementById('m-avgdl').textContent = avgDl;
-  document.getElementById('m-below1').textContent = below1;
-  document.getElementById('m-below1').style.color = below1 > 0 ? 'var(--red)' : 'var(--green)';
+  document.getElementById('m-below1').textContent = missingGps;
+  document.getElementById('m-below1').style.color = missingGps > 0 ? 'var(--red)' : 'var(--green)';
+  const quality = document.getElementById('map-quality');
+  if (quality) {
+    const valid = surveys.filter(p => gpsStatus(p.lat, p.lng) === 'Valid').length;
+    const outside = surveys.filter(p => gpsStatus(p.lat, p.lng) === 'Outside study area').length;
+    const towers = src.filter(p => p.type === 'cell' && gpsStatus(p.lat, p.lng) !== 'Missing').length;
+    const operators = [...new Set(surveys.map(p => p.fd_s1_op || p.operator || p.op).filter(Boolean))];
+    const row = (label, value, colour = 'var(--navy)') =>
+      `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 9px;background:var(--gray-50);border:1px solid var(--border);border-radius:6px;font-size:11px">
+        <span style="color:var(--gray-600)">${label}</span><strong style="color:${colour};text-align:right">${value}</strong>
+      </div>`;
+    quality.innerHTML =
+      row('Valid Honiara waypoints', valid, 'var(--green)') +
+      row('Outside study area', outside, outside ? 'var(--amber)' : 'var(--green)') +
+      row('Mobile tower points', towers) +
+      row('Operators represented', operators.join(', ') || 'None');
+  }
 }
 
 function renderWardBars() {
@@ -2141,8 +2153,8 @@ function refreshMap() {
   if (!gmap) return;
   const showSurveys = document.getElementById('layer-surveys').checked;
   const showCells   = document.getElementById('layer-cells').checked;
-  const showSignal  = document.getElementById('layer-signal').checked;
-  const colMode     = document.getElementById('colour-mode').value;
+  const showSignal  = false;
+  const colMode     = 'signal';
 
   // Clear existing markers
   markers.forEach(m => m.setMap(null));
@@ -2399,7 +2411,8 @@ function updateLegend(mode) {
       <div class="sig-row"><div class="sig-dot" style="background:#1C3557"></div>Our Telekom</div>
       <div class="sig-row"><div class="sig-dot" style="background:#BA7517"></div>BMobile</div>`;
   } else {
-    legend.innerHTML = `<div class="sig-legend-title">Signal strength (RSRP)</div>
+    legend.innerHTML = `<div class="sig-legend-title">Survey waypoint colours (RSRP)</div>
+      <div style="font-size:9px;color:var(--gray-600);margin-bottom:6px">Each survey marker is coloured by its recorded signal strength.</div>
       <div class="sig-row"><div class="sig-dot" style="background:#27500A"></div>Excellent (&gt; -80 dBm)</div>
       <div class="sig-row"><div class="sig-dot" style="background:#639922"></div>Good (-80 to -90)</div>
       <div class="sig-row"><div class="sig-dot" style="background:#BA7517"></div>Fair (-90 to -100)</div>
