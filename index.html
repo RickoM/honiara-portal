@@ -1705,6 +1705,7 @@ let apiKey   = 'AIzaSyDTQZWZb7YxaIl2sBAk7P50SqTorOe6zl8';
 let gmap     = null;
 let markers  = [];
 let surveyOverlays = [];
+let waypointShapes = [];
 let heatmap  = null;
 let activeView = 'survey';
 
@@ -2059,6 +2060,8 @@ function refreshMap() {
   markers = [];
   surveyOverlays.forEach(m => m.setMap(null));
   surveyOverlays = [];
+  waypointShapes.forEach(m => m.setMap(null));
+  waypointShapes = [];
   if (heatmap) { heatmap.setMap(null); heatmap = null; }
 
   const src = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
@@ -2068,6 +2071,7 @@ function refreshMap() {
     Number(p.lat) >= -90 && Number(p.lat) <= 90 &&
     Number(p.lng) >= -180 && Number(p.lng) <= 180;
   const plottedSurveys = src.filter(p => p.type === 'survey' && hasMapCoordinates(p));
+  const validStudyWaypoints = plottedSurveys.filter(p => gpsStatus(p.lat, p.lng) === 'Valid');
   const waypointCount = document.getElementById('ms-waypoints');
   if (waypointCount) waypointCount.textContent = `${plottedSurveys.length} waypoint${plottedSurveys.length === 1 ? '' : 's'} plotted`;
 
@@ -2095,59 +2099,47 @@ function refreshMap() {
       const col = status === 'Outside study area' ? '#D92D20' :
         colMode === 'signal' ? (p.rsrp == null || p.rsrp === '' ? '#378ADD' : rsrpColor(p.rsrp)) :
         colMode === 'speed' ? speedColor(p.dl) : opColor(p.op);
-      const marker = new google.maps.Marker({
-        position: { lat: Number(p.lat), lng: Number(p.lng) },
-        map: gmap,
-        animation: google.maps.Animation.DROP,
-        optimized: false,
-        title: `${p.id} — ${p.ward} (${rsrpLabel(p.rsrp)})`,
-        zIndex: 9999,
-      });
       const info = new google.maps.InfoWindow({
         content: infoWindowHTML(p),
         maxWidth: 390,
       });
-      marker.addListener('click', () => {
-        markers.forEach(m => m.infoWindow && m.infoWindow.close());
-        marker.setAnimation(google.maps.Animation.BOUNCE);
-        setTimeout(() => marker.setAnimation(null), 700);
-        info.open(gmap, marker);
-      });
-      marker.infoWindow = info;
-      markers.push(marker);
 
-      // Independent HTML overlay fallback, visible even if Google's marker canvas fails.
-      class SurveyWaypointOverlay extends google.maps.OverlayView {
-        onAdd() {
-          this.el = document.createElement('button');
-          this.el.type = 'button';
-          this.el.title = `Survey ${p.id} — ${p.ward}`;
-          this.el.style.cssText = `position:absolute;width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${col};border:3px solid #fff;box-shadow:0 2px 7px rgba(0,0,0,.65);cursor:pointer;z-index:99999;padding:0`;
-          const dot = document.createElement('span');
-          dot.style.cssText = 'position:absolute;width:8px;height:8px;border-radius:50%;background:#fff;left:7px;top:7px';
-          this.el.appendChild(dot);
-          this.el.addEventListener('click', event => {
-            event.stopPropagation();
-            markers.forEach(m => m.infoWindow && m.infoWindow.close());
-            info.setPosition({ lat: Number(p.lat), lng: Number(p.lng) });
-            info.open(gmap);
-          });
-          this.getPanes().overlayMouseTarget.appendChild(this.el);
-        }
-        draw() {
-          const pixel = this.getProjection().fromLatLngToDivPixel(new google.maps.LatLng(Number(p.lat), Number(p.lng)));
-          if (!pixel || !this.el) return;
-          this.el.style.left = `${pixel.x - 14}px`;
-          this.el.style.top = `${pixel.y - 28}px`;
-        }
-        onRemove() {
-          if (this.el) this.el.remove();
-          this.el = null;
-        }
-      }
-      const overlay = new SurveyWaypointOverlay();
-      overlay.setMap(gmap);
-      surveyOverlays.push(overlay);
+      // Geometry waypoint: avoids the legacy Marker renderer entirely.
+      const waypointCircle = new google.maps.Circle({
+        map: gmap,
+        center: { lat: Number(p.lat), lng: Number(p.lng) },
+        radius: 55,
+        fillColor: col,
+        fillOpacity: 0.85,
+        strokeColor: '#ffffff',
+        strokeOpacity: 1,
+        strokeWeight: 4,
+        clickable: true,
+        zIndex: 99999,
+      });
+      const waypointCore = new google.maps.Circle({
+        map: gmap,
+        center: { lat: Number(p.lat), lng: Number(p.lng) },
+        radius: 12,
+        fillColor: '#ffffff',
+        fillOpacity: 1,
+        strokeColor: col,
+        strokeOpacity: 1,
+        strokeWeight: 3,
+        clickable: true,
+        zIndex: 100000,
+      });
+      const openWaypointInfo = () => {
+        markers.forEach(m => m.infoWindow && m.infoWindow.close());
+        waypointShapes.forEach(m => m.infoWindow && m.infoWindow.close());
+        info.setPosition({ lat: Number(p.lat), lng: Number(p.lng) });
+        info.open(gmap);
+      };
+      waypointCircle.infoWindow = info;
+      waypointCore.infoWindow = info;
+      waypointCircle.addListener('click', openWaypointInfo);
+      waypointCore.addListener('click', openWaypointInfo);
+      waypointShapes.push(waypointCircle, waypointCore);
     });
   }
 
@@ -2176,6 +2168,12 @@ function refreshMap() {
       marker.infoWindow = info;
       markers.push(marker);
     });
+  }
+
+  // Keep a single valid study waypoint unmistakably centred and close enough to see.
+  if (showSurveys && validStudyWaypoints.length === 1) {
+    gmap.setCenter({ lat: Number(validStudyWaypoints[0].lat), lng: Number(validStudyWaypoints[0].lng) });
+    if (gmap.getZoom() < 17) gmap.setZoom(17);
   }
 
   updateLegend(colMode);
