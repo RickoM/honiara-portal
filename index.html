@@ -410,6 +410,7 @@
 
     /* Single column for all grids */
     .sf-fgrid { grid-template-columns: 1fr !important; }
+    .sf-id-row,
     .sf-id-row div[style*="grid-template-columns"],
     div[style*="grid-template-columns:1fr 1fr 1fr 1fr"] { grid-template-columns: 1fr 1fr !important; }
 
@@ -794,7 +795,7 @@
               <th>Lat</th><th>Lng</th><th>GPS Status</th><th>RSRP dBm</th><th>Signal</th>
               <th>DL Mbps</th><th>UL Mbps</th><th>Ping ms</th>
               <th>Browsing %</th><th>Streaming %</th><th>Jitter ms</th>
-              <th>eNB-LCID</th><th>TAC-ECI</th><th>Actions</th>
+              <th>eNB-LCID</th><th>TAC-ECI</th><th>Survey conducted by</th><th>Uploaded by</th><th>Actions</th>
             </tr>
           </thead>
           <tbody id="dt-body"></tbody>
@@ -820,9 +821,11 @@
     </div>
 
     <!-- ID ROW -->
-    <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+    <div class="sf-id-row" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px">
       <div class="sff"><label>Respondent ID</label><input type="text" id="sf-respondent-id" placeholder="" style="background:var(--gray-50);color:var(--gray-600)" readonly></div>
       <div class="sff"><label>Respondent Name <span style="font-size:10px;color:var(--gray-600);font-weight:400">(verification only)</span></label><input type="text" id="sf-name" placeholder="Full name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())"></div>
+      <div class="sff"><label>Survey conducted by <span style="color:var(--red)">*</span></label><input type="text" id="sf-interviewer" placeholder="Field assistant or interviewer name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())"></div>
+      <div class="sff"><label>Uploaded by</label><input type="text" id="sf-uploaded-by" placeholder="Set from signed-in account" style="background:var(--gray-50);color:var(--gray-600)" readonly></div>
       <div class="sff"><label>Date</label><input type="date" id="sf-date"></div>
       <div class="sff">
         <label>Time</label>
@@ -1895,6 +1898,7 @@ function handleCSV(input) {
 // ══════════════════════════════════════════════════════
 
 function switchView(id, btn) {
+  if (activeView === 'survey' && id !== 'survey' && surveyReadOnlyMode) sfReset();
   document.querySelectorAll('.tnav').forEach(t => t.classList.remove('on'));
   if (btn) btn.classList.add('on');
   activeView = id;
@@ -2402,7 +2406,7 @@ function renderDataTable() {
 
   const tbody = document.getElementById('dt-body');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="22" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(p => {
@@ -2439,7 +2443,10 @@ function renderDataTable() {
       <td>${p.jitter || '\u2014'}</td>
       <td style="${mono};font-size:11px">${p.enb || '\u2014'}</td>
       <td style="${mono};font-size:11px">${p.taceci || '\u2014'}</td>
+      <td style="font-size:11px">${p.interviewer || '\u2014'}</td>
+      <td style="font-size:11px">${p.uploadedBy || p.submittedBy || '\u2014'}</td>
       <td style="white-space:nowrap">
+        <button onclick='dtView(this)' data-mid='${p._id}' style="border:none;background:var(--green);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">View</button>
         <button onclick='dtEdit(this)' data-mid='${p._id}' style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>
         ${currentUser && currentUser.role === 'admin' ? `<button onclick='dtDelete(this)' data-mid='${p._id}' data-did='${p.id}' style='border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer'>Delete</button>` : ''}
       </td>
@@ -2495,6 +2502,8 @@ async function dtRestore(deletedId) {
 
 // editingId tracks which MongoDB record we are editing (null = new submission)
 let editingId = null;
+let openRecordReadOnly = false;
+let surveyReadOnlyMode = false;
 
 const SCREENSHOT_FIELDS = [
   'fd-s2a-scr', 'fd-s2b-scr',
@@ -2590,7 +2599,23 @@ async function uploadSurveyScreenshots() {
   }
 }
 
+function setSurveyReadOnly(readOnly) {
+  surveyReadOnlyMode = readOnly;
+  document.querySelectorAll('#view-survey input, #view-survey select, #view-survey textarea, #view-survey button').forEach(el => {
+    el.disabled = readOnly;
+  });
+  const submitBar = document.querySelector('#view-survey .sf-submit-bar');
+  if (submitBar) submitBar.style.display = readOnly ? 'none' : '';
+}
+
+function dtView(btn) {
+  openRecordReadOnly = true;
+  dtEdit(btn);
+}
+
 async function dtEdit(btn) {
+  const readOnly = openRecordReadOnly;
+  openRecordReadOnly = false;
   const mongoId = btn.getAttribute('data-mid');
   console.log('dtEdit called with:', mongoId);
   if (!mongoId || mongoId === 'undefined') { alert('Cannot edit — record has no database ID.'); return; }
@@ -2620,7 +2645,8 @@ async function dtEdit(btn) {
   if (!survey) { alert('Could not load survey data.'); return; }
 
   // Set editingId first then reset form (keepEditingId=true preserves it)
-  editingId = mongoId;
+  setSurveyReadOnly(false);
+  editingId = readOnly ? null : mongoId;
   sfReset(true);
 
   // Helper: set text/number/select/textarea value
@@ -2669,6 +2695,8 @@ async function dtEdit(btn) {
   // ── Header ──────────────────────────────────
   s('sf-respondent-id', survey.respondentId);
   s('sf-name', survey.name);
+  s('sf-interviewer', survey.interviewer);
+  s('sf-uploaded-by', survey.uploadedBy || survey.submittedBy);
   s('sf-date', survey.date);
 
   // Time — convert 24hr stored value back to 12hr selects
@@ -2748,6 +2776,24 @@ async function dtEdit(btn) {
   // ── Notes ────────────────────────────────────
   s('sf-notes', survey.notes);
 
+  if (readOnly) {
+    switchView('survey', document.getElementById('tnav-survey'));
+    setSurveyReadOnly(true);
+    document.getElementById('view-survey').scrollTop = 0;
+    let viewBanner = document.getElementById('sf-edit-banner');
+    if (!viewBanner) {
+      viewBanner = document.createElement('div');
+      viewBanner.id = 'sf-edit-banner';
+      const formBody = document.getElementById('sf-form-body');
+      formBody.insertBefore(viewBanner, formBody.firstChild);
+    }
+    viewBanner.style.cssText = 'background:#E8F5EE;border:1px solid #2E7D5B;border-radius:6px;padding:10px 14px;margin:10px 14px;font-size:12px;color:#205C43;display:flex;align-items:center;justify-content:space-between';
+    viewBanner.innerHTML = '<span><strong>Read-only record:</strong> ' + (survey.respondentId || mongoId) + ' — viewing only; no changes can be made</span>' +
+      '<button onclick="sfCancelEdit()" style="border:none;background:transparent;color:#205C43;cursor:pointer;font-weight:600;font-size:12px">Back to Data Table</button>';
+    viewBanner.querySelector('button').disabled = false;
+    return;
+  }
+
   // Hide Save draft, change Submit to Save changes
   const draftBtn = document.getElementById('sf-draft-btn');
   const submitBtn2 = document.getElementById('sf-submit-btn');
@@ -2801,7 +2847,7 @@ function sfCancelEdit() {
 
 function exportCSV() {
   if (!points.length) return;
-  const hdrs = ['ID','Type','Date','Ward','Zone','Operator','Lat','Lng',
+  const hdrs = ['ID','Type','Date','Ward','Constituency','Operator','Survey_Conducted_By','Uploaded_By','Lat','Lng',
     'RSRP_dBm','RSRQ_dB','RSSNR_dB','Signal','Band',
     'TAC','ECI','eNB','LCID','PCI',
     'DL_Mbps_Ookla','UL_Mbps_Ookla','Ping_ms_Ookla','Jitter_ms_Ookla',
@@ -2809,7 +2855,7 @@ function exportCSV() {
     'Tower_Lat','Tower_Lng','Tower_Operator','Tower_Type',
     'B1_Signal','C5_DataSpeed','Browsing_pct','Streaming_pct',
     'eNB_LCID','TAC_ECI'];
-  const keys = ['id','type','date','ward','zone','op','lat','lng',
+  const keys = ['id','type','date','ward','constituency','op','interviewer','uploadedBy','lat','lng',
     'rsrp','rsrq','rssnr','','band',
     'tac','eci','enb_raw','lcid','pci',
     'dl','ul','ping','jitter',
@@ -2883,7 +2929,7 @@ function sfGetData() {
   const a3val = r('sf-a3') === 'Other' ? (g('sf-a3-other-text') || 'Other') : r('sf-a3');
   return {
     // Header
-    respondentId: g('sf-respondent-id'), date: g('sf-date'), time: g('sf-time'),
+    respondentId: g('sf-respondent-id'), interviewer: g('sf-interviewer'), date: g('sf-date'), time: g('sf-time'),
     // Step 1 — DEVICE+SIM
     fd_s1_op: (g('fd-s1-op') === 'Other' ? g('fd-s1-op-other') : g('fd-s1-op')),
     fd_s1_simstate: g('fd-s1-simstate'), fd_s1_svcstate: g('fd-s1-svcstate'), fd_s1_roaming: g('fd-s1-roaming'),
@@ -3209,7 +3255,12 @@ function toggleSim2Auto() {
 }
 
 async function sfSubmit() {
+  if (surveyReadOnlyMode) return;
   const btn  = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
+  if (!document.getElementById('sf-interviewer')?.value.trim()) {
+    alert('Please enter the name of the person who conducted the survey.');
+    return;
+  }
   const missing = editingId ? [] : SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
   if (missing.length) { alert('Please complete all required fields before submitting.'); return; }
   const currentGpsStatus = gpsStatus(document.getElementById('sf-lat')?.value, document.getElementById('sf-lon')?.value);
@@ -3352,6 +3403,7 @@ function sfRestoreDraft() {
       date: 'sf-date',
       time: 'sf-time',
       name: 'sf-name',
+      interviewer: 'sf-interviewer',
       notes: 'sf-notes',
       // Step 1
       fd_s1_op: 'fd-s1-op', fd_s1_simstate: 'fd-s1-simstate',
@@ -3465,6 +3517,7 @@ function sfRestoreDraft() {
 
 function sfReset(keepEditingId) {
   if (!keepEditingId) editingId = null;
+  setSurveyReadOnly(false);
   const banner = document.getElementById('sf-edit-banner');
   if (banner && !keepEditingId) banner.style.display = 'none';
   const draftBtn = document.getElementById('sf-draft-btn');
@@ -3494,6 +3547,8 @@ function sfReset(keepEditingId) {
   if (apEl) apEl.value = 'AM';
   const hiddenTime = document.getElementById('sf-time');
   if (hiddenTime) hiddenTime.value = '';
+  const uploadedByEl = document.getElementById('sf-uploaded-by');
+  if (uploadedByEl) uploadedByEl.value = currentUser?.fullName || currentUser?.username || '';
   const towerFields = document.getElementById('tower-fields');
   if (towerFields) { towerFields.style.opacity = '1'; towerFields.style.pointerEvents = 'auto'; }
   const simWarn = document.getElementById('sim-not-ready-warn');
@@ -3778,6 +3833,8 @@ function showApp() {
     loadSurveysFromAPI();
     // Google Maps loads when Live Map tab is clicked
   }
+  const uploadedByEl = document.getElementById('sf-uploaded-by');
+  if (uploadedByEl) uploadedByEl.value = currentUser?.fullName || currentUser?.username || '';
   refresh();
   // Check for saved draft after login
   if (!DEMO_MODE) setTimeout(sfRestoreDraft, 500);
