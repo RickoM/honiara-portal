@@ -795,7 +795,7 @@
               <th>Lat</th><th>Lng</th><th>GPS Status</th><th>RSRP dBm</th><th>Signal</th>
               <th>DL Mbps</th><th>UL Mbps</th><th>Ping ms</th>
               <th>Browsing %</th><th>Streaming %</th><th>Jitter ms</th>
-              <th>eNB-LCID</th><th>TAC-ECI</th><th>Survey conducted by</th><th>Uploaded by</th><th>Actions</th>
+              <th>eNB-LCID</th><th>TAC-ECI</th><th>Survey conducted by</th><th>App readings by</th><th>Uploaded by</th><th>Actions</th>
             </tr>
           </thead>
           <tbody id="dt-body"></tbody>
@@ -821,10 +821,17 @@
     </div>
 
     <!-- ID ROW -->
-    <div class="sf-id-row" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px">
+    <div class="sf-id-row" style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px">
       <div class="sff"><label>Respondent ID</label><input type="text" id="sf-respondent-id" placeholder="" style="background:var(--gray-50);color:var(--gray-600)" readonly></div>
       <div class="sff"><label>Respondent Name <span style="font-size:10px;color:var(--gray-600);font-weight:400">(verification only)</span></label><input type="text" id="sf-name" placeholder="Full name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())"></div>
-      <div class="sff"><label>Survey conducted by <span style="color:var(--red)">*</span></label><input type="text" id="sf-interviewer" placeholder="Field assistant or interviewer name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())"></div>
+      <div class="sff"><label>Survey questions conducted by <span style="color:var(--red)">*</span></label><input type="text" id="sf-interviewer" placeholder="Interviewer name" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase());syncAppRecorder()"></div>
+      <div class="sff">
+        <label>App readings recorded by <span style="color:var(--red)">*</span></label>
+        <input type="text" id="sf-app-recorder" placeholder="Assistant recording app readings" oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())">
+        <label style="display:flex;align-items:center;gap:5px;margin-top:5px;font-size:10px;color:var(--gray-600);font-weight:500;text-transform:none;letter-spacing:0">
+          <input type="checkbox" id="sf-app-recorder-same" onchange="syncAppRecorder()" style="width:auto"> Same as survey interviewer
+        </label>
+      </div>
       <div class="sff"><label>Uploaded by</label><input type="text" id="sf-uploaded-by" placeholder="Set from signed-in account" style="background:var(--gray-50);color:var(--gray-600)" readonly></div>
       <div class="sff"><label>Date</label><input type="date" id="sf-date"></div>
       <div class="sff">
@@ -2406,7 +2413,7 @@ function renderDataTable() {
 
   const tbody = document.getElementById('dt-body');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="22" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="23" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(p => {
@@ -2444,6 +2451,7 @@ function renderDataTable() {
       <td style="${mono};font-size:11px">${p.enb || '\u2014'}</td>
       <td style="${mono};font-size:11px">${p.taceci || '\u2014'}</td>
       <td style="font-size:11px">${p.interviewer || '\u2014'}</td>
+      <td style="font-size:11px">${p.appRecorder || '\u2014'}</td>
       <td style="font-size:11px">${p.uploadedBy || p.submittedBy || '\u2014'}</td>
       <td style="white-space:nowrap">
         <button onclick='dtView(this)' data-mid='${p._id}' style="border:none;background:var(--green);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">View</button>
@@ -2696,6 +2704,10 @@ async function dtEdit(btn) {
   s('sf-respondent-id', survey.respondentId);
   s('sf-name', survey.name);
   s('sf-interviewer', survey.interviewer);
+  s('sf-app-recorder', survey.appRecorder);
+  const sameRecorder = document.getElementById('sf-app-recorder-same');
+  if (sameRecorder) sameRecorder.checked = !!survey.interviewer && survey.appRecorder === survey.interviewer;
+  syncAppRecorder();
   s('sf-uploaded-by', survey.uploadedBy || survey.submittedBy);
   s('sf-date', survey.date);
 
@@ -2847,7 +2859,7 @@ function sfCancelEdit() {
 
 function exportCSV() {
   if (!points.length) return;
-  const hdrs = ['ID','Type','Date','Ward','Constituency','Operator','Survey_Conducted_By','Uploaded_By','Lat','Lng',
+  const hdrs = ['ID','Type','Date','Ward','Constituency','Operator','Survey_Conducted_By','App_Readings_Recorded_By','Uploaded_By','Lat','Lng',
     'RSRP_dBm','RSRQ_dB','RSSNR_dB','Signal','Band',
     'TAC','ECI','eNB','LCID','PCI',
     'DL_Mbps_Ookla','UL_Mbps_Ookla','Ping_ms_Ookla','Jitter_ms_Ookla',
@@ -2855,7 +2867,7 @@ function exportCSV() {
     'Tower_Lat','Tower_Lng','Tower_Operator','Tower_Type',
     'B1_Signal','C5_DataSpeed','Browsing_pct','Streaming_pct',
     'eNB_LCID','TAC_ECI'];
-  const keys = ['id','type','date','ward','constituency','op','interviewer','uploadedBy','lat','lng',
+  const keys = ['id','type','date','ward','constituency','op','interviewer','appRecorder','uploadedBy','lat','lng',
     'rsrp','rsrq','rssnr','','band',
     'tac','eci','enb_raw','lcid','pci',
     'dl','ul','ping','jitter',
@@ -2918,6 +2930,23 @@ function sfToggle(id, show) {
   if (el) el.classList.toggle('show', show);
 }
 
+function syncAppRecorder() {
+  const same = document.getElementById('sf-app-recorder-same');
+  const interviewer = document.getElementById('sf-interviewer');
+  const recorder = document.getElementById('sf-app-recorder');
+  if (!same || !interviewer || !recorder) return;
+  if (same.checked) {
+    recorder.value = interviewer.value;
+    recorder.readOnly = true;
+    recorder.style.background = 'var(--gray-50)';
+    recorder.style.color = 'var(--gray-600)';
+  } else {
+    recorder.readOnly = false;
+    recorder.style.background = '';
+    recorder.style.color = '';
+  }
+}
+
 function sfGetData() {
   sfTimeSync(); // ensure hidden sf-time is up to date before reading
   const g = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
@@ -2929,7 +2958,7 @@ function sfGetData() {
   const a3val = r('sf-a3') === 'Other' ? (g('sf-a3-other-text') || 'Other') : r('sf-a3');
   return {
     // Header
-    respondentId: g('sf-respondent-id'), interviewer: g('sf-interviewer'), date: g('sf-date'), time: g('sf-time'),
+    respondentId: g('sf-respondent-id'), interviewer: g('sf-interviewer'), appRecorder: g('sf-app-recorder'), date: g('sf-date'), time: g('sf-time'),
     // Step 1 — DEVICE+SIM
     fd_s1_op: (g('fd-s1-op') === 'Other' ? g('fd-s1-op-other') : g('fd-s1-op')),
     fd_s1_simstate: g('fd-s1-simstate'), fd_s1_svcstate: g('fd-s1-svcstate'), fd_s1_roaming: g('fd-s1-roaming'),
@@ -3261,6 +3290,10 @@ async function sfSubmit() {
     alert('Please enter the name of the person who conducted the survey.');
     return;
   }
+  if (!document.getElementById('sf-app-recorder')?.value.trim()) {
+    alert('Please enter the name of the person who recorded the app readings.');
+    return;
+  }
   const missing = editingId ? [] : SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
   if (missing.length) { alert('Please complete all required fields before submitting.'); return; }
   const currentGpsStatus = gpsStatus(document.getElementById('sf-lat')?.value, document.getElementById('sf-lon')?.value);
@@ -3404,6 +3437,7 @@ function sfRestoreDraft() {
       time: 'sf-time',
       name: 'sf-name',
       interviewer: 'sf-interviewer',
+      appRecorder: 'sf-app-recorder',
       notes: 'sf-notes',
       // Step 1
       fd_s1_op: 'fd-s1-op', fd_s1_simstate: 'fd-s1-simstate',
@@ -3509,6 +3543,11 @@ function sfRestoreDraft() {
 
     // Trigger SIM2 visibility if operator = Both
     if (data.a3 === 'Both') toggleSim2Auto();
+    const sameRecorder = document.getElementById('sf-app-recorder-same');
+    if (sameRecorder) {
+      sameRecorder.checked = !!data.interviewer && data.appRecorder === data.interviewer;
+      syncAppRecorder();
+    }
 
     sfProgress();
     console.log('Draft restored successfully');
@@ -3549,6 +3588,9 @@ function sfReset(keepEditingId) {
   if (hiddenTime) hiddenTime.value = '';
   const uploadedByEl = document.getElementById('sf-uploaded-by');
   if (uploadedByEl) uploadedByEl.value = currentUser?.fullName || currentUser?.username || '';
+  const appRecorderSameEl = document.getElementById('sf-app-recorder-same');
+  if (appRecorderSameEl) appRecorderSameEl.checked = false;
+  syncAppRecorder();
   const towerFields = document.getElementById('tower-fields');
   if (towerFields) { towerFields.style.opacity = '1'; towerFields.style.pointerEvents = 'auto'; }
   const simWarn = document.getElementById('sim-not-ready-warn');
