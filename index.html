@@ -2443,6 +2443,10 @@ function renderDataTable() {
     const lngStr  = (p.lng != null && p.lng !== '') ? parseFloat(p.lng).toFixed(5) : '\u2014';
     const gpsState = gpsStatus(p.lat, p.lng);
     const mono    = "font-family:'JetBrains Mono',monospace";
+    const canEdit = currentUser && (
+      currentUser.role === 'admin' ||
+      String(p.submittedBy || '').toLowerCase() === String(currentUser.username || '').toLowerCase()
+    );
     return `<tr>
       <td style="${mono};font-weight:500">${p.id || '\u2014'}</td>
       <td><span class="badge ${typeBdg}">${p.type === 'cell' ? 'Cell site' : 'Survey'}</span></td>
@@ -2468,7 +2472,7 @@ function renderDataTable() {
       <td style="font-size:11px">${p.uploadedBy || p.submittedBy || '\u2014'}</td>
       <td style="white-space:nowrap">
         <button onclick='dtView(this)' data-mid='${p._id}' style="border:none;background:var(--green);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">View</button>
-        <button onclick='dtEdit(this)' data-mid='${p._id}' style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>
+        ${canEdit ? `<button onclick='dtEdit(this)' data-mid='${p._id}' style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>` : ''}
         ${currentUser && currentUser.role === 'admin' ? `<button onclick='dtDelete(this)' data-mid='${p._id}' data-did='${p.id}' style='border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer'>Delete</button>` : ''}
       </td>
     </tr>`;
@@ -2640,6 +2644,13 @@ async function dtEdit(btn) {
   const mongoId = btn.getAttribute('data-mid');
   console.log('dtEdit called with:', mongoId);
   if (!mongoId || mongoId === 'undefined') { alert('Cannot edit — record has no database ID.'); return; }
+  const cachedSurvey = points.find(p => p._id === mongoId);
+  const ownsRecord = cachedSurvey &&
+    String(cachedSurvey.submittedBy || '').toLowerCase() === String(currentUser?.username || '').toLowerCase();
+  if (!readOnly && currentUser?.role !== 'admin' && !ownsRecord) {
+    alert('You can only edit records uploaded by your own account.');
+    return;
+  }
 
   // Always fetch full record from server to get all fields
   let survey;
