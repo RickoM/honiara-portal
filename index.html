@@ -2225,10 +2225,12 @@ function renderDataTable() {
   tbody.innerHTML = rows.map(p => {
     const rsrpNum = (p.rsrp !== '' && p.rsrp != null) ? parseFloat(p.rsrp) : null;
     const dlNum   = (p.dl   !== '' && p.dl   != null) ? parseFloat(p.dl)   : null;
+    const browseVal = (p.browse !== '' && p.browse != null) ? p.browse : null;
+    const streamVal = (p.stream !== '' && p.stream != null) ? p.stream : null;
     const sigCol  = rsrpColor(rsrpNum);
     const dlCol   = dlNum != null ? (dlNum >= 1 ? 'var(--green)' : 'var(--red)') : 'var(--gray-400)';
-    const brCol   = +p.browse >= 70 ? 'var(--green)' : +p.browse >= 50 ? 'var(--amber)' : 'var(--red)';
-    const stCol   = +p.stream >= 70 ? 'var(--green)' : +p.stream >= 50 ? 'var(--amber)' : 'var(--red)';
+    const brCol   = browseVal == null ? 'var(--gray-400)' : +browseVal >= 70 ? 'var(--green)' : +browseVal >= 50 ? 'var(--amber)' : 'var(--red)';
+    const stCol   = streamVal == null ? 'var(--gray-400)' : +streamVal >= 70 ? 'var(--green)' : +streamVal >= 50 ? 'var(--amber)' : 'var(--red)';
     const typeBdg = p.type === 'cell' ? 'badge-warn' : 'badge-blue';
     const latStr  = (p.lat != null && p.lat !== '') ? parseFloat(p.lat).toFixed(5) : '\u2014';
     const lngStr  = (p.lng != null && p.lng !== '') ? parseFloat(p.lng).toFixed(5) : '\u2014';
@@ -2247,8 +2249,8 @@ function renderDataTable() {
       <td style="color:${dlCol};font-weight:500">${dlNum != null ? dlNum : '\u2014'}</td>
       <td>${p.ul || '\u2014'}</td>
       <td>${p.ping || '\u2014'}</td>
-      <td style="color:${brCol}">${p.browse || '\u2014'}</td>
-      <td style="color:${stCol}">${p.stream || '\u2014'}</td>
+      <td style="color:${brCol}">${browseVal ?? '\u2014'}</td>
+      <td style="color:${stCol}">${streamVal ?? '\u2014'}</td>
       <td>${p.jitter || '\u2014'}</td>
       <td style="${mono};font-size:11px">${p.enb || '\u2014'}</td>
       <td style="${mono};font-size:11px">${p.taceci || '\u2014'}</td>
@@ -2764,6 +2766,8 @@ function sfGetData() {
     type: 'survey', op: a3val || 'Our Telekom', operator: a3val || 'Our Telekom',
     rsrp: g('fd-s2a-rsrp'), dl: g('fd-s1-ookla-dl'), ul: g('fd-s1-ookla-ul'),
     ping: g('fd-s1-ookla-ping'), jitter: g('fd-s1-ookla-jitter'),
+    browse: g('fd-s1-nperf-browse') || g('fd-s2-nperf-browse'),
+    stream: g('fd-s1-nperf-stream') || g('fd-s2-nperf-stream'),
     enb: g('fd-s2a-enb') + (g('fd-s2a-lcid') ? '-' + g('fd-s2a-lcid') : ''),
     taceci: g('fd-s2a-tac') + (g('fd-s2a-eci') ? '-' + g('fd-s2a-eci') : ''),
     band: g('fd-s2a-band'),
@@ -3665,7 +3669,9 @@ async function loadSurveysFromAPI() {
       rsrp: s.rsrp != null ? parseFloat(s.rsrp) : null,
       dl: s.dl != null ? parseFloat(s.dl) : null,
       ul: s.ul != null ? parseFloat(s.ul) : null,
-      ping: s.ping || null, browse: s.browse || null, stream: s.stream || null,
+      ping: s.ping || null,
+      browse: s.browse || s.fd_s1_nperf_browse || s.fd_s2_nperf_browse || null,
+      stream: s.stream || s.fd_s1_nperf_stream || s.fd_s2_nperf_stream || null,
       jitter: s.jitter || null, b1: s.b1, c5: s.c5,
       enb: s.enb || '', taceci: s.taceci || '',
       // Full raw survey data for edit form
