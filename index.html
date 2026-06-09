@@ -658,10 +658,8 @@
         </label>
         <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
           <div class="layer-ctrl-title" style="margin-bottom:6px">Colour by</div>
-          <select id="colour-mode" onchange="refreshMap()" style="width:100%;font-size:11px;padding:4px 6px">
+          <select id="colour-mode" disabled style="width:100%;font-size:11px;padding:4px 6px">
             <option value="signal">Signal strength (RSRP)</option>
-            <option value="speed">Download speed vs 1 Mbps</option>
-            <option value="operator">Operator</option>
           </select>
         </div>
         <button class="btn btn-sm" onclick="fitSurveyWaypoints()" style="width:100%;margin-top:8px">Fit survey waypoints</button>
@@ -2190,18 +2188,26 @@ function refreshMap() {
   if (showSurveys && window.google) {
     plottedSurveys.forEach(p => {
       const status = gpsStatus(p.lat, p.lng);
-      const col = status === 'Outside study area' ? '#D92D20' :
-        colMode === 'signal' ? (p.rsrp == null || p.rsrp === '' ? '#378ADD' : rsrpColor(p.rsrp)) :
-        colMode === 'speed' ? speedColor(p.dl) : opColor(p.op);
+      const col = p.rsrp == null || p.rsrp === '' ? '#378ADD' : rsrpColor(p.rsrp);
       const info = new google.maps.InfoWindow({
-        content: infoWindowHTML(p),
-        maxWidth: 440,
+        content: enhancedInfoWindowHTML(p),
+        maxWidth: 680,
       });
 
       const position = { lat: parseCoordinate(p.lat), lng: parseCoordinate(p.lng) };
       const marker = new google.maps.Marker({
         map: gmap,
         position,
+        icon: {
+          path: 'M 0,0 C -2,-9 -10,-13 -10,-22 A 10,10 0 1,1 10,-22 C 10,-13 2,-9 0,0 Z',
+          fillColor: col,
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+          scale: 1.45,
+          anchor: new google.maps.Point(0, 0),
+          labelOrigin: new google.maps.Point(0, -22),
+        },
         label: {
           text: 'S',
           color: '#ffffff',
@@ -2214,7 +2220,7 @@ function refreshMap() {
       });
       const openWaypointInfo = () => {
         markers.forEach(m => m.infoWindow && m.infoWindow.close());
-        google.maps.event.addListenerOnce(info, 'domready', () => hydrateWaypointScreenshots(p));
+        google.maps.event.addListenerOnce(info, 'domready', () => hydrateWaypointEvidence(p));
         info.open(gmap, marker);
       };
       marker.infoWindow = info;
@@ -2341,6 +2347,41 @@ function cellInfoWindowHTML(p) {
       <div style="margin-bottom:4px"><span style="color:#666">eNB-LCID: </span><strong style="font-family:'JetBrains Mono',monospace">${p.enb||'—'}</strong></div>
       <div><span style="color:#666">TAC-ECI: </span><strong style="font-family:'JetBrains Mono',monospace">${p.taceci||'—'}</strong></div>
     </div>
+  </div>`;
+}
+
+function enhancedInfoWindowHTML(p) {
+  const has = value => value !== '' && value != null;
+  const show = (value, suffix = '') => has(value) ? `${value}${suffix}` : '&mdash;';
+  const badge = (value, background) =>
+    `<span style="display:inline-flex;align-items:center;background:${background};color:#fff;border-radius:999px;padding:4px 10px;font-size:10px;font-weight:700">${show(value)}</span>`;
+  const card = (label, value, suffix = '', colour = '#1A1A2E') =>
+    `<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:5px;padding:6px">
+      <div style="color:#667085;font-size:9px;text-transform:uppercase;letter-spacing:.04em">${label}</div>
+      <div style="font-weight:600;color:${colour};font-size:11px;margin-top:2px">${show(value, suffix)}</div>
+    </div>`;
+  const rsrp = p.rsrp ?? p.fd_s2a_rsrp;
+  const signalColour = has(rsrp) ? rsrpColor(rsrp) : '#378ADD';
+  const operator = p.fd_s1_op || p.operator || p.op;
+  const networkType = p.fd_s1_ncil_type || p.fd_s1_ookla_type || p.fd_s1_nperf_type || 'Network type not recorded';
+  return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:570px;max-width:640px">
+    <div style="font-weight:700;font-size:14px;margin-bottom:5px">Survey ${show(p.id)} &mdash; ${show(p.ward)}</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
+      ${badge(operator, '#1C3557')}
+      ${badge(networkType, '#0F6E56')}
+      ${badge(`${rsrpLabel(rsrp)} ${has(rsrp) ? `(${rsrp} dBm)` : ''}`, signalColour)}
+    </div>
+    <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.constituency)} &middot; ${show(p.date)} ${show(p.time)}</div>
+    <div style="font-size:10px;color:#667085;margin-bottom:7px">GPS waypoint: ${parseCoordinate(p.lat).toFixed(5)}, ${parseCoordinate(p.lng).toFixed(5)}</div>
+    <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
+      ${card('RSRQ', p.fd_s2a_rsrq, has(p.fd_s2a_rsrq) ? ' dB' : '')}
+      ${card('SNR', p.fd_s2a_rssnr, has(p.fd_s2a_rssnr) ? ' dB' : '')}
+      ${card('Band', p.fd_s2a_band)}
+      ${card('SIM state', p.fd_s1_simstate)}
+      ${card('Service', p.fd_s1_svcstate)}
+    </div>
+    ${waypointEvidenceHTML(p)}
   </div>`;
 }
 
@@ -2651,10 +2692,161 @@ function waypointCarouselStep(carouselId, direction) {
 }
 
 function openWaypointScreenshot(carouselId) {
+  openMapScreenshot(carouselId);
+}
+
+const WAYPOINT_EVIDENCE = [
+  { field: 'fd_s2a_scr', label: 'SIM 1 RAW readings', kind: 'raw', sim: 'SIM 1', prefix: 'fd_s2a' },
+  { field: 'fd_s2b_scr', label: 'SIM 2 RAW readings', kind: 'raw', sim: 'SIM 2', prefix: 'fd_s2b' },
+  { field: 'fd_s1_ncil_scr', label: 'NCIL performance', kind: 'app', sim: 'SIM 1', app: 'NCIL', prefix: 'fd_s1_ncil' },
+  { field: 'fd_s1_ookla_scr', label: 'Ookla performance', kind: 'app', sim: 'SIM 1', app: 'Ookla', prefix: 'fd_s1_ookla' },
+  { field: 'fd_s1_nperf_scr', label: 'nPerf performance', kind: 'app', sim: 'SIM 1', app: 'nPerf', prefix: 'fd_s1_nperf' },
+  { field: 'fd_s2_ncil_scr', label: 'NCIL performance', kind: 'app', sim: 'SIM 2', app: 'NCIL', prefix: 'fd_s2_ncil' },
+  { field: 'fd_s2_ookla_scr', label: 'Ookla performance', kind: 'app', sim: 'SIM 2', app: 'Ookla', prefix: 'fd_s2_ookla' },
+  { field: 'fd_s2_nperf_scr', label: 'nPerf performance', kind: 'app', sim: 'SIM 2', app: 'nPerf', prefix: 'fd_s2_nperf' },
+  { field: 'fd_s6_scr', label: 'Survey GPS waypoint', kind: 'gps', sim: 'Survey location' },
+  { field: 'fd_s7_scr', label: 'Tower GPS waypoint', kind: 'tower', sim: 'Tower location' },
+  { field: 'fd_s7_photo_file', label: 'Tower photo', kind: 'tower', sim: 'Tower evidence' },
+];
+
+function waypointEvidenceId(p) {
+  return 'waypoint-evidence-' + String(p._id || p.id || 'survey').replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+
+function waypointEvidenceRefs(p) {
+  return WAYPOINT_EVIDENCE.filter(item => p[item.field]).map(item => ({ ...item, id: String(p[item.field]), survey: p }));
+}
+
+function waypointEvidenceHTML(p) {
+  const refs = waypointEvidenceRefs(p);
+  if (!refs.length) return '<div style="margin-top:9px;padding:8px;border:1px dashed #d0d5dd;border-radius:7px;color:#667085;font-size:10px">No saved screenshots for this survey.</div>';
+  return `<div style="margin-top:9px;border-top:1px solid #e5e7eb;padding-top:8px">
+    <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:5px">App readings and matching evidence (${refs.length})</div>
+    <div id="${waypointEvidenceId(p)}" style="height:250px;border:1px solid #e5e7eb;border-radius:7px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#667085;font-size:11px">
+      Loading saved screenshots...
+    </div>
+  </div>`;
+}
+
+function evidenceMetricRows(slide) {
+  const p = slide.survey;
+  const value = suffix => p[slide.prefix + suffix];
+  if (slide.kind === 'app') return [
+    ['Network type', value('_type')],
+    ['Download', value('_dl')],
+    ['Upload', value('_ul')],
+    ['Ping', value('_ping'), ' ms'],
+    ['Jitter', value('_jitter'), ' ms'],
+    ...(slide.app === 'nPerf' ? [['Browsing', value('_browse'), '%'], ['Streaming', value('_stream'), '%']] : []),
+  ];
+  if (slide.kind === 'raw') return [
+    ['RSRP', value('_rsrp'), ' dBm'],
+    ['RSRQ', value('_rsrq'), ' dB'],
+    ['SNR', value('_rssnr'), ' dB'],
+    ['Band', value('_band')],
+    ['eNB', value('_enb')],
+    ['LCID', value('_lcid')],
+  ];
+  if (slide.kind === 'gps') return [['Latitude', p.lat], ['Longitude', p.lng], ['GPS status', gpsStatus(p.lat, p.lng)]];
+  return [['Tower latitude', p.fd_s7_tlat], ['Tower longitude', p.fd_s7_tlon], ['Operator', p.fd_s7_top], ['Tower type', p.fd_s7_ttype]];
+}
+
+function evidenceMetricsHTML(slide) {
+  const rows = evidenceMetricRows(slide).filter(([, value]) => value !== '' && value != null);
+  const operator = slide.survey.fd_s1_op || slide.survey.operator || slide.survey.op || 'Operator not recorded';
+  return `<div style="height:100%;display:flex;flex-direction:column;padding:9px;overflow:auto">
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px">
+      <span style="background:#1C3557;color:#fff;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:700">${operator}</span>
+      <span style="background:#0F6E56;color:#fff;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:700">${slide.sim}</span>
+      ${slide.app ? `<span style="background:#BA7517;color:#fff;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:700">${slide.app}</span>` : ''}
+    </div>
+    <div style="font-size:11px;font-weight:700;color:#1A1A2E;margin-bottom:6px">${slide.label}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+      ${rows.map(([label, value, suffix = '']) => `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:5px;padding:5px">
+        <div style="font-size:8px;color:#667085;text-transform:uppercase">${label}</div>
+        <div style="font-size:10px;font-weight:700;color:#1A1A2E;margin-top:2px">${value}${suffix}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+async function hydrateWaypointEvidence(p) {
+  const container = document.getElementById(waypointEvidenceId(p));
+  const refs = waypointEvidenceRefs(p);
+  if (!container || !refs.length) return;
+  const slides = (await Promise.all(refs.map(async ref => {
+    try {
+      let url = waypointScreenshotUrls.get(ref.id);
+      if (!url) {
+        const res = await fetch(API_URL + '/api/screenshots/' + encodeURIComponent(ref.id), {
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        if (!res.ok) throw new Error('Screenshot unavailable');
+        url = URL.createObjectURL(await res.blob());
+        waypointScreenshotUrls.set(ref.id, url);
+      }
+      return { ...ref, url };
+    } catch (err) {
+      return null;
+    }
+  }))).filter(Boolean);
+  if (!slides.length) {
+    container.innerHTML = '<span style="color:#A32D2D">Saved screenshots could not be loaded.</span>';
+    return;
+  }
+  container._slides = slides;
+  container.dataset.slide = '0';
+  container.innerHTML = `<div style="width:100%;height:100%;display:grid;grid-template-columns:1.15fr .85fr;grid-template-rows:1fr 35px;min-width:0">
+    <button type="button" onclick="openMapScreenshot('${waypointEvidenceId(p)}')" title="Enlarge inside map" style="border:0;background:#111827;cursor:zoom-in;padding:0;overflow:hidden">
+      <img data-role="evidence-image" style="width:100%;height:100%;object-fit:contain;display:block">
+    </button>
+    <div data-role="evidence-metrics" style="min-width:0;background:#f8fafc"></div>
+    <div style="grid-column:1 / -1;display:flex;align-items:center;gap:5px;padding:4px 6px;background:#fff;border-top:1px solid #e5e7eb">
+      <button type="button" onclick="waypointEvidenceStep('${waypointEvidenceId(p)}',-1)" style="border:1px solid #d0d5dd;background:#fff;border-radius:4px;cursor:pointer;padding:2px 9px">&#8249;</button>
+      <span data-role="evidence-label" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:#344054"></span>
+      <span data-role="evidence-count" style="font-size:9px;color:#667085"></span>
+      <button type="button" onclick="waypointEvidenceStep('${waypointEvidenceId(p)}',1)" style="border:1px solid #d0d5dd;background:#fff;border-radius:4px;cursor:pointer;padding:2px 9px">&#8250;</button>
+    </div>
+  </div>`;
+  updateWaypointEvidence(container, 0);
+}
+
+function updateWaypointEvidence(container, index) {
+  const slide = container._slides[index];
+  container.dataset.slide = String(index);
+  container.querySelector('[data-role="evidence-image"]').src = slide.url;
+  container.querySelector('[data-role="evidence-image"]').alt = slide.label;
+  container.querySelector('[data-role="evidence-metrics"]').innerHTML = evidenceMetricsHTML(slide);
+  container.querySelector('[data-role="evidence-label"]').textContent = `${slide.sim} - ${slide.label}`;
+  container.querySelector('[data-role="evidence-count"]').textContent = `${index + 1}/${container._slides.length}`;
+}
+
+function waypointEvidenceStep(carouselId, direction) {
+  const container = document.getElementById(carouselId);
+  if (!container?._slides?.length) return;
+  const index = (Number(container.dataset.slide || 0) + direction + container._slides.length) % container._slides.length;
+  updateWaypointEvidence(container, index);
+}
+
+function openMapScreenshot(carouselId) {
   const container = document.getElementById(carouselId);
   if (!container?._slides?.length) return;
   const slide = container._slides[Number(container.dataset.slide || 0)];
-  window.open(slide.url, '_blank', 'noopener');
+  closeMapScreenshot();
+  const overlay = document.createElement('div');
+  overlay.id = 'map-screenshot-lightbox';
+  overlay.style.cssText = 'position:absolute;inset:0;z-index:80;background:rgba(8,18,32,.92);display:flex;align-items:center;justify-content:center;padding:28px';
+  overlay.innerHTML = `<div style="position:relative;width:min(920px,92%);height:min(720px,88%);display:flex;flex-direction:column;gap:8px">
+    <button type="button" onclick="closeMapScreenshot()" style="position:absolute;right:-12px;top:-12px;z-index:2;width:34px;height:34px;border:0;border-radius:50%;background:#fff;color:#1A1A2E;font-size:20px;cursor:pointer">&times;</button>
+    <img src="${slide.url}" alt="${slide.label}" style="flex:1;min-height:0;width:100%;object-fit:contain;background:#111827;border-radius:8px">
+    <div style="color:#fff;text-align:center;font-size:12px;font-weight:600">${slide.sim ? slide.sim + ' - ' : ''}${slide.label}</div>
+  </div>`;
+  overlay.addEventListener('click', event => { if (event.target === overlay) closeMapScreenshot(); });
+  document.querySelector('#view-map .map-area').appendChild(overlay);
+}
+
+function closeMapScreenshot() {
+  document.getElementById('map-screenshot-lightbox')?.remove();
 }
 
 function screenshotValue(id) {
