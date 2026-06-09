@@ -608,8 +608,8 @@
         <div class="layer-ctrl-title">Map layers</div>
         <label class="layer-toggle">
           <input type="checkbox" id="layer-surveys" checked onchange="refreshMap()">
-          <div class="layer-icon" style="background:#378ADD"></div>
-          <span class="layer-toggle-label">Survey points</span>
+          <svg width="14" height="16" viewBox="0 0 14 20" aria-hidden="true"><circle cx="7" cy="3" r="3" fill="#378ADD"/><path d="M3 7h8l3 6-3 1-1-3v9H8l-1-6-1 6H4v-9l-1 3-3-1z" fill="#378ADD"/></svg>
+          <span class="layer-toggle-label">Survey participant waypoints</span>
         </label>
         <label class="layer-toggle">
           <input type="checkbox" id="layer-cells" checked onchange="refreshMap()">
@@ -629,6 +629,7 @@
             <option value="operator">Operator</option>
           </select>
         </div>
+        <button class="btn btn-sm" onclick="fitSurveyWaypoints()" style="width:100%;margin-top:8px">Fit survey waypoints</button>
       </div>
 
       <!-- MAP STATS OVERLAY -->
@@ -662,7 +663,7 @@
           <div style="background:rgba(255,255,255,0.07);border-radius:10px;padding:16px 20px;margin-top:8px;text-align:left;max-width:400px">
             <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">What will appear on the map</div>
             <div style="font-size:12px;color:rgba(255,255,255,0.7);display:flex;flex-direction:column;gap:6px">
-              <div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:50%;background:#378ADD;flex-shrink:0"></div>Interview participant locations (coloured by signal)</div>
+              <div style="display:flex;align-items:center;gap:8px"><svg width="12" height="16" viewBox="0 0 14 20" aria-hidden="true"><circle cx="7" cy="3" r="3" fill="#378ADD"/><path d="M3 7h8l3 6-3 1-1-3v9H8l-1-6-1 6H4v-9l-1 3-3-1z" fill="#378ADD"/></svg>Interview participant locations (coloured by signal)</div>
               <div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:3px;background:#BA7517;flex-shrink:0"></div>Cell site GPS waypoints (tower markers)</div>
               <div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;background:linear-gradient(90deg,#A32D2D55,#27500A55);border-radius:2px;flex-shrink:0"></div>Signal quality heatmap overlay</div>
             </div>
@@ -2013,11 +2014,16 @@ function refreshMap() {
   if (heatmap) { heatmap.setMap(null); heatmap = null; }
 
   const src = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
+  const hasMapCoordinates = p =>
+    p.lat !== '' && p.lat != null && p.lng !== '' && p.lng != null &&
+    Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)) &&
+    Number(p.lat) >= -90 && Number(p.lat) <= 90 &&
+    Number(p.lng) >= -180 && Number(p.lng) <= 180;
 
   // Signal heatmap
   if (showSignal && window.google) {
-    const hData = src.filter(p => p.type === 'survey' && p.rsrp).map(p => ({
-      location: new google.maps.LatLng(p.lat, p.lng),
+    const hData = src.filter(p => p.type === 'survey' && p.rsrp && hasMapCoordinates(p)).map(p => ({
+      location: new google.maps.LatLng(Number(p.lat), Number(p.lng)),
       weight: Math.max(0, (parseFloat(p.rsrp) + 140) / 60)
     }));
     if (hData.length) {
@@ -2033,27 +2039,34 @@ function refreshMap() {
 
   // Survey markers
   if (showSurveys && window.google) {
-    src.filter(p => p.type === 'survey').forEach(p => {
+    src.filter(p => p.type === 'survey' && hasMapCoordinates(p)).forEach(p => {
       const col = colMode === 'signal' ? rsrpColor(p.rsrp) : colMode === 'speed' ? speedColor(p.dl) : opColor(p.op);
       const marker = new google.maps.Marker({
-        position: { lat: p.lat, lng: p.lng },
+        position: { lat: Number(p.lat), lng: Number(p.lng) },
         map: gmap,
         icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 8,
+          // Person waypoint: head, body, arms, and legs.
+          path: 'M 0,-14 A 3,3 0 1 1 -0.01,-14 Z M -4,-9 L 4,-9 L 7,0 L 4,1 L 3,-4 L 3,10 L 1,10 L 0,3 L -1,10 L -3,10 L -3,-4 L -4,1 L -7,0 Z',
+          scale: 1.15,
           fillColor: col,
-          fillOpacity: 0.9,
+          fillOpacity: 1,
           strokeColor: '#ffffff',
-          strokeWeight: 1.5,
+          strokeWeight: 1.8,
+          anchor: new google.maps.Point(0, 10),
         },
         title: `${p.id} — ${p.ward} (${rsrpLabel(p.rsrp)})`,
         zIndex: 10,
       });
       const info = new google.maps.InfoWindow({
         content: infoWindowHTML(p),
-        maxWidth: 260,
+        maxWidth: 390,
       });
-      marker.addListener('click', () => { markers.forEach(m => m.infoWindow && m.infoWindow.close()); info.open(gmap, marker); });
+      marker.addListener('click', () => {
+        markers.forEach(m => m.infoWindow && m.infoWindow.close());
+        marker.setAnimation(google.maps.Animation.BOUNCE);
+        setTimeout(() => marker.setAnimation(null), 700);
+        info.open(gmap, marker);
+      });
       marker.infoWindow = info;
       markers.push(marker);
     });
@@ -2061,9 +2074,9 @@ function refreshMap() {
 
   // Cell site markers
   if (showCells && window.google) {
-    src.filter(p => p.type === 'cell').forEach(p => {
+    src.filter(p => p.type === 'cell' && hasMapCoordinates(p)).forEach(p => {
       const marker = new google.maps.Marker({
-        position: { lat: p.lat, lng: p.lng },
+        position: { lat: Number(p.lat), lng: Number(p.lng) },
         map: gmap,
         icon: {
           path: 'M -1,-8 L 1,-8 L 1,0 L 6,8 L -6,8 L -1,0 Z',
@@ -2089,18 +2102,65 @@ function refreshMap() {
   updateLegend(colMode);
 }
 
+function fitSurveyWaypoints() {
+  if (!gmap || !window.google) return;
+  const bounds = new google.maps.LatLngBounds();
+  let count = 0;
+  points.filter(p => p.type === 'survey').forEach(p => {
+    const lat = Number(p.lat);
+    const lng = Number(p.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+    bounds.extend({ lat, lng });
+    count++;
+  });
+  if (!count) {
+    alert('No surveys currently have valid latitude and longitude values.');
+    return;
+  }
+  gmap.fitBounds(bounds);
+  if (count === 1) google.maps.event.addListenerOnce(gmap, 'idle', () => gmap.setZoom(17));
+}
+
 function infoWindowHTML(p) {
-  const col = rsrpColor(p.rsrp);
-  return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:220px">
-    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Survey ${p.id} — ${p.ward}</div>
-    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.constituency} · ${p.date}</div>
-    <div style="background:#f8f9fa;border-radius:6px;padding:8px;display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px">
-      <div><div style="color:#666">RSRP</div><div style="font-weight:600;color:${col}">${p.rsrp} dBm (${rsrpLabel(p.rsrp)})</div></div>
-      <div><div style="color:#666">Download</div><div style="font-weight:600;color:${+p.dl>=1?'#27500A':'#A32D2D'}">${p.dl} Mbps</div></div>
-      <div><div style="color:#666">Ping</div><div style="font-weight:600">${p.ping} ms</div></div>
-      <div><div style="color:#666">Jitter</div><div style="font-weight:600">${p.jitter} ms</div></div>
-      <div><div style="color:#666">Browsing</div><div style="font-weight:600;color:${p.browse>=70?'#27500A':p.browse>=50?'#BA7517':'#A32D2D'}">${p.browse}%</div></div>
-      <div><div style="color:#666">Streaming</div><div style="font-weight:600;color:${p.stream>=70?'#27500A':p.stream>=50?'#BA7517':'#A32D2D'}">${p.stream}%</div></div>
+  const has = value => value !== '' && value != null;
+  const show = (value, suffix = '') => has(value) ? `${value}${suffix}` : '—';
+  const card = (label, value, suffix = '', colour = 'var(--text)') =>
+    `<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:5px;padding:6px">
+      <div style="color:#667085;font-size:9px;text-transform:uppercase;letter-spacing:.04em">${label}</div>
+      <div style="font-weight:600;color:${colour};font-size:11px;margin-top:2px">${show(value, suffix)}</div>
+    </div>`;
+  const rsrp = p.rsrp ?? p.fd_s2a_rsrp;
+  const dl = p.dl ?? p.fd_s1_ookla_dl ?? p.fd_s1_nperf_dl;
+  const ul = p.ul ?? p.fd_s1_ookla_ul ?? p.fd_s1_nperf_ul;
+  const ping = p.ping ?? p.fd_s1_ookla_ping ?? p.fd_s1_nperf_ping;
+  const jitter = p.jitter ?? p.fd_s1_ookla_jitter ?? p.fd_s1_nperf_jitter;
+  const browse = p.browse ?? p.fd_s1_nperf_browse ?? p.fd_s2_nperf_browse;
+  const stream = p.stream ?? p.fd_s1_nperf_stream ?? p.fd_s2_nperf_stream;
+  const col = has(rsrp) ? rsrpColor(rsrp) : 'var(--gray-600)';
+  return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:340px;max-width:380px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} — ${show(p.ward)}</div>
+    <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} · ${show(p.constituency)} · ${show(p.date)} ${show(p.time)}</div>
+    <div style="font-size:10px;color:#667085;margin-bottom:8px">GPS waypoint: ${Number(p.lat).toFixed(5)}, ${Number(p.lng).toFixed(5)}</div>
+    <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
+      ${card('RSRP', rsrp, has(rsrp) ? ' dBm' : '', col)}
+      ${card('RSRQ', p.fd_s2a_rsrq, has(p.fd_s2a_rsrq) ? ' dB' : '')}
+      ${card('SNR', p.fd_s2a_rssnr, has(p.fd_s2a_rssnr) ? ' dB' : '')}
+      ${card('Band', p.fd_s2a_band)}
+      ${card('SIM state', p.fd_s1_simstate)}
+      ${card('Service', p.fd_s1_svcstate)}
+      ${card('Roaming', p.fd_s1_roaming)}
+      ${card('eNB-LCID', p.enb)}
+      ${card('TAC-ECI', p.taceci)}
+    </div>
+    <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Performance</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+      ${card('Download', dl, has(dl) && !String(dl).match(/[a-z]/i) ? ' Mbps' : '', +parseFloat(dl) >= 1 ? '#27500A' : '#A32D2D')}
+      ${card('Upload', ul, has(ul) && !String(ul).match(/[a-z]/i) ? ' Mbps' : '')}
+      ${card('Ping', ping, has(ping) ? ' ms' : '')}
+      ${card('Jitter', jitter, has(jitter) ? ' ms' : '')}
+      ${card('Browsing', browse, has(browse) ? '%' : '', +browse >= 70 ? '#27500A' : +browse >= 50 ? '#BA7517' : '#A32D2D')}
+      ${card('Streaming', stream, has(stream) ? '%' : '', +stream >= 70 ? '#27500A' : +stream >= 50 ? '#BA7517' : '#A32D2D')}
     </div>
   </div>`;
 }
@@ -3663,8 +3723,8 @@ async function loadSurveysFromAPI() {
       ward: s.ward, constituency: s.constituency || WARDS[s.ward]?.constituency || '',
       op: s.operator || s.op || s.a3 || '',
       date: s.date, type: s.type || 'survey',
-      lat: (s.lat != null && s.lat !== '') ? parseFloat(s.lat) : (WARDS[s.ward]?.lat ? WARDS[s.ward].lat + (Math.random()-.5)*.006 : null),
-      lng: (s.lng != null && s.lng !== '') ? parseFloat(s.lng) : (WARDS[s.ward]?.lng ? WARDS[s.ward].lng + (Math.random()-.5)*.008 : null),
+      lat: (s.lat != null && s.lat !== '') ? parseFloat(s.lat) : null,
+      lng: (s.lng != null && s.lng !== '') ? parseFloat(s.lng) : null,
       r: s.rsrp != null ? parseFloat(s.rsrp) : null,
       rsrp: s.rsrp != null ? parseFloat(s.rsrp) : null,
       dl: s.dl != null ? parseFloat(s.dl) : null,
