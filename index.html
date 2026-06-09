@@ -123,6 +123,7 @@
   .view-panel.on { display: flex; flex-direction: column; }
   .data-card { background: #fff; border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
   .data-toolbar { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  [hidden] { display: none !important; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
   th { text-align: left; padding: 8px 12px; background: var(--gray-50); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); border-bottom: 1px solid var(--border); white-space: nowrap; }
   td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
@@ -793,7 +794,7 @@
           <option value="survey">Survey points</option>
           <option value="cell">Cell sites</option>
         </select>
-        <button class="btn btn-sm" id="admin-export-csv-btn" onclick="exportAdminCSV()" style="display:none">
+        <button class="btn btn-sm" id="admin-export-csv-btn" onclick="exportAdminCSV()" hidden disabled>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV (Admin)
         </button>
@@ -1917,7 +1918,23 @@ function handleCSV(input) {
 //  VIEW SWITCHING
 // ══════════════════════════════════════════════════════
 
+function isExactAdmin() {
+  return String(currentUser?.role || '').trim().toLowerCase() === 'admin' &&
+    String(currentUser?.username || '').trim().toLowerCase() === 'admin';
+}
+
+function applyRolePermissions() {
+  const isAdmin = isExactAdmin();
+  const exportBtn = document.getElementById('admin-export-csv-btn');
+  if (exportBtn) {
+    exportBtn.hidden = !isAdmin;
+    exportBtn.disabled = !isAdmin;
+    exportBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  }
+}
+
 function switchView(id, btn) {
+  applyRolePermissions();
   if (activeView === 'survey' && id !== 'survey' && surveyReadOnlyMode) sfReset();
   document.querySelectorAll('.tnav').forEach(t => t.classList.remove('on'));
   if (btn) btn.classList.add('on');
@@ -2414,6 +2431,7 @@ function renderDashboard() {
 // ══════════════════════════════════════════════════════
 
 function renderDataTable() {
+  applyRolePermissions();
   const fw   = document.getElementById('dt-ward').value;
   const fo   = document.getElementById('dt-op').value;
   const ft   = document.getElementById('dt-type').value;
@@ -2915,7 +2933,7 @@ function sfProgress() {
 }
 
 async function exportAdminCSV() {
-  if (currentUser?.role !== 'admin') {
+  if (!isExactAdmin()) {
     alert('CSV export is restricted to the administrator.');
     return;
   }
@@ -3845,8 +3863,7 @@ function doLogout() {
   if (sidebarTools2) sidebarTools2.style.display = 'none';
   const dtAddBtn2 = document.getElementById('dt-add-random-btn');
   if (dtAddBtn2) dtAddBtn2.style.display = 'none';
-  const exportBtn2 = document.getElementById('admin-export-csv-btn');
-  if (exportBtn2) exportBtn2.style.display = 'none';
+  applyRolePermissions();
 
   const adminPanel = document.getElementById('view-admin');
   if (adminPanel) adminPanel.classList.remove('on');
@@ -3882,7 +3899,7 @@ function showApp() {
   } else {
     document.getElementById('topbar-username').textContent = currentUser?.fullName || currentUser?.username || '';
     // Show admin-only tabs and tools based on role
-    const isAdmin = currentUser?.role === 'admin';
+    const isAdmin = isExactAdmin();
     const adminTab = document.getElementById('tnav-admin');
     if (adminTab) adminTab.style.display = isAdmin ? '' : 'none';
 
@@ -3891,8 +3908,6 @@ function showApp() {
     if (sidebarTools) sidebarTools.style.display = isAdmin ? '' : 'none';
     const dtAddBtn = document.getElementById('dt-add-random-btn');
     if (dtAddBtn) dtAddBtn.style.display = isAdmin ? '' : 'none';
-    const exportBtn = document.getElementById('admin-export-csv-btn');
-    if (exportBtn) exportBtn.style.display = isAdmin ? '' : 'none';
 
     document.getElementById('topbar-role').textContent =
       currentUser?.role === 'admin' ? 'Admin' :
@@ -3900,6 +3915,7 @@ function showApp() {
     loadSurveysFromAPI();
     // Google Maps loads when Live Map tab is clicked
   }
+  applyRolePermissions();
   const uploadedByEl = document.getElementById('sf-uploaded-by');
   if (uploadedByEl) uploadedByEl.value = currentUser?.fullName || currentUser?.username || '';
   refresh();
