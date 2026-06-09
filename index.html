@@ -2171,14 +2171,18 @@ function refreshMap() {
       location: new google.maps.LatLng(parseCoordinate(p.lat), parseCoordinate(p.lng)),
       weight: Math.max(0, (parseFloat(p.rsrp) + 140) / 60)
     }));
-    if (hData.length) {
-      heatmap = new google.maps.visualization.HeatmapLayer({
-        data: hData,
-        map: gmap,
-        radius: 40,
-        opacity: 0.45,
-        gradient: ['rgba(163,45,45,0)', 'rgba(163,45,45,1)', 'rgba(186,117,23,1)', 'rgba(99,153,34,1)', 'rgba(39,80,10,1)']
-      });
+    if (hData.length && google.maps.visualization?.HeatmapLayer) {
+      try {
+        heatmap = new google.maps.visualization.HeatmapLayer({
+          data: hData,
+          map: gmap,
+          radius: 40,
+          opacity: 0.45,
+          gradient: ['rgba(163,45,45,0)', 'rgba(163,45,45,1)', 'rgba(186,117,23,1)', 'rgba(99,153,34,1)', 'rgba(39,80,10,1)']
+        });
+      } catch (err) {
+        console.warn('Signal heatmap unavailable; continuing with waypoint markers.', err);
+      }
     }
   }
 
@@ -2198,7 +2202,12 @@ function refreshMap() {
       const marker = new google.maps.Marker({
         map: gmap,
         position,
-        icon: personMarkerIcon(col),
+        label: {
+          text: 'S',
+          color: '#ffffff',
+          fontSize: '12px',
+          fontWeight: '700',
+        },
         title: `Survey participant — ${p.id || p.ward || 'waypoint'}`,
         optimized: false,
         zIndex: 1000,
