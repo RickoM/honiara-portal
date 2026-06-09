@@ -1704,6 +1704,7 @@ let selDay   = 'all';
 let apiKey   = 'AIzaSyDTQZWZb7YxaIl2sBAk7P50SqTorOe6zl8';
 let gmap     = null;
 let markers  = [];
+let surveyOverlays = [];
 let heatmap  = null;
 let activeView = 'survey';
 
@@ -2056,6 +2057,8 @@ function refreshMap() {
   // Clear existing markers
   markers.forEach(m => m.setMap(null));
   markers = [];
+  surveyOverlays.forEach(m => m.setMap(null));
+  surveyOverlays = [];
   if (heatmap) { heatmap.setMap(null); heatmap = null; }
 
   const src = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
@@ -2095,10 +2098,10 @@ function refreshMap() {
       const marker = new google.maps.Marker({
         position: { lat: Number(p.lat), lng: Number(p.lng) },
         map: gmap,
-        icon: personMarkerIcon(col),
-        label: { text: '●', color: '#ffffff', fontSize: '10px', fontWeight: '700' },
+        animation: google.maps.Animation.DROP,
+        optimized: false,
         title: `${p.id} — ${p.ward} (${rsrpLabel(p.rsrp)})`,
-        zIndex: 10,
+        zIndex: 9999,
       });
       const info = new google.maps.InfoWindow({
         content: infoWindowHTML(p),
@@ -2112,6 +2115,39 @@ function refreshMap() {
       });
       marker.infoWindow = info;
       markers.push(marker);
+
+      // Independent HTML overlay fallback, visible even if Google's marker canvas fails.
+      class SurveyWaypointOverlay extends google.maps.OverlayView {
+        onAdd() {
+          this.el = document.createElement('button');
+          this.el.type = 'button';
+          this.el.title = `Survey ${p.id} — ${p.ward}`;
+          this.el.style.cssText = `position:absolute;width:28px;height:28px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${col};border:3px solid #fff;box-shadow:0 2px 7px rgba(0,0,0,.65);cursor:pointer;z-index:99999;padding:0`;
+          const dot = document.createElement('span');
+          dot.style.cssText = 'position:absolute;width:8px;height:8px;border-radius:50%;background:#fff;left:7px;top:7px';
+          this.el.appendChild(dot);
+          this.el.addEventListener('click', event => {
+            event.stopPropagation();
+            markers.forEach(m => m.infoWindow && m.infoWindow.close());
+            info.setPosition({ lat: Number(p.lat), lng: Number(p.lng) });
+            info.open(gmap);
+          });
+          this.getPanes().overlayMouseTarget.appendChild(this.el);
+        }
+        draw() {
+          const pixel = this.getProjection().fromLatLngToDivPixel(new google.maps.LatLng(Number(p.lat), Number(p.lng)));
+          if (!pixel || !this.el) return;
+          this.el.style.left = `${pixel.x - 14}px`;
+          this.el.style.top = `${pixel.y - 28}px`;
+        }
+        onRemove() {
+          if (this.el) this.el.remove();
+          this.el = null;
+        }
+      }
+      const overlay = new SurveyWaypointOverlay();
+      overlay.setMap(gmap);
+      surveyOverlays.push(overlay);
     });
   }
 
@@ -2148,6 +2184,7 @@ function refreshMap() {
 function fitSurveyWaypoints(showEmptyAlert = true, studyAreaOnly = false) {
   if (!gmap || !window.google) return;
   const bounds = new google.maps.LatLngBounds();
+  const positions = [];
   let count = 0;
   points.filter(p => p.type === 'survey').forEach(p => {
     const lat = Number(p.lat);
@@ -2155,6 +2192,7 @@ function fitSurveyWaypoints(showEmptyAlert = true, studyAreaOnly = false) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
     if (studyAreaOnly && gpsStatus(lat, lng) !== 'Valid') return;
     bounds.extend({ lat, lng });
+    positions.push({ lat, lng });
     count++;
   });
   if (!count) {
@@ -2162,8 +2200,12 @@ function fitSurveyWaypoints(showEmptyAlert = true, studyAreaOnly = false) {
     if (showEmptyAlert) alert('No surveys currently have valid latitude and longitude values.');
     return;
   }
-  gmap.fitBounds(bounds);
-  if (count === 1) google.maps.event.addListenerOnce(gmap, 'idle', () => gmap.setZoom(17));
+  if (count === 1) {
+    gmap.setCenter(positions[0]);
+    gmap.setZoom(17);
+  } else {
+    gmap.fitBounds(bounds);
+  }
 }
 
 function infoWindowHTML(p) {
