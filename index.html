@@ -127,6 +127,16 @@
   th { text-align: left; padding: 8px 12px; background: var(--gray-50); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); border-bottom: 1px solid var(--border); white-space: nowrap; }
   td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
+  .data-table-scroll { overflow-x: auto; position: relative; }
+  #data-table { min-width: 1680px; }
+  #data-table th:last-child, #data-table td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 3;
+    background: #fff;
+    box-shadow: -5px 0 8px rgba(15, 35, 60, 0.08);
+  }
+  #data-table th:last-child { background: var(--gray-50); z-index: 4; }
   tr:hover td { background: var(--gray-50); }
   
   /* ── BADGE ── */
@@ -764,7 +774,7 @@
         </button>
         <button class="btn btn-sm btn-primary" id="dt-add-random-btn" onclick="addBatch()">+ Add 10 random</button>
       </div>
-      <div style="overflow-x:auto">
+      <div class="data-table-scroll">
         <table id="data-table">
           <thead>
             <tr>
@@ -2309,7 +2319,7 @@ function renderDataTable() {
 
   const tbody = document.getElementById('dt-body');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="19" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="20" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(p => {
