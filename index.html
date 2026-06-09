@@ -1956,6 +1956,7 @@ function switchView(id, btn) {
   // Show selected view
   if (id === 'map') {
     document.getElementById('view-map').style.display = 'flex';
+    if (!DEMO_MODE) loadSurveysFromAPI();
     if (!gmap && apiKey) loadGoogleMaps(apiKey);
     else if (gmap) {
       refreshMap();
@@ -2565,16 +2566,21 @@ async function dtDelete(btn, displayId) {
   if (!mongoId || mongoId === 'undefined') { alert('Cannot delete — record has no database ID.'); return; }
   if (!confirm('Move survey ' + displayId + ' to Deleted Records?\nYou can restore it later from the Deleted tab.')) return;
   try {
-    await apiCall('DELETE', '/api/surveys/' + mongoId);
-    points = points.filter(p => p._id !== mongoId);
-    renderDataTable(); renderMap(); updateTopBadge();
+    const res = await apiCall('DELETE', '/api/surveys/' + mongoId);
+    if (!res) return;
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Delete request failed');
+    await syncSurveyViews();
     alert('Survey ' + displayId + ' moved to Deleted Records.');
   } catch (err) { alert('Delete failed: ' + err.message); }
 }
 
 async function loadDeletedSurveys() {
   try {
-    const data = await apiCall('GET', '/api/surveys/deleted/all');
+    const res = await apiCall('GET', '/api/surveys/deleted/all');
+    if (!res) return;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load deleted records');
     const tbody = document.getElementById('deleted-tbody');
     if (!data.deleted || !data.deleted.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:2rem">No deleted records</td></tr>';
@@ -2594,10 +2600,13 @@ async function loadDeletedSurveys() {
 async function dtRestore(deletedId) {
   if (!confirm('Restore this survey back to active records?')) return;
   try {
-    await apiCall('POST', '/api/surveys/restore/' + deletedId);
+    const res = await apiCall('POST', '/api/surveys/restore/' + deletedId);
+    if (!res) return;
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Restore request failed');
+    await loadDeletedSurveys();
+    await syncSurveyViews();
     alert('Survey restored successfully.');
-    loadDeletedSurveys();
-    await loadSurveysFromAPI();
   } catch (err) { alert('Restore failed: ' + err.message); }
 }
 
@@ -3669,7 +3678,7 @@ async function sfSubmit() {
       editingId = null;
       const banner = document.getElementById('sf-edit-banner');
       if (banner) banner.style.display = 'none';
-      await loadSurveysFromAPI();
+      await syncSurveyViews();
       document.getElementById('sf-form-body').classList.add('hide');
       document.getElementById('sf-success').classList.add('show');
       document.getElementById('sf-success-txt').textContent = 'Survey updated successfully in database.';
@@ -3741,7 +3750,7 @@ async function sfSubmit() {
       `Survey ${data.respondentId || ''} — ${data.ward} — saved to database. Point added to Live Map.`;
     updateTopBadge();
     // Reload all surveys from server so table and map stay in sync with MongoDB
-    await loadSurveysFromAPI();
+    await syncSurveyViews();
   } catch (err) {
     alert('Network error. Check your connection and try again.');
     console.error('Submit error:', err);
@@ -4320,6 +4329,19 @@ async function loadSurveysFromAPI() {
     refresh();
     if (activeView === 'map') setTimeout(() => fitSurveyWaypoints(false, true), 100);
   } catch (err) { console.error('Load surveys error:', err); }
+}
+
+async function syncSurveyViews() {
+  if (DEMO_MODE) {
+    refresh();
+    return;
+  }
+  await loadSurveysFromAPI();
+  if (activeView === 'data') renderDataTable();
+  if (activeView === 'map') {
+    refreshMap();
+    setTimeout(() => fitSurveyWaypoints(false, true), 100);
+  }
 }
 
 async function checkAuth() {
