@@ -793,9 +793,9 @@
           <option value="survey">Survey points</option>
           <option value="cell">Cell sites</option>
         </select>
-        <button class="btn btn-sm" onclick="exportCSV()">
+        <button class="btn btn-sm" id="admin-export-csv-btn" onclick="exportAdminCSV()" style="display:none">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Export CSV
+          Export CSV (Admin)
         </button>
         <button class="btn btn-sm btn-primary" id="dt-add-random-btn" onclick="addBatch()">+ Add 10 random</button>
       </div>
@@ -2878,41 +2878,6 @@ function sfCancelEdit() {
 }
 
 // ══════════════════════════════════════════════════════
-//  CSV EXPORT
-// ══════════════════════════════════════════════════════
-
-function exportCSV() {
-  if (!points.length) return;
-  const hdrs = ['ID','Type','Date','Ward','Constituency','Operator','Survey_Conducted_By','App_Readings_Recorded_By','Uploaded_By','Lat','Lng',
-    'RSRP_dBm','RSRQ_dB','RSSNR_dB','Signal','Band',
-    'TAC','ECI','eNB','LCID','PCI',
-    'DL_Mbps_Ookla','UL_Mbps_Ookla','Ping_ms_Ookla','Jitter_ms_Ookla',
-    'DL_Mbps_NCIL','DL_Mbps_nPerf',
-    'Tower_Lat','Tower_Lng','Tower_Operator','Tower_Type',
-    'B1_Signal','C5_DataSpeed','Browsing_pct','Streaming_pct',
-    'eNB_LCID','TAC_ECI'];
-  const keys = ['id','type','date','ward','constituency','op','interviewer','appRecorder','uploadedBy','lat','lng',
-    'rsrp','rsrq','rssnr','','band',
-    'tac','eci','enb_raw','lcid','pci',
-    'dl','ul','ping','jitter',
-    'ncil_dl','nperf_dl',
-    'tower_lat','tower_lng','tower_op','tower_type',
-    'b1','c5','browse','stream',
-    'enb','taceci'];
-  const csv = [
-    hdrs.join(','),
-    ...points.map(p => keys.map((k,i) => {
-      if (k === '') return `"${rsrpLabel(p.rsrp)}"`;
-      return `"${p[k]??''}"`;
-    }).join(','))
-  ].join('\n');
-  const a    = document.createElement('a');
-  a.href     = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = 'honiara_survey_data.csv';
-  a.click();
-}
-
-// ══════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════
 
@@ -2947,6 +2912,38 @@ function sfProgress() {
   document.getElementById('sf-prog-fill').style.width = pct + '%';
   document.getElementById('sf-prog-txt').textContent  = `${done} of ${SF_REQUIRED.length} required fields`;
   document.getElementById('sf-hint').textContent      = pct === 100 ? 'Ready to submit' : `${SF_REQUIRED.length - done} required field(s) remaining`;
+}
+
+async function exportAdminCSV() {
+  if (currentUser?.role !== 'admin') {
+    alert('CSV export is restricted to the administrator.');
+    return;
+  }
+  const btn = document.getElementById('admin-export-csv-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparing export...'; }
+  try {
+    const res = await fetch(API_URL + '/api/surveys/export.csv', {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    if (res.status === 401) { doLogout(); return; }
+    if (!res.ok) {
+      const result = await res.json().catch(() => ({}));
+      throw new Error(result.error || 'Export failed');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'honiara_survey_dissertation_export.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('CSV export failed: ' + err.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Export CSV (Admin)'; }
+  }
 }
 
 function sfToggle(id, show) {
@@ -3848,6 +3845,8 @@ function doLogout() {
   if (sidebarTools2) sidebarTools2.style.display = 'none';
   const dtAddBtn2 = document.getElementById('dt-add-random-btn');
   if (dtAddBtn2) dtAddBtn2.style.display = 'none';
+  const exportBtn2 = document.getElementById('admin-export-csv-btn');
+  if (exportBtn2) exportBtn2.style.display = 'none';
 
   const adminPanel = document.getElementById('view-admin');
   if (adminPanel) adminPanel.classList.remove('on');
@@ -3892,6 +3891,8 @@ function showApp() {
     if (sidebarTools) sidebarTools.style.display = isAdmin ? '' : 'none';
     const dtAddBtn = document.getElementById('dt-add-random-btn');
     if (dtAddBtn) dtAddBtn.style.display = isAdmin ? '' : 'none';
+    const exportBtn = document.getElementById('admin-export-csv-btn');
+    if (exportBtn) exportBtn.style.display = isAdmin ? '' : 'none';
 
     document.getElementById('topbar-role').textContent =
       currentUser?.role === 'admin' ? 'Admin' :
