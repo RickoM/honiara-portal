@@ -1512,14 +1512,14 @@
       <div class="sf-sec-hdr interviewer">Step 7 — Tower GPS Waypoint</div>
       <div class="sf-sec-body">
         <div style="background:var(--amber-light);border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--amber);margin-bottom:12px;line-height:1.6">
-          <strong>When to complete:</strong> Only if you can walk to within 10 metres of the tower base safely and without trespassing. If behind a fence, on private land, or on a slope — select Accessible: No below and Step 7 fields will be disabled.
+          <strong>When to complete:</strong> Record every tower value that can be safely observed. Never trespass or enter an unsafe area. Select Accessible: No and explain the reason when the tower base cannot be reached.
         </div>
-        <!-- Accessible gate — must select Yes to unlock tower fields -->
+        <!-- Accessibility assessment -->
         <div class="sf-fgrid" style="margin-bottom:10px">
           <div class="sf-fcell">
-            <label>Accessible? <span style="color:var(--red);font-size:10px">&#9733; Select first to unlock fields</span></label>
+            <label>Accessible? <span style="color:var(--red);font-size:10px">&#9733; Record access status</span></label>
             <select id="fd-s7-access" style="width:100%;margin-top:2px" onchange="checkTowerAccess()">
-              <option value="">— select first —</option>
+              <option value="">— select —</option>
               <option value="yes">Yes — tower accessible</option>
               <option value="no">No — fence / private land / unsafe slope</option>
             </select>
@@ -1527,8 +1527,8 @@
           <div class="sf-fcell"><label>Reason if not accessible</label><input type="text" id="fd-s7-noaccess-reason" placeholder="e.g. fenced compound, steep slope..." style="opacity:0.4"></div>
           <div></div>
         </div>
-        <!-- Tower fields — locked until Accessible = Yes -->
-        <div id="tower-fields" style="opacity:0.35;pointer-events:none;transition:all 0.3s">
+        <!-- Tower fields remain editable so assistants can record safely observed values -->
+        <div id="tower-fields" style="opacity:1;pointer-events:auto;transition:all 0.3s">
           <div class="sf-fgrid">
             <div class="sf-fcell"><label>Tower Latitude</label><input type="number" step="0.0001" id="fd-s7-tlat" placeholder="e.g. -9.4305"></div>
             <div class="sf-fcell"><label>Tower Longitude</label><input type="number" step="0.0001" id="fd-s7-tlon" placeholder="e.g. 160.0498"></div>
@@ -3131,10 +3131,11 @@ function checkTowerAccess() {
   const val = document.getElementById('fd-s7-access').value;
   const fields = document.getElementById('tower-fields');
   const noReason = document.getElementById('fd-s7-noaccess-reason');
-  const isYes = val === 'yes';
-  fields.style.opacity = isYes ? '1' : '0.35';
-  fields.style.pointerEvents = isYes ? 'all' : 'none';
+  // Always allow safely observed tower values to be recorded.
+  fields.style.opacity = '1';
+  fields.style.pointerEvents = 'auto';
   noReason.style.opacity = val === 'no' ? '1' : '0.4';
+  noReason.disabled = false;
 }
 
 // ── Step 7: tower operator "Other" ───────────────────────────────────
@@ -3456,7 +3457,7 @@ function sfReset(keepEditingId) {
   const hiddenTime = document.getElementById('sf-time');
   if (hiddenTime) hiddenTime.value = '';
   const towerFields = document.getElementById('tower-fields');
-  if (towerFields) { towerFields.style.opacity = '0.35'; towerFields.style.pointerEvents = 'none'; }
+  if (towerFields) { towerFields.style.opacity = '1'; towerFields.style.pointerEvents = 'auto'; }
   const simWarn = document.getElementById('sim-not-ready-warn');
   if (simWarn) simWarn.style.display = 'none';
   const opOther = document.getElementById('fd-s1-op-other');
