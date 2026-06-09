@@ -2036,14 +2036,13 @@ window.initMap = function() {
 };
 
 function personMarkerIcon(colour) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="42" height="54" viewBox="0 0 42 54">
-    <circle cx="21" cy="9" r="7" fill="${colour}" stroke="white" stroke-width="3"/>
-    <path d="M12 19h18l9 15-6 4-5-9v22h-6l-2-15-3 15h-6V29l-5 9-6-4 9-15z" fill="${colour}" stroke="white" stroke-width="3" stroke-linejoin="round"/>
-  </svg>`;
   return {
-    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-    scaledSize: new google.maps.Size(42, 54),
-    anchor: new google.maps.Point(21, 54),
+    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+    scale: 8,
+    fillColor: colour,
+    fillOpacity: 1,
+    strokeColor: '#ffffff',
+    strokeWeight: 2.5,
   };
 }
 
@@ -2097,6 +2096,7 @@ function refreshMap() {
         position: { lat: Number(p.lat), lng: Number(p.lng) },
         map: gmap,
         icon: personMarkerIcon(col),
+        label: { text: '●', color: '#ffffff', fontSize: '10px', fontWeight: '700' },
         title: `${p.id} — ${p.ward} (${rsrpLabel(p.rsrp)})`,
         zIndex: 10,
       });
