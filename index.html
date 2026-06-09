@@ -769,7 +769,7 @@
           <thead>
             <tr>
               <th>ID</th><th>Type</th><th>Date</th><th>Ward</th><th>Constituency</th><th>Operator</th>
-              <th>Lat</th><th>Lng</th><th>RSRP dBm</th><th>Signal</th>
+              <th>Lat</th><th>Lng</th><th>GPS Status</th><th>RSRP dBm</th><th>Signal</th>
               <th>DL Mbps</th><th>UL Mbps</th><th>Ping ms</th>
               <th>Browsing %</th><th>Streaming %</th><th>Jitter ms</th>
               <th>eNB-LCID</th><th>TAC-ECI</th><th>Actions</th>
@@ -1671,6 +1671,23 @@ const WARDS = {
 const HONIARA_CENTER = { lat: -9.432, lng: 160.052 };
 const TOTAL_TARGET   = 150;
 
+function gpsStatus(latValue, lngValue) {
+  const lat = Number(latValue);
+  const lng = Number(lngValue);
+  if (latValue === '' || latValue == null || lngValue === '' || lngValue == null ||
+      !Number.isFinite(lat) || !Number.isFinite(lng) ||
+      lat < -90 || lat > 90 || lng < -180 || lng > 180) return 'Missing';
+  // Broad Honiara study-area box, intentionally allowing nearby outskirts.
+  return lat >= -9.60 && lat <= -9.25 && lng >= 159.75 && lng <= 160.25
+    ? 'Valid'
+    : 'Outside study area';
+}
+
+function gpsStatusBadge(status) {
+  const cls = status === 'Valid' ? 'badge-ok' : status === 'Outside study area' ? 'badge-red' : 'badge-warn';
+  return `<span class="badge ${cls}">${status}</span>`;
+}
+
 let points   = [];   // all survey & cell site data points
 let selDay   = 'all';
 let apiKey   = 'AIzaSyDTQZWZb7YxaIl2sBAk7P50SqTorOe6zl8';
@@ -1843,7 +1860,10 @@ function switchView(id, btn) {
   if (id === 'map') {
     document.getElementById('view-map').style.display = 'flex';
     if (!gmap && apiKey) loadGoogleMaps(apiKey);
-    else if (gmap) refreshMap();
+    else if (gmap) {
+      refreshMap();
+      setTimeout(() => fitSurveyWaypoints(false), 100);
+    }
   }
   if (id === 'dashboard') { document.getElementById('view-dashboard').classList.add('on'); renderDashboard(); }
   if (id === 'data')      { document.getElementById('view-data').classList.add('on'); renderDataTable(); }
@@ -1998,8 +2018,23 @@ window.initMap = function() {
   const apiBadgeEl = document.getElementById('api-badge');
   if (apiBadgeEl) { apiBadgeEl.textContent = '✓ Map loaded'; apiBadgeEl.classList.remove('missing'); }
   // Only refresh map visuals if Live Map tab is currently active
-  if (activeView === 'map') refreshMap();
+  if (activeView === 'map') {
+    refreshMap();
+    setTimeout(() => fitSurveyWaypoints(false), 100);
+  }
 };
+
+function personMarkerIcon(colour) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="44" viewBox="0 0 34 44">
+    <circle cx="17" cy="7" r="6" fill="${colour}" stroke="white" stroke-width="2"/>
+    <path d="M10 15h14l7 12-5 3-4-7v18h-5l-1-12-2 12H9V23l-4 7-5-3 7-12z" fill="${colour}" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+  </svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(34, 44),
+    anchor: new google.maps.Point(17, 44),
+  };
+}
 
 function refreshMap() {
   if (!gmap) return;
@@ -2040,20 +2075,13 @@ function refreshMap() {
   // Survey markers
   if (showSurveys && window.google) {
     src.filter(p => p.type === 'survey' && hasMapCoordinates(p)).forEach(p => {
-      const col = colMode === 'signal' ? rsrpColor(p.rsrp) : colMode === 'speed' ? speedColor(p.dl) : opColor(p.op);
+      const status = p.gps_status || gpsStatus(p.lat, p.lng);
+      const col = status === 'Outside study area' ? '#D92D20' :
+        colMode === 'signal' ? rsrpColor(p.rsrp) : colMode === 'speed' ? speedColor(p.dl) : opColor(p.op);
       const marker = new google.maps.Marker({
         position: { lat: Number(p.lat), lng: Number(p.lng) },
         map: gmap,
-        icon: {
-          // Person waypoint: head, body, arms, and legs.
-          path: 'M 0,-14 A 3,3 0 1 1 -0.01,-14 Z M -4,-9 L 4,-9 L 7,0 L 4,1 L 3,-4 L 3,10 L 1,10 L 0,3 L -1,10 L -3,10 L -3,-4 L -4,1 L -7,0 Z',
-          scale: 1.15,
-          fillColor: col,
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 1.8,
-          anchor: new google.maps.Point(0, 10),
-        },
+        icon: personMarkerIcon(col),
         title: `${p.id} — ${p.ward} (${rsrpLabel(p.rsrp)})`,
         zIndex: 10,
       });
@@ -2102,7 +2130,7 @@ function refreshMap() {
   updateLegend(colMode);
 }
 
-function fitSurveyWaypoints() {
+function fitSurveyWaypoints(showEmptyAlert = true) {
   if (!gmap || !window.google) return;
   const bounds = new google.maps.LatLngBounds();
   let count = 0;
@@ -2114,7 +2142,7 @@ function fitSurveyWaypoints() {
     count++;
   });
   if (!count) {
-    alert('No surveys currently have valid latitude and longitude values.');
+    if (showEmptyAlert) alert('No surveys currently have valid latitude and longitude values.');
     return;
   }
   gmap.fitBounds(bounds);
@@ -2137,10 +2165,12 @@ function infoWindowHTML(p) {
   const browse = p.browse ?? p.fd_s1_nperf_browse ?? p.fd_s2_nperf_browse;
   const stream = p.stream ?? p.fd_s1_nperf_stream ?? p.fd_s2_nperf_stream;
   const col = has(rsrp) ? rsrpColor(rsrp) : 'var(--gray-600)';
+  const gpsState = p.gps_status || gpsStatus(p.lat, p.lng);
   return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:340px;max-width:380px">
     <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} — ${show(p.ward)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} · ${show(p.constituency)} · ${show(p.date)} ${show(p.time)}</div>
-    <div style="font-size:10px;color:#667085;margin-bottom:8px">GPS waypoint: ${Number(p.lat).toFixed(5)}, ${Number(p.lng).toFixed(5)}</div>
+    <div style="font-size:10px;color:#667085;margin-bottom:4px">GPS waypoint: ${Number(p.lat).toFixed(5)}, ${Number(p.lng).toFixed(5)}</div>
+    <div style="margin-bottom:8px">${gpsStatusBadge(gpsState)}</div>
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
       ${card('RSRP', rsrp, has(rsrp) ? ' dBm' : '', col)}
@@ -2294,6 +2324,7 @@ function renderDataTable() {
     const typeBdg = p.type === 'cell' ? 'badge-warn' : 'badge-blue';
     const latStr  = (p.lat != null && p.lat !== '') ? parseFloat(p.lat).toFixed(5) : '\u2014';
     const lngStr  = (p.lng != null && p.lng !== '') ? parseFloat(p.lng).toFixed(5) : '\u2014';
+    const gpsState = p.gps_status || gpsStatus(p.lat, p.lng);
     const mono    = "font-family:'JetBrains Mono',monospace";
     return `<tr>
       <td style="${mono};font-weight:500">${p.id || '\u2014'}</td>
@@ -2304,6 +2335,7 @@ function renderDataTable() {
       <td>${p.op || '\u2014'}</td>
       <td style="${mono};font-size:11px">${latStr}</td>
       <td style="${mono};font-size:11px">${lngStr}</td>
+      <td>${gpsStatusBadge(gpsState)}</td>
       <td style="color:${sigCol};font-weight:500">${rsrpNum != null ? rsrpNum : '\u2014'}</td>
       <td><span class="badge" style="background:#EAF3DE;color:${sigCol}">${rsrpLabel(rsrpNum)}</span></td>
       <td style="color:${dlCol};font-weight:500">${dlNum != null ? dlNum : '\u2014'}</td>
@@ -2754,6 +2786,7 @@ function sfGetData() {
   const c = (name) => [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(i => i.value).join(';');
   const ward = r('sf-a1');
   const constituency = WARDS[ward]?.constituency || '';
+  const gps_status = gpsStatus(g('sf-lat'), g('sf-lon'));
   const a3val = r('sf-a3') === 'Other' ? (g('sf-a3-other-text') || 'Other') : r('sf-a3');
   return {
     // Header
@@ -2807,7 +2840,7 @@ function sfGetData() {
     fd_s2_ncil_ping: g('fd-s2-ncil-ping'), fd_s2_ookla_ping: g('fd-s2-ookla-ping'), fd_s2_nperf_ping: g('fd-s2-nperf-ping'),
     fd_s2_ncil_jitter: g('fd-s2-ncil-jitter'), fd_s2_ookla_jitter: g('fd-s2-ookla-jitter'), fd_s2_nperf_jitter: g('fd-s2-nperf-jitter'),
     // Step 6 — GPS
-    lat: g('sf-lat'), lng: g('sf-lon'), fd_s6_scr: screenshotValue('fd-s6-scr'),
+    lat: g('sf-lat'), lng: g('sf-lon'), gps_status, fd_s6_scr: screenshotValue('fd-s6-scr'),
     // Step 7 — Tower
     fd_s7_tlat: g('fd-s7-tlat'), fd_s7_tlon: g('fd-s7-tlon'),
     fd_s7_top: (g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top')), fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: g('fd-s7-newenb'),
@@ -3084,6 +3117,9 @@ async function sfSubmit() {
   const btn  = document.querySelector('#sf-form-body .sf-submit-bar .btn-primary');
   const missing = editingId ? [] : SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
   if (missing.length) { alert('Please complete all required fields before submitting.'); return; }
+  const currentGpsStatus = gpsStatus(document.getElementById('sf-lat')?.value, document.getElementById('sf-lon')?.value);
+  if (currentGpsStatus === 'Outside study area' &&
+      !confirm('Warning: this GPS waypoint is outside the Honiara study area.\n\nSubmit it anyway for verification?')) return;
   if (btn) { btn.textContent = 'Uploading screenshots...'; btn.disabled = true; }
   try {
     await uploadSurveyScreenshots();
@@ -3725,6 +3761,7 @@ async function loadSurveysFromAPI() {
       date: s.date, type: s.type || 'survey',
       lat: (s.lat != null && s.lat !== '') ? parseFloat(s.lat) : null,
       lng: (s.lng != null && s.lng !== '') ? parseFloat(s.lng) : null,
+      gps_status: s.gps_status || gpsStatus(s.lat, s.lng),
       r: s.rsrp != null ? parseFloat(s.rsrp) : null,
       rsrp: s.rsrp != null ? parseFloat(s.rsrp) : null,
       dl: s.dl != null ? parseFloat(s.dl) : null,
@@ -3739,6 +3776,7 @@ async function loadSurveysFromAPI() {
       _id: String(s._id),
     }));
     refresh();
+    if (activeView === 'map') setTimeout(() => fitSurveyWaypoints(false), 100);
   } catch (err) { console.error('Load surveys error:', err); }
 }
 
