@@ -652,6 +652,7 @@
           <div class="progress-bar-mini-fill" id="ms-progress" style="width:0%"></div>
         </div>
         <div style="font-size:10px;color:var(--gray-600);margin-top:4px" id="ms-day">No data yet</div>
+        <div style="font-size:10px;color:var(--gray-600);margin-top:3px" id="ms-waypoints">0 waypoints plotted</div>
       </div>
 
       <!-- SIGNAL LEGEND -->
@@ -1872,7 +1873,7 @@ function switchView(id, btn) {
     if (!gmap && apiKey) loadGoogleMaps(apiKey);
     else if (gmap) {
       refreshMap();
-      setTimeout(() => fitSurveyWaypoints(false), 100);
+      setTimeout(() => fitSurveyWaypoints(false, true), 100);
     }
   }
   if (id === 'dashboard') { document.getElementById('view-dashboard').classList.add('on'); renderDashboard(); }
@@ -2030,19 +2031,19 @@ window.initMap = function() {
   // Only refresh map visuals if Live Map tab is currently active
   if (activeView === 'map') {
     refreshMap();
-    setTimeout(() => fitSurveyWaypoints(false), 100);
+    setTimeout(() => fitSurveyWaypoints(false, true), 100);
   }
 };
 
 function personMarkerIcon(colour) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="34" height="44" viewBox="0 0 34 44">
-    <circle cx="17" cy="7" r="6" fill="${colour}" stroke="white" stroke-width="2"/>
-    <path d="M10 15h14l7 12-5 3-4-7v18h-5l-1-12-2 12H9V23l-4 7-5-3 7-12z" fill="${colour}" stroke="white" stroke-width="2" stroke-linejoin="round"/>
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="42" height="54" viewBox="0 0 42 54">
+    <circle cx="21" cy="9" r="7" fill="${colour}" stroke="white" stroke-width="3"/>
+    <path d="M12 19h18l9 15-6 4-5-9v22h-6l-2-15-3 15h-6V29l-5 9-6-4 9-15z" fill="${colour}" stroke="white" stroke-width="3" stroke-linejoin="round"/>
   </svg>`;
   return {
     url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-    scaledSize: new google.maps.Size(34, 44),
-    anchor: new google.maps.Point(17, 44),
+    scaledSize: new google.maps.Size(42, 54),
+    anchor: new google.maps.Point(21, 54),
   };
 }
 
@@ -2064,6 +2065,9 @@ function refreshMap() {
     Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng)) &&
     Number(p.lat) >= -90 && Number(p.lat) <= 90 &&
     Number(p.lng) >= -180 && Number(p.lng) <= 180;
+  const plottedSurveys = src.filter(p => p.type === 'survey' && hasMapCoordinates(p));
+  const waypointCount = document.getElementById('ms-waypoints');
+  if (waypointCount) waypointCount.textContent = `${plottedSurveys.length} waypoint${plottedSurveys.length === 1 ? '' : 's'} plotted`;
 
   // Signal heatmap
   if (showSignal && window.google) {
@@ -2084,10 +2088,11 @@ function refreshMap() {
 
   // Survey markers
   if (showSurveys && window.google) {
-    src.filter(p => p.type === 'survey' && hasMapCoordinates(p)).forEach(p => {
-      const status = p.gps_status || gpsStatus(p.lat, p.lng);
+    plottedSurveys.forEach(p => {
+      const status = gpsStatus(p.lat, p.lng);
       const col = status === 'Outside study area' ? '#D92D20' :
-        colMode === 'signal' ? rsrpColor(p.rsrp) : colMode === 'speed' ? speedColor(p.dl) : opColor(p.op);
+        colMode === 'signal' ? (p.rsrp == null || p.rsrp === '' ? '#378ADD' : rsrpColor(p.rsrp)) :
+        colMode === 'speed' ? speedColor(p.dl) : opColor(p.op);
       const marker = new google.maps.Marker({
         position: { lat: Number(p.lat), lng: Number(p.lng) },
         map: gmap,
@@ -2140,7 +2145,7 @@ function refreshMap() {
   updateLegend(colMode);
 }
 
-function fitSurveyWaypoints(showEmptyAlert = true) {
+function fitSurveyWaypoints(showEmptyAlert = true, studyAreaOnly = false) {
   if (!gmap || !window.google) return;
   const bounds = new google.maps.LatLngBounds();
   let count = 0;
@@ -2148,10 +2153,12 @@ function fitSurveyWaypoints(showEmptyAlert = true) {
     const lat = Number(p.lat);
     const lng = Number(p.lng);
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+    if (studyAreaOnly && gpsStatus(lat, lng) !== 'Valid') return;
     bounds.extend({ lat, lng });
     count++;
   });
   if (!count) {
+    if (studyAreaOnly) return fitSurveyWaypoints(showEmptyAlert, false);
     if (showEmptyAlert) alert('No surveys currently have valid latitude and longitude values.');
     return;
   }
@@ -2175,7 +2182,7 @@ function infoWindowHTML(p) {
   const browse = p.browse ?? p.fd_s1_nperf_browse ?? p.fd_s2_nperf_browse;
   const stream = p.stream ?? p.fd_s1_nperf_stream ?? p.fd_s2_nperf_stream;
   const col = has(rsrp) ? rsrpColor(rsrp) : 'var(--gray-600)';
-  const gpsState = p.gps_status || gpsStatus(p.lat, p.lng);
+  const gpsState = gpsStatus(p.lat, p.lng);
   return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:340px;max-width:380px">
     <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} — ${show(p.ward)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} · ${show(p.constituency)} · ${show(p.date)} ${show(p.time)}</div>
@@ -2334,7 +2341,7 @@ function renderDataTable() {
     const typeBdg = p.type === 'cell' ? 'badge-warn' : 'badge-blue';
     const latStr  = (p.lat != null && p.lat !== '') ? parseFloat(p.lat).toFixed(5) : '\u2014';
     const lngStr  = (p.lng != null && p.lng !== '') ? parseFloat(p.lng).toFixed(5) : '\u2014';
-    const gpsState = p.gps_status || gpsStatus(p.lat, p.lng);
+    const gpsState = gpsStatus(p.lat, p.lng);
     const mono    = "font-family:'JetBrains Mono',monospace";
     return `<tr>
       <td style="${mono};font-weight:500">${p.id || '\u2014'}</td>
@@ -3771,7 +3778,7 @@ async function loadSurveysFromAPI() {
       date: s.date, type: s.type || 'survey',
       lat: (s.lat != null && s.lat !== '') ? parseFloat(s.lat) : null,
       lng: (s.lng != null && s.lng !== '') ? parseFloat(s.lng) : null,
-      gps_status: s.gps_status || gpsStatus(s.lat, s.lng),
+      gps_status: gpsStatus(s.lat, s.lng),
       r: s.rsrp != null ? parseFloat(s.rsrp) : null,
       rsrp: s.rsrp != null ? parseFloat(s.rsrp) : null,
       dl: s.dl != null ? parseFloat(s.dl) : null,
@@ -3786,7 +3793,7 @@ async function loadSurveysFromAPI() {
       _id: String(s._id),
     }));
     refresh();
-    if (activeView === 'map') setTimeout(() => fitSurveyWaypoints(false), 100);
+    if (activeView === 'map') setTimeout(() => fitSurveyWaypoints(false, true), 100);
   } catch (err) { console.error('Load surveys error:', err); }
 }
 
