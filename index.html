@@ -2195,7 +2195,7 @@ function refreshMap() {
         colMode === 'speed' ? speedColor(p.dl) : opColor(p.op);
       const info = new google.maps.InfoWindow({
         content: infoWindowHTML(p),
-        maxWidth: 390,
+        maxWidth: 440,
       });
 
       const position = { lat: parseCoordinate(p.lat), lng: parseCoordinate(p.lng) };
@@ -2214,6 +2214,7 @@ function refreshMap() {
       });
       const openWaypointInfo = () => {
         markers.forEach(m => m.infoWindow && m.infoWindow.close());
+        google.maps.event.addListenerOnce(info, 'domready', () => hydrateWaypointScreenshots(p));
         info.open(gmap, marker);
       };
       marker.infoWindow = info;
@@ -2328,6 +2329,7 @@ function infoWindowHTML(p) {
       ${card('Browsing', browse, has(browse) ? '%' : '', +browse >= 70 ? '#27500A' : +browse >= 50 ? '#BA7517' : '#A32D2D')}
       ${card('Streaming', stream, has(stream) ? '%' : '', +stream >= 70 ? '#27500A' : +stream >= 50 ? '#BA7517' : '#A32D2D')}
     </div>
+    ${waypointCarouselHTML(p)}
   </div>`;
 }
 
@@ -2556,6 +2558,104 @@ const SCREENSHOT_FIELDS = [
   'fd-s2-ncil-scr', 'fd-s2-ookla-scr', 'fd-s2-nperf-scr',
   'fd-s6-scr', 'fd-s7-scr', 'fd-s7-photo-file'
 ];
+
+const WAYPOINT_SCREENSHOT_LABELS = {
+  fd_s2a_scr: 'SIM 1 RAW readings',
+  fd_s2b_scr: 'SIM 2 RAW readings',
+  fd_s1_ncil_scr: 'SIM 1 NCIL performance',
+  fd_s1_ookla_scr: 'SIM 1 Ookla performance',
+  fd_s1_nperf_scr: 'SIM 1 nPerf performance',
+  fd_s2_ncil_scr: 'SIM 2 NCIL performance',
+  fd_s2_ookla_scr: 'SIM 2 Ookla performance',
+  fd_s2_nperf_scr: 'SIM 2 nPerf performance',
+  fd_s6_scr: 'Survey GPS waypoint',
+  fd_s7_scr: 'Tower GPS waypoint',
+  fd_s7_photo_file: 'Tower photo',
+};
+
+const waypointScreenshotUrls = new Map();
+
+function waypointCarouselId(p) {
+  return 'waypoint-shots-' + String(p._id || p.id || 'survey').replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+
+function waypointScreenshotRefs(p) {
+  return Object.entries(WAYPOINT_SCREENSHOT_LABELS)
+    .filter(([field]) => p[field])
+    .map(([field, label]) => ({ id: String(p[field]), label }));
+}
+
+function waypointCarouselHTML(p) {
+  const refs = waypointScreenshotRefs(p);
+  if (!refs.length) return '';
+  return `<div style="margin-top:9px;border-top:1px solid #e5e7eb;padding-top:8px">
+    <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:5px">Performance screenshots (${refs.length})</div>
+    <div id="${waypointCarouselId(p)}" style="height:190px;border:1px solid #e5e7eb;border-radius:7px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#667085;font-size:11px">
+      Loading saved screenshots...
+    </div>
+  </div>`;
+}
+
+async function hydrateWaypointScreenshots(p) {
+  const carouselId = waypointCarouselId(p);
+  const container = document.getElementById(carouselId);
+  const refs = waypointScreenshotRefs(p);
+  if (!container || !refs.length) return;
+  const slides = await Promise.all(refs.map(async ref => {
+    try {
+      let url = waypointScreenshotUrls.get(ref.id);
+      if (!url) {
+        const res = await fetch(API_URL + '/api/screenshots/' + encodeURIComponent(ref.id), {
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        if (!res.ok) throw new Error('Screenshot unavailable');
+        url = URL.createObjectURL(await res.blob());
+        waypointScreenshotUrls.set(ref.id, url);
+      }
+      return { ...ref, url };
+    } catch (err) {
+      return { ...ref, error: true };
+    }
+  }));
+  const available = slides.filter(slide => !slide.error);
+  if (!available.length) {
+    container.innerHTML = '<span style="color:#A32D2D">Saved screenshots could not be loaded.</span>';
+    return;
+  }
+  container.dataset.slide = '0';
+  container.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;min-width:0">
+    <button type="button" onclick="openWaypointScreenshot('${carouselId}')" title="Open full screenshot" style="border:0;background:#111827;cursor:zoom-in;height:154px;padding:0;border-radius:6px 6px 0 0;overflow:hidden">
+      <img data-role="image" src="${available[0].url}" alt="${available[0].label}" style="width:100%;height:100%;object-fit:contain;display:block">
+    </button>
+    <div style="height:35px;display:flex;align-items:center;gap:5px;padding:4px 6px;background:#fff;border-radius:0 0 6px 6px">
+      <button type="button" onclick="waypointCarouselStep('${carouselId}',-1)" style="border:1px solid #d0d5dd;background:#fff;border-radius:4px;cursor:pointer;padding:2px 8px">&#8249;</button>
+      <span data-role="label" style="flex:1;text-align:center;font-size:10px;font-weight:600;color:#344054">${available[0].label}</span>
+      <span data-role="count" style="font-size:9px;color:#667085">1/${available.length}</span>
+      <button type="button" onclick="waypointCarouselStep('${carouselId}',1)" style="border:1px solid #d0d5dd;background:#fff;border-radius:4px;cursor:pointer;padding:2px 8px">&#8250;</button>
+    </div>
+  </div>`;
+  container._slides = available;
+}
+
+function waypointCarouselStep(carouselId, direction) {
+  const container = document.getElementById(carouselId);
+  if (!container?._slides?.length) return;
+  const slides = container._slides;
+  const index = (Number(container.dataset.slide || 0) + direction + slides.length) % slides.length;
+  const slide = slides[index];
+  container.dataset.slide = String(index);
+  container.querySelector('[data-role="image"]').src = slide.url;
+  container.querySelector('[data-role="image"]').alt = slide.label;
+  container.querySelector('[data-role="label"]').textContent = slide.label;
+  container.querySelector('[data-role="count"]').textContent = `${index + 1}/${slides.length}`;
+}
+
+function openWaypointScreenshot(carouselId) {
+  const container = document.getElementById(carouselId);
+  if (!container?._slides?.length) return;
+  const slide = container._slides[Number(container.dataset.slide || 0)];
+  window.open(slide.url, '_blank', 'noopener');
+}
 
 function screenshotValue(id) {
   return document.getElementById(id)?.dataset.uploadId || '';
