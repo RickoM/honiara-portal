@@ -2222,7 +2222,6 @@ function initializeBoundaryLayers() {
   wardBoundaryLayer.addListener('click', event => openBoundaryInfo(event, 'Ward'));
   constituencyBoundaryLayer.addListener('click', event => openBoundaryInfo(event, 'Constituency'));
   boundaryInfoWindow.addListener('closeclick', clearBoundarySelection);
-  gmap.addListener('click', clearBoundarySelection);
   refreshBoundaryLayers();
 }
 
