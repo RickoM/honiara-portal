@@ -1825,6 +1825,9 @@ let boundaryHighlightLayer = null;
 let boundaryInfoWindow = null;
 let selectedWardBoundary = null;
 let selectedConstituencyBoundary = null;
+let surveySyncTimer = null;
+let surveySyncInFlight = false;
+let lastSurveyFingerprint = '';
 let activeView = 'survey';
 
 // ══════════════════════════════════════════════════════
@@ -4399,6 +4402,7 @@ function showLoginError(msg) {
 }
 
 function doLogout() {
+  stopSurveySync();
   authToken = null; currentUser = null;
   localStorage.removeItem('honiara_token');
   localStorage.removeItem('honiara_user');
@@ -4459,6 +4463,7 @@ function showApp() {
       currentUser?.role === 'admin' ? 'Admin' :
       currentUser?.role === 'leader' ? 'Field Leader' : 'Field Assistant';
     loadSurveysFromAPI();
+    startSurveySync();
     // Google Maps loads when Live Map tab is clicked
   }
   applyRolePermissions();
@@ -4528,13 +4533,24 @@ async function apiCall(method, path, body) {
   return res;
 }
 
-async function loadSurveysFromAPI() {
+function surveyFingerprint(surveys) {
+  // Include record content so edits are detected even if the backend schema
+  // does not maintain an updatedAt timestamp.
+  return JSON.stringify(surveys);
+}
+
+async function loadSurveysFromAPI({ silent = false } = {}) {
   if (DEMO_MODE) return; // demo data already seeded in showApp
+  if (surveySyncInFlight) return false;
+  surveySyncInFlight = true;
   try {
     const res = await apiCall('GET', '/api/surveys');
-    if (!res) return;
+    if (!res) return false;
     const data = await res.json();
-    if (!data.surveys) return;
+    if (!data.surveys) return false;
+    const fingerprint = surveyFingerprint(data.surveys);
+    if (silent && fingerprint === lastSurveyFingerprint) return false;
+    lastSurveyFingerprint = fingerprint;
     points = data.surveys.map(s => ({
       // Keep full raw survey data, then normalize summary/map fields afterward.
       ...s,
@@ -4557,8 +4573,14 @@ async function loadSurveysFromAPI() {
       _id: String(s._id),
     }));
     refresh();
-    if (activeView === 'map') setTimeout(() => fitSurveyWaypoints(false, true), 100);
-  } catch (err) { console.error('Load surveys error:', err); }
+    if (!silent && activeView === 'map') setTimeout(() => fitSurveyWaypoints(false, true), 100);
+    return true;
+  } catch (err) {
+    console.error('Load surveys error:', err);
+    return false;
+  } finally {
+    surveySyncInFlight = false;
+  }
 }
 
 async function syncSurveyViews() {
@@ -4574,14 +4596,29 @@ async function syncSurveyViews() {
   }
 }
 
+function startSurveySync() {
+  stopSurveySync();
+  if (DEMO_MODE || !authToken) return;
+  surveySyncTimer = setInterval(() => {
+    if (!document.hidden && authToken) loadSurveysFromAPI({ silent: true });
+  }, 20000);
+}
+
+function stopSurveySync() {
+  if (surveySyncTimer) clearInterval(surveySyncTimer);
+  surveySyncTimer = null;
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && authToken && currentUser) loadSurveysFromAPI({ silent: true });
+});
+
 async function checkAuth() {
   if (DEMO_MODE) { showApp(); return; }
-  if (!authToken) return;
-  try {
-    const res = await fetch(`${API_URL}/api/auth/me`, { headers: { 'Authorization': `Bearer ${authToken}` } });
-    if (res.ok) { const data = await res.json(); currentUser = data.user; showApp(); }
-    else doLogout();
-  } catch (err) { doLogout(); }
+  if (!authToken || !currentUser) return;
+  // Restore the saved session immediately. Authenticated API calls will log out
+  // only if the server explicitly reports that the token is invalid or expired.
+  showApp();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
