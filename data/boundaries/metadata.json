@@ -1,0 +1,27 @@
+{
+  "title": "Honiara administrative boundary overlays",
+  "generatedFor": "Honiara Mobile Network Survey Portal",
+  "accessed": "2026-06-10",
+  "files": {
+    "wards": {
+      "file": "honiara-wards-2014.geojson",
+      "features": 12,
+      "sourceYear": 2014,
+      "originalSource": "POPGIS",
+      "repository": "geoBoundaries",
+      "boundaryLevel": "ADM3 / Ward"
+    },
+    "constituencies": {
+      "file": "honiara-constituencies-2018.geojson",
+      "features": 3,
+      "sourceYear": 2018,
+      "originalSource": "Solomon Islands National Statistics Office (SINSO) and OCHA ROAP",
+      "repository": "geoBoundaries",
+      "boundaryLevel": "ADM2 / Constituency"
+    }
+  },
+  "citation": {
+    "geoBoundaries": "Runfola, D. et al. (2020). geoBoundaries: A global database of political administrative boundaries. PLOS ONE, 15(4), e0231866. https://doi.org/10.1371/journal.pone.0231866",
+    "website": "https://www.geoboundaries.org/"
+  }
+}
