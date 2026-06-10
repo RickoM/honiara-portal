@@ -310,6 +310,9 @@
   /* ── LOGIN SCREEN ── */
   .login-screen { position: fixed; inset: 0; background: var(--navy-dark); display: flex; align-items: center; justify-content: center; z-index: 200; }
   .login-screen.hidden { display: none; }
+  body.auth-checking { background: var(--navy-dark); }
+  body.auth-checking #login-screen,
+  body.auth-checking #app { display: none !important; }
   .login-box { background: #fff; border-radius: 14px; padding: 36px 32px; width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
   .login-logo { text-align: center; margin-bottom: 24px; }
   .login-logo h1 { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
@@ -487,7 +490,7 @@
 
 </style>
 </head>
-<body>
+<body class="auth-checking">
 
 <!-- LOGIN SCREEN -->
 <div class="login-screen" id="login-screen">
@@ -1746,10 +1749,10 @@ const API_URL = 'https://honiara-survey-api.onrender.com';
 const DEMO_MODE = false;
 
 // ── AUTH STATE ───────────────────────────────────────────────────
-// Strict authentication: credentials are required after every page load.
-// Tokens remain only in memory and are never restored from browser storage.
-let authToken = null;
-let currentUser = null;
+// Authentication is retained only in the current tab. Refreshing this tab
+// keeps the session; opening a new tab or reopening the browser requires login.
+let authToken = sessionStorage.getItem('honiara_token') || null;
+let currentUser = JSON.parse(sessionStorage.getItem('honiara_user') || 'null');
 
 const WARDS = {
   'Nggossi':        {constituency:'West Honiara',    target:20, lat:-9.405, lng:160.018},
@@ -4385,6 +4388,8 @@ async function doLogin() {
     const data = await res.json();
     if (!res.ok) { showLoginError(data.error || 'Login failed.'); btn.innerHTML = 'Sign in'; btn.disabled = false; return; }
     authToken = data.token; currentUser = data.user;
+    sessionStorage.setItem('honiara_token', authToken);
+    sessionStorage.setItem('honiara_user', JSON.stringify(currentUser));
     btn.innerHTML = '\u2713 Signed in';
     // Keep button disabled after success — login screen will hide
     showApp();
@@ -4427,6 +4432,7 @@ function doLogout() {
   switchView('survey', document.getElementById('tnav-survey'));
   document.getElementById('app').style.display = 'none';
   const loginScreen = document.getElementById('login-screen');
+  document.body.classList.remove('auth-checking');
   loginScreen.classList.remove('hidden');
   loginScreen.style.display = 'flex';
   document.getElementById('login-username').value = '';
@@ -4440,6 +4446,7 @@ function doLogout() {
 function showApp() {
   const loginScreen = document.getElementById('login-screen');
   const app = document.getElementById('app');
+  document.body.classList.remove('auth-checking');
   loginScreen.classList.add('hidden');
   loginScreen.style.display = 'none';
   app.style.display = 'flex';
@@ -4647,8 +4654,27 @@ document.addEventListener('visibilitychange', () => {
 
 async function checkAuth() {
   if (DEMO_MODE) { showApp(); return; }
-  // Production always starts locked. Only a successful login calls showApp().
-  doLogout();
+  if (!authToken || !currentUser) {
+    doLogout();
+    return;
+  }
+  try {
+    const res = await fetch(`${API_URL}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${authToken}` },
+    });
+    if (!res.ok) {
+      doLogout();
+      return;
+    }
+    const data = await res.json();
+    currentUser = data.user || currentUser;
+    sessionStorage.setItem('honiara_user', JSON.stringify(currentUser));
+    showApp();
+  } catch (err) {
+    // A session cannot be trusted until the API confirms it.
+    doLogout();
+    showLoginError('Could not verify your session. Please sign in again.');
+  }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
@@ -4657,15 +4683,11 @@ document.getElementById('f-date').value  = new Date().toISOString().split('T')[0
 initScreenshotInputs();
 document.getElementById('view-map').style.display = 'none';
 document.getElementById('view-survey').classList.add('on');
-// Remove authentication created by older portal versions. Production always
-// starts at the login screen and never restores a previous browser session.
+// Remove persistent authentication created by older portal versions.
+// Current-tab authentication remains in sessionStorage across refreshes.
 if (!DEMO_MODE) {
   localStorage.removeItem('honiara_token');
   localStorage.removeItem('honiara_user');
-  sessionStorage.removeItem('honiara_token');
-  sessionStorage.removeItem('honiara_user');
-  authToken = null;
-  currentUser = null;
 }
 checkAuth();
 </script>
