@@ -2243,11 +2243,12 @@ function refreshBoundaryLayers() {
       const selectionActive = Boolean(selectedWardBoundary || selectedConstituencyBoundary);
       return {
         fillColor: constituencyStyle.wards[shadeIndex],
-        fillOpacity: isSelected ? 0.58 : selectionActive ? (isSelectedConstituency ? 0.18 : 0.035) : 0.22,
+        fillOpacity: isSelected ? 0.62 : selectionActive ? (isSelectedConstituency ? 0.2 : 0.1) : 0.22,
         strokeColor: constituencyStyle.stroke,
-        strokeOpacity: isSelected ? 1 : selectionActive ? (isSelectedConstituency ? 0.82 : 0.25) : 0.88,
-        strokeWeight: isSelected ? 4 : isSelectedConstituency ? 1.5 : 1.1,
+        strokeOpacity: isSelected ? 1 : selectionActive ? (isSelectedConstituency ? 0.9 : 0.62) : 0.88,
+        strokeWeight: isSelected ? 4.5 : isSelectedConstituency ? 1.8 : 1.4,
         zIndex: isSelected ? 5 : 1,
+        clickable: true,
       };
     });
   }
@@ -2260,11 +2261,12 @@ function refreshBoundaryLayers() {
       const selectionActive = Boolean(selectedConstituencyBoundary);
       return {
         fillColor: constituencyStyle.stroke,
-        fillOpacity: isSelected ? 0.07 : selectionActive ? 0 : 0.035,
+        fillOpacity: isSelected ? 0.045 : selectionActive ? 0 : 0.035,
         strokeColor: constituencyStyle.stroke,
-        strokeOpacity: isSelected ? 1 : selectionActive ? 0.15 : 1,
-        strokeWeight: isSelected ? 5 : selectionActive ? 1 : 3.2,
-        zIndex: isSelected ? 4 : 2,
+        strokeOpacity: isSelected ? 1 : selectionActive ? 0.6 : 1,
+        strokeWeight: isSelected ? 5 : selectionActive ? 2.5 : 3.2,
+        zIndex: 0,
+        clickable: !showWards,
       };
     });
   }
@@ -2285,6 +2287,14 @@ function frameBoundaryFeature(feature) {
   if (!bounds.isEmpty()) gmap.fitBounds(bounds, { top: 130, right: 170, bottom: 130, left: 330 });
 }
 
+function findBoundaryFeature(layer, name) {
+  let match = null;
+  layer?.forEach(feature => {
+    if (feature.getProperty('name') === name) match = feature;
+  });
+  return match;
+}
+
 function openBoundaryInfo(event, expectedLevel) {
   if (!boundaryInfoWindow) return;
   const feature = event.feature;
@@ -2297,7 +2307,10 @@ function openBoundaryInfo(event, expectedLevel) {
   selectedWardBoundary = level === 'Ward' ? name : null;
   selectedConstituencyBoundary = constituency || null;
   refreshBoundaryLayers();
-  frameBoundaryFeature(feature);
+  const framingFeature = level === 'Ward'
+    ? findBoundaryFeature(constituencyBoundaryLayer, constituency) || feature
+    : feature;
+  frameBoundaryFeature(framingFeature);
   const surveyCount = level === 'Ward'
     ? wardCount(name, selDay === 'all' ? null : selDay)
     : constituencyCount(name, selDay === 'all' ? null : selDay);
