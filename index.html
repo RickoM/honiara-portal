@@ -688,7 +688,7 @@
         <div class="boundary-source">
           Boundaries: POPGIS and SINSO/OCHA ROAP via
           <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener">geoBoundaries</a>.
-          Wards 2014; constituencies 2018.
+          Wards 2014; constituencies 2018. These independently sourced boundaries may not align exactly.
         </div>
       </div>
 
@@ -2320,7 +2320,7 @@ function findBoundaryFeature(layer, name) {
 function updateBoundaryHighlight(wardFeature, constituencyFeature, constituency) {
   if (!boundaryHighlightLayer) return;
   clearBoundaryHighlightLayer();
-  if (constituencyFeature) {
+  if (!wardFeature && constituencyFeature) {
     boundaryHighlightLayer.add({
       geometry: constituencyFeature.getGeometry(),
       properties: { highlightType: 'constituency', constituency },
@@ -2353,8 +2353,8 @@ function openBoundaryInfo(event, expectedLevel) {
   selectedWardBoundary = level === 'Ward' ? name : null;
   selectedConstituencyBoundary = constituency || null;
   const constituencyFeature = findBoundaryFeature(constituencyBoundaryLayer, constituency);
-  updateBoundaryHighlight(level === 'Ward' ? feature : null, constituencyFeature || feature, constituency);
-  const framingFeature = level === 'Ward' ? constituencyFeature || feature : feature;
+  updateBoundaryHighlight(level === 'Ward' ? feature : null, level === 'Ward' ? null : constituencyFeature || feature, constituency);
+  const framingFeature = feature;
   frameBoundaryFeature(framingFeature);
   const surveyCount = level === 'Ward'
     ? wardCount(name, selDay === 'all' ? null : selDay)
@@ -2367,7 +2367,7 @@ function openBoundaryInfo(event, expectedLevel) {
         <div style="font-size:10px;color:#667085;margin-top:2px">${level} boundary${sourceYear ? ` (${sourceYear})` : ''}</div>
         ${level === 'Ward' && constituency ? `<div style="font-size:10px;color:${boundaryColour};font-weight:700;margin-top:3px">${constituency}</div>` : ''}
       </div>
-      ${level === 'Ward' ? `<div style="font-size:10px;color:#475467;margin-top:8px">This ward is highlighted within the outlined ${constituency} constituency.</div>` : ''}
+      ${level === 'Ward' ? `<div style="font-size:10px;color:#475467;margin-top:8px">Selected ward highlighted. Constituency classification: ${constituency}.</div>` : ''}
       <div style="margin-top:9px;padding:7px 9px;background:#f7f9fc;border:1px solid #e5e7eb;border-radius:6px">
         <div style="font-size:9px;color:#667085;text-transform:uppercase;letter-spacing:.04em">Survey records</div>
         <div style="font-size:16px;font-weight:700;color:#172033;margin-top:2px">${surveyCount}</div>
