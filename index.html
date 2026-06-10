@@ -616,6 +616,7 @@
           <div class="metric-card"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Survey records</div></div>
           <div class="metric-card"><div class="metric-val" id="m-avgdl">—</div><div class="metric-lbl">Avg DL (Mbps)</div></div>
           <div class="metric-card"><div class="metric-val" id="m-below1">0</div><div class="metric-lbl">Missing GPS</div></div>
+          <div id="avg-dl-note" style="grid-column:1/-1;font-size:9px;color:var(--gray-600);line-height:1.4">Average download uses recorded SIM 1 Ookla results.</div>
         </div>
       </div>
 
@@ -651,12 +652,12 @@
         <div class="layer-ctrl-title">Map layers</div>
         <label class="layer-toggle">
           <input type="checkbox" id="layer-surveys" checked onchange="refreshMap()">
-          <svg width="14" height="16" viewBox="0 0 14 20" aria-hidden="true"><circle cx="7" cy="3" r="3" fill="#378ADD"/><path d="M3 7h8l3 6-3 1-1-3v9H8l-1-6-1 6H4v-9l-1 3-3-1z" fill="#378ADD"/></svg>
+          <svg width="18" height="22" viewBox="-12 -28 24 30" aria-hidden="true"><path d="M0 0C-2-9-10-13-10-22A10 10 0 1 1 10-22C10-13 2-9 0 0Z" fill="#BA7517" stroke="#fff" stroke-width="1.5"/><text x="0" y="-18" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">S</text></svg>
           <span class="layer-toggle-label">Survey data points</span>
         </label>
         <label class="layer-toggle">
           <input type="checkbox" id="layer-cells" checked onchange="refreshMap()">
-          <div class="layer-icon" style="background:#BA7517;border-radius:2px"></div>
+          <svg width="22" height="24" viewBox="-16 -21 32 34" aria-hidden="true"><g fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0-17L-7 11M0-17L7 11M-5 4H5M-3-3H3M-1-10H1"/><path d="M-7-14C-12-10-12-4-8 0M7-14C12-10 12-4 8 0M-12-17C-19-11-19-2-13 4M12-17C19-11 19-2 13 4"/></g></svg>
           <span class="layer-toggle-label">Mobile tower points</span>
         </label>
         <button class="btn btn-sm" onclick="fitSurveyWaypoints()" style="width:100%;margin-top:8px">Fit survey waypoints</button>
@@ -2033,6 +2034,8 @@ function updateSidebarMetrics() {
   document.getElementById('m-today').textContent = mapped.length;
   document.getElementById('m-total').textContent = surveys.length;
   document.getElementById('m-avgdl').textContent = avgDl;
+  const avgDlLabel = document.getElementById('m-avgdl')?.nextElementSibling;
+  if (avgDlLabel) avgDlLabel.textContent = 'Avg Ookla DL (Mbps)';
   document.getElementById('m-below1').textContent = missingGps;
   document.getElementById('m-below1').style.color = missingGps > 0 ? 'var(--red)' : 'var(--green)';
   const quality = document.getElementById('map-quality');
@@ -2249,12 +2252,13 @@ function refreshMap() {
         position: { lat: parseCoordinate(p.lat), lng: parseCoordinate(p.lng) },
         map: gmap,
         icon: {
-          path: 'M -1,-8 L 1,-8 L 1,0 L 6,8 L -6,8 L -1,0 Z',
-          fillColor: '#BA7517',
-          fillOpacity: 0.9,
-          strokeColor: '#ffffff',
-          strokeWeight: 1.5,
-          scale: 1.4,
+          path: 'M0-17L-7 11M0-17L7 11M-5 4H5M-3-3H3M-1-10H1M-7-14C-12-10-12-4-8 0M7-14C12-10 12-4 8 0M-12-17C-19-11-19-2-13 4M12-17C19-11 19-2 13 4',
+          fillOpacity: 0,
+          strokeColor: '#BA7517',
+          strokeWeight: 2.4,
+          strokeOpacity: 1,
+          scale: 1.25,
+          anchor: new google.maps.Point(0, 11),
         },
         title: `Cell site — ${p.ward} (${p.op})`,
         zIndex: 20,
