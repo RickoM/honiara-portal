@@ -74,6 +74,9 @@
   .layer-toggle input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--navy); cursor: pointer; }
   .layer-toggle-label { font-size: 12px; font-weight: 500; }
   .layer-icon { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .boundary-line-icon { width: 22px; height: 12px; border: 2px solid; border-radius: 2px; background: rgba(255,255,255,.25); flex-shrink: 0; }
+  .boundary-source { border-top: 1px solid var(--border); margin-top: 7px; padding-top: 7px; max-width: 230px; font-size: 9px; line-height: 1.35; color: var(--gray-600); }
+  .boundary-source a { color: var(--blue-mid); text-decoration: none; }
   
   /* ── MAP STATS ── */
   .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; }
@@ -660,7 +663,22 @@
           <svg width="22" height="24" viewBox="-16 -21 32 34" aria-hidden="true"><g fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0-17L-7 11M0-17L7 11M-5 4H5M-3-3H3M-1-10H1"/><path d="M-7-14C-12-10-12-4-8 0M7-14C12-10 12-4 8 0M-12-17C-19-11-19-2-13 4M12-17C19-11 19-2 13 4"/></g></svg>
           <span class="layer-toggle-label">Mobile tower points</span>
         </label>
+        <label class="layer-toggle">
+          <input type="checkbox" id="layer-wards" checked onchange="refreshBoundaryLayers()">
+          <span class="boundary-line-icon" style="border-color:#62D4C3;background:rgba(98,212,195,.13)"></span>
+          <span class="layer-toggle-label">Ward boundaries</span>
+        </label>
+        <label class="layer-toggle">
+          <input type="checkbox" id="layer-constituencies" onchange="refreshBoundaryLayers()">
+          <span class="boundary-line-icon" style="border-color:#F6C85F;background:rgba(246,200,95,.08)"></span>
+          <span class="layer-toggle-label">Constituency boundaries</span>
+        </label>
         <button class="btn btn-sm" onclick="fitSurveyWaypoints()" style="width:100%;margin-top:8px">Fit survey waypoints</button>
+        <div class="boundary-source">
+          Boundaries: POPGIS and SINSO/OCHA ROAP via
+          <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener">geoBoundaries</a>.
+          Wards 2014; constituencies 2018.
+        </div>
       </div>
 
       <!-- MAP STATS OVERLAY -->
@@ -1775,6 +1793,9 @@ let markers  = [];
 let surveyOverlays = [];
 let waypointShapes = [];
 let heatmap  = null;
+let wardBoundaryLayer = null;
+let constituencyBoundaryLayer = null;
+let boundaryInfoWindow = null;
 let activeView = 'survey';
 
 // ══════════════════════════════════════════════════════
@@ -2133,6 +2154,7 @@ window.initMap = function() {
   });
   const apiBadgeEl = document.getElementById('api-badge');
   if (apiBadgeEl) { apiBadgeEl.textContent = '✓ Map loaded'; apiBadgeEl.classList.remove('missing'); }
+  initializeBoundaryLayers();
   // Only refresh map visuals if Live Map tab is currently active
   if (activeView === 'map') {
     refreshMap();
@@ -2153,8 +2175,84 @@ function personMarkerIcon(colour) {
   };
 }
 
+function initializeBoundaryLayers() {
+  if (!gmap || !window.google || wardBoundaryLayer || constituencyBoundaryLayer) return;
+
+  wardBoundaryLayer = new google.maps.Data();
+  constituencyBoundaryLayer = new google.maps.Data();
+  boundaryInfoWindow = new google.maps.InfoWindow({ maxWidth: 300 });
+
+  wardBoundaryLayer.loadGeoJson('data/boundaries/honiara-wards-2014.geojson', null, features => {
+    if (!features.length) console.warn('No Honiara ward boundaries were loaded.');
+    refreshBoundaryLayers();
+  });
+  constituencyBoundaryLayer.loadGeoJson('data/boundaries/honiara-constituencies-2018.geojson', null, features => {
+    if (!features.length) console.warn('No Honiara constituency boundaries were loaded.');
+    refreshBoundaryLayers();
+  });
+
+  wardBoundaryLayer.addListener('click', event => openBoundaryInfo(event, 'Ward'));
+  constituencyBoundaryLayer.addListener('click', event => openBoundaryInfo(event, 'Constituency'));
+  refreshBoundaryLayers();
+}
+
+function refreshBoundaryLayers() {
+  if (!gmap) return;
+  const showWards = document.getElementById('layer-wards')?.checked ?? true;
+  const showConstituencies = document.getElementById('layer-constituencies')?.checked ?? false;
+
+  if (wardBoundaryLayer) {
+    wardBoundaryLayer.setMap(showWards ? gmap : null);
+    wardBoundaryLayer.setStyle({
+      fillColor: '#62D4C3',
+      fillOpacity: 0.08,
+      strokeColor: '#62D4C3',
+      strokeOpacity: 0.9,
+      strokeWeight: 1.4,
+      zIndex: 1,
+    });
+  }
+  if (constituencyBoundaryLayer) {
+    constituencyBoundaryLayer.setMap(showConstituencies ? gmap : null);
+    constituencyBoundaryLayer.setStyle({
+      fillColor: '#F6C85F',
+      fillOpacity: 0.04,
+      strokeColor: '#F6C85F',
+      strokeOpacity: 0.95,
+      strokeWeight: 2.6,
+      zIndex: 2,
+    });
+  }
+}
+
+function openBoundaryInfo(event, expectedLevel) {
+  if (!boundaryInfoWindow) return;
+  const feature = event.feature;
+  const name = feature.getProperty('name') || feature.getProperty('sourceName') || expectedLevel;
+  const level = feature.getProperty('level') || expectedLevel;
+  const sourceYear = feature.getProperty('sourceYear') || '';
+  const originalSource = feature.getProperty('originalSource') || 'geoBoundaries';
+  const surveyCount = level === 'Ward'
+    ? wardCount(name, selDay === 'all' ? null : selDay)
+    : constituencyCount(name, selDay === 'all' ? null : selDay);
+
+  boundaryInfoWindow.setContent(`
+    <div style="font-family:Arial,sans-serif;min-width:210px;padding:3px">
+      <div style="font-size:14px;font-weight:700;color:#172033">${name}</div>
+      <div style="font-size:10px;color:#667085;margin-top:2px">${level} boundary${sourceYear ? ` (${sourceYear})` : ''}</div>
+      <div style="margin-top:9px;padding:7px 9px;background:#f7f9fc;border:1px solid #e5e7eb;border-radius:6px">
+        <div style="font-size:9px;color:#667085;text-transform:uppercase;letter-spacing:.04em">Survey records</div>
+        <div style="font-size:16px;font-weight:700;color:#172033;margin-top:2px">${surveyCount}</div>
+      </div>
+      <div style="font-size:9px;color:#667085;line-height:1.35;margin-top:8px">Source: ${originalSource} via geoBoundaries.</div>
+    </div>`);
+  boundaryInfoWindow.setPosition(event.latLng);
+  boundaryInfoWindow.open(gmap);
+}
+
 function refreshMap() {
   if (!gmap) return;
+  refreshBoundaryLayers();
   const showSurveys = document.getElementById('layer-surveys').checked;
   const showCells   = document.getElementById('layer-cells').checked;
   const showSignal  = false;
