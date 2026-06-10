@@ -1746,8 +1746,10 @@ const API_URL = 'https://honiara-survey-api.onrender.com';
 const DEMO_MODE = false;
 
 // ── AUTH STATE ───────────────────────────────────────────────────
-let authToken = localStorage.getItem('honiara_token') || null;
-let currentUser = JSON.parse(localStorage.getItem('honiara_user') || 'null');
+// Strict authentication: credentials are required after every page load.
+// Tokens remain only in memory and are never restored from browser storage.
+let authToken = null;
+let currentUser = null;
 
 const WARDS = {
   'Nggossi':        {constituency:'West Honiara',    target:20, lat:-9.405, lng:160.018},
@@ -1828,6 +1830,8 @@ let selectedConstituencyBoundary = null;
 let surveySyncTimer = null;
 let surveySyncInFlight = false;
 let lastSurveyFingerprint = '';
+let inactivityTimer = null;
+const INACTIVITY_LOGOUT_MS = 15 * 60 * 1000;
 let activeView = 'survey';
 
 // ══════════════════════════════════════════════════════
@@ -4381,8 +4385,6 @@ async function doLogin() {
     const data = await res.json();
     if (!res.ok) { showLoginError(data.error || 'Login failed.'); btn.innerHTML = 'Sign in'; btn.disabled = false; return; }
     authToken = data.token; currentUser = data.user;
-    localStorage.setItem('honiara_token', authToken);
-    localStorage.setItem('honiara_user', JSON.stringify(currentUser));
     btn.innerHTML = '\u2713 Signed in';
     // Keep button disabled after success — login screen will hide
     showApp();
@@ -4403,7 +4405,11 @@ function showLoginError(msg) {
 
 function doLogout() {
   stopSurveySync();
+  stopInactivityLogout();
   authToken = null; currentUser = null;
+  sessionStorage.removeItem('honiara_token');
+  sessionStorage.removeItem('honiara_user');
+  // Remove legacy persistent sessions created by earlier portal versions.
   localStorage.removeItem('honiara_token');
   localStorage.removeItem('honiara_user');
   // Hide admin-only tabs and tools
@@ -4464,6 +4470,7 @@ function showApp() {
       currentUser?.role === 'leader' ? 'Field Leader' : 'Field Assistant';
     loadSurveysFromAPI();
     startSurveySync();
+    startInactivityLogout();
     // Google Maps loads when Live Map tab is clicked
   }
   applyRolePermissions();
@@ -4609,34 +4616,39 @@ function stopSurveySync() {
   surveySyncTimer = null;
 }
 
+function resetInactivityLogout() {
+  if (!authToken || !currentUser) return;
+  if (inactivityTimer) clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    doLogout();
+    showLoginError('Session locked after 15 minutes of inactivity. Please sign in again.');
+  }, INACTIVITY_LOGOUT_MS);
+}
+
+function startInactivityLogout() {
+  stopInactivityLogout();
+  ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(eventName => {
+    document.addEventListener(eventName, resetInactivityLogout, { passive: true });
+  });
+  resetInactivityLogout();
+}
+
+function stopInactivityLogout() {
+  if (inactivityTimer) clearTimeout(inactivityTimer);
+  inactivityTimer = null;
+  ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(eventName => {
+    document.removeEventListener(eventName, resetInactivityLogout);
+  });
+}
+
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && authToken && currentUser) loadSurveysFromAPI({ silent: true });
 });
 
 async function checkAuth() {
   if (DEMO_MODE) { showApp(); return; }
-  if (!authToken || !currentUser) return;
-  try {
-    const res = await fetch(`${API_URL}/api/auth/me`, {
-      headers: { 'Authorization': `Bearer ${authToken}` },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      currentUser = data.user || currentUser;
-      localStorage.setItem('honiara_user', JSON.stringify(currentUser));
-      showApp();
-      return;
-    }
-    if (res.status === 401) {
-      doLogout();
-      return;
-    }
-    // Keep the locally saved session visible during temporary server errors.
-    showApp();
-  } catch (err) {
-    // A sleeping or temporarily unreachable API should not erase the session.
-    showApp();
-  }
+  // Production always starts locked. Only a successful login calls showApp().
+  doLogout();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
@@ -4645,15 +4657,15 @@ document.getElementById('f-date').value  = new Date().toISOString().split('T')[0
 initScreenshotInputs();
 document.getElementById('view-map').style.display = 'none';
 document.getElementById('view-survey').classList.add('on');
-// Check if already logged in, otherwise show login screen
-// Clear stale demo tokens on load
+// Remove authentication created by older portal versions. Production always
+// starts at the login screen and never restores a previous browser session.
 if (!DEMO_MODE) {
-  const storedToken = localStorage.getItem('honiara_token');
-  // Validate token is real (not from demo session)
-  if (storedToken === 'demo-token-admin' || storedToken === 'demo-token') {
-    localStorage.removeItem('honiara_token');
-    localStorage.removeItem('honiara_user');
-  }
+  localStorage.removeItem('honiara_token');
+  localStorage.removeItem('honiara_user');
+  sessionStorage.removeItem('honiara_token');
+  sessionStorage.removeItem('honiara_user');
+  authToken = null;
+  currentUser = null;
 }
 checkAuth();
 </script>
