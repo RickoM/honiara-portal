@@ -4616,9 +4616,27 @@ document.addEventListener('visibilitychange', () => {
 async function checkAuth() {
   if (DEMO_MODE) { showApp(); return; }
   if (!authToken || !currentUser) return;
-  // Restore the saved session immediately. Authenticated API calls will log out
-  // only if the server explicitly reports that the token is invalid or expired.
-  showApp();
+  try {
+    const res = await fetch(`${API_URL}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${authToken}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      currentUser = data.user || currentUser;
+      localStorage.setItem('honiara_user', JSON.stringify(currentUser));
+      showApp();
+      return;
+    }
+    if (res.status === 401) {
+      doLogout();
+      return;
+    }
+    // Keep the locally saved session visible during temporary server errors.
+    showApp();
+  } catch (err) {
+    // A sleeping or temporarily unreachable API should not erase the session.
+    showApp();
+  }
 }
 
 // ── INIT ──────────────────────────────────────────────────────────
