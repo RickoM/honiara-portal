@@ -75,6 +75,10 @@
   .layer-toggle-label { font-size: 12px; font-weight: 500; }
   .layer-icon { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
   .boundary-line-icon { width: 22px; height: 12px; border: 2px solid; border-radius: 2px; background: rgba(255,255,255,.25); flex-shrink: 0; }
+  .boundary-key { border-top: 1px solid var(--border); margin-top: 7px; padding-top: 7px; display: grid; gap: 4px; }
+  .boundary-key-title { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); }
+  .boundary-key-row { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--gray-800); }
+  .boundary-key-swatch { width: 18px; height: 9px; border: 2px solid; border-radius: 2px; flex-shrink: 0; }
   .boundary-source { border-top: 1px solid var(--border); margin-top: 7px; padding-top: 7px; max-width: 230px; font-size: 9px; line-height: 1.35; color: var(--gray-600); }
   .boundary-source a { color: var(--blue-mid); text-decoration: none; }
   
@@ -665,15 +669,22 @@
         </label>
         <label class="layer-toggle">
           <input type="checkbox" id="layer-wards" checked onchange="refreshBoundaryLayers()">
-          <span class="boundary-line-icon" style="border-color:#62D4C3;background:rgba(98,212,195,.13)"></span>
+          <span class="boundary-line-icon" style="border-color:#7C3AED;background:linear-gradient(90deg,#3B82F655 0 33%,#A855F755 33% 66%,#F59E0B55 66%)"></span>
           <span class="layer-toggle-label">Ward boundaries</span>
         </label>
         <label class="layer-toggle">
           <input type="checkbox" id="layer-constituencies" onchange="refreshBoundaryLayers()">
-          <span class="boundary-line-icon" style="border-color:#F6C85F;background:rgba(246,200,95,.08)"></span>
+          <span class="boundary-line-icon" style="border-color:#172033;background:linear-gradient(90deg,#2563EB 0 33%,#7C3AED 33% 66%,#D97706 66%)"></span>
           <span class="layer-toggle-label">Constituency boundaries</span>
         </label>
         <button class="btn btn-sm" onclick="fitSurveyWaypoints()" style="width:100%;margin-top:8px">Fit survey waypoints</button>
+        <div class="boundary-key">
+          <div class="boundary-key-title">Constituency colours</div>
+          <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#2563EB;background:#3B82F655"></span>West Honiara</div>
+          <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#7C3AED;background:#A855F755"></span>Central Honiara</div>
+          <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#D97706;background:#F59E0B55"></span>East Honiara</div>
+          <div style="font-size:9px;color:var(--gray-600);line-height:1.3">Wards use different shades of their constituency colour.</div>
+        </div>
         <div class="boundary-source">
           Boundaries: POPGIS and SINSO/OCHA ROAP via
           <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener">geoBoundaries</a>.
@@ -1753,6 +1764,21 @@ const WARDS = {
   'Panatina':       {constituency:'East Honiara',    target:30, lat:-9.448, lng:160.088},
 };
 
+const CONSTITUENCY_BOUNDARY_STYLES = {
+  'West Honiara': {
+    stroke: '#2563EB',
+    wards: ['#93C5FD', '#60A5FA', '#3B82F6'],
+  },
+  'Central Honiara': {
+    stroke: '#7C3AED',
+    wards: ['#D8B4FE', '#C084FC', '#A855F7', '#9333EA', '#7E22CE'],
+  },
+  'East Honiara': {
+    stroke: '#D97706',
+    wards: ['#FDE68A', '#FCD34D', '#FBBF24', '#F59E0B'],
+  },
+};
+
 const HONIARA_CENTER = { lat: -9.432, lng: 160.052 };
 const TOTAL_TARGET   = 150;
 
@@ -2203,24 +2229,35 @@ function refreshBoundaryLayers() {
 
   if (wardBoundaryLayer) {
     wardBoundaryLayer.setMap(showWards ? gmap : null);
-    wardBoundaryLayer.setStyle({
-      fillColor: '#62D4C3',
-      fillOpacity: 0.08,
-      strokeColor: '#62D4C3',
-      strokeOpacity: 0.9,
-      strokeWeight: 1.4,
-      zIndex: 1,
+    wardBoundaryLayer.setStyle(feature => {
+      const wardName = feature.getProperty('name');
+      const constituency = WARDS[wardName]?.constituency || 'Central Honiara';
+      const constituencyStyle = CONSTITUENCY_BOUNDARY_STYLES[constituency];
+      const constituencyWards = Object.keys(WARDS).filter(name => WARDS[name].constituency === constituency);
+      const shadeIndex = Math.max(0, constituencyWards.indexOf(wardName)) % constituencyStyle.wards.length;
+      return {
+        fillColor: constituencyStyle.wards[shadeIndex],
+        fillOpacity: 0.22,
+        strokeColor: constituencyStyle.stroke,
+        strokeOpacity: 0.88,
+        strokeWeight: 1.3,
+        zIndex: 1,
+      };
     });
   }
   if (constituencyBoundaryLayer) {
     constituencyBoundaryLayer.setMap(showConstituencies ? gmap : null);
-    constituencyBoundaryLayer.setStyle({
-      fillColor: '#F6C85F',
-      fillOpacity: 0.04,
-      strokeColor: '#F6C85F',
-      strokeOpacity: 0.95,
-      strokeWeight: 2.6,
-      zIndex: 2,
+    constituencyBoundaryLayer.setStyle(feature => {
+      const name = feature.getProperty('name');
+      const constituencyStyle = CONSTITUENCY_BOUNDARY_STYLES[name] || CONSTITUENCY_BOUNDARY_STYLES['Central Honiara'];
+      return {
+        fillColor: constituencyStyle.stroke,
+        fillOpacity: 0.035,
+        strokeColor: constituencyStyle.stroke,
+        strokeOpacity: 1,
+        strokeWeight: 3.2,
+        zIndex: 2,
+      };
     });
   }
 }
@@ -2232,14 +2269,19 @@ function openBoundaryInfo(event, expectedLevel) {
   const level = feature.getProperty('level') || expectedLevel;
   const sourceYear = feature.getProperty('sourceYear') || '';
   const originalSource = feature.getProperty('originalSource') || 'geoBoundaries';
+  const constituency = level === 'Ward' ? WARDS[name]?.constituency : name;
+  const boundaryColour = CONSTITUENCY_BOUNDARY_STYLES[constituency]?.stroke || '#172033';
   const surveyCount = level === 'Ward'
     ? wardCount(name, selDay === 'all' ? null : selDay)
     : constituencyCount(name, selDay === 'all' ? null : selDay);
 
   boundaryInfoWindow.setContent(`
     <div style="font-family:Arial,sans-serif;min-width:210px;padding:3px">
-      <div style="font-size:14px;font-weight:700;color:#172033">${name}</div>
-      <div style="font-size:10px;color:#667085;margin-top:2px">${level} boundary${sourceYear ? ` (${sourceYear})` : ''}</div>
+      <div style="border-left:5px solid ${boundaryColour};padding-left:8px">
+        <div style="font-size:14px;font-weight:700;color:#172033">${name}</div>
+        <div style="font-size:10px;color:#667085;margin-top:2px">${level} boundary${sourceYear ? ` (${sourceYear})` : ''}</div>
+        ${level === 'Ward' && constituency ? `<div style="font-size:10px;color:${boundaryColour};font-weight:700;margin-top:3px">${constituency}</div>` : ''}
+      </div>
       <div style="margin-top:9px;padding:7px 9px;background:#f7f9fc;border:1px solid #e5e7eb;border-radius:6px">
         <div style="font-size:9px;color:#667085;text-transform:uppercase;letter-spacing:.04em">Survey records</div>
         <div style="font-size:16px;font-weight:700;color:#172033;margin-top:2px">${surveyCount}</div>
