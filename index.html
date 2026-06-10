@@ -1822,6 +1822,8 @@ let heatmap  = null;
 let wardBoundaryLayer = null;
 let constituencyBoundaryLayer = null;
 let boundaryInfoWindow = null;
+let selectedWardBoundary = null;
+let selectedConstituencyBoundary = null;
 let activeView = 'survey';
 
 // ══════════════════════════════════════════════════════
@@ -2219,6 +2221,8 @@ function initializeBoundaryLayers() {
 
   wardBoundaryLayer.addListener('click', event => openBoundaryInfo(event, 'Ward'));
   constituencyBoundaryLayer.addListener('click', event => openBoundaryInfo(event, 'Constituency'));
+  boundaryInfoWindow.addListener('closeclick', clearBoundarySelection);
+  gmap.addListener('click', clearBoundarySelection);
   refreshBoundaryLayers();
 }
 
@@ -2235,31 +2239,51 @@ function refreshBoundaryLayers() {
       const constituencyStyle = CONSTITUENCY_BOUNDARY_STYLES[constituency];
       const constituencyWards = Object.keys(WARDS).filter(name => WARDS[name].constituency === constituency);
       const shadeIndex = Math.max(0, constituencyWards.indexOf(wardName)) % constituencyStyle.wards.length;
+      const isSelected = wardName === selectedWardBoundary;
+      const isSelectedConstituency = constituency === selectedConstituencyBoundary;
+      const selectionActive = Boolean(selectedWardBoundary || selectedConstituencyBoundary);
       return {
         fillColor: constituencyStyle.wards[shadeIndex],
-        fillOpacity: 0.22,
+        fillOpacity: isSelected ? 0.58 : selectionActive ? (isSelectedConstituency ? 0.18 : 0.035) : 0.22,
         strokeColor: constituencyStyle.stroke,
-        strokeOpacity: 0.88,
-        strokeWeight: 1.3,
-        zIndex: 1,
+        strokeOpacity: isSelected ? 1 : selectionActive ? (isSelectedConstituency ? 0.82 : 0.25) : 0.88,
+        strokeWeight: isSelected ? 4 : isSelectedConstituency ? 1.5 : 1.1,
+        zIndex: isSelected ? 5 : 1,
       };
     });
   }
   if (constituencyBoundaryLayer) {
-    constituencyBoundaryLayer.setMap(showConstituencies ? gmap : null);
+    constituencyBoundaryLayer.setMap(showConstituencies || selectedConstituencyBoundary ? gmap : null);
     constituencyBoundaryLayer.setStyle(feature => {
       const name = feature.getProperty('name');
       const constituencyStyle = CONSTITUENCY_BOUNDARY_STYLES[name] || CONSTITUENCY_BOUNDARY_STYLES['Central Honiara'];
+      const isSelected = name === selectedConstituencyBoundary;
+      const selectionActive = Boolean(selectedConstituencyBoundary);
       return {
         fillColor: constituencyStyle.stroke,
-        fillOpacity: 0.035,
+        fillOpacity: isSelected ? 0.07 : selectionActive ? 0 : 0.035,
         strokeColor: constituencyStyle.stroke,
-        strokeOpacity: 1,
-        strokeWeight: 3.2,
-        zIndex: 2,
+        strokeOpacity: isSelected ? 1 : selectionActive ? 0.15 : 1,
+        strokeWeight: isSelected ? 5 : selectionActive ? 1 : 3.2,
+        zIndex: isSelected ? 4 : 2,
       };
     });
   }
+}
+
+function clearBoundarySelection() {
+  if (!selectedWardBoundary && !selectedConstituencyBoundary) return;
+  selectedWardBoundary = null;
+  selectedConstituencyBoundary = null;
+  refreshBoundaryLayers();
+}
+
+function frameBoundaryFeature(feature) {
+  const geometry = feature?.getGeometry?.();
+  if (!geometry || !window.google) return;
+  const bounds = new google.maps.LatLngBounds();
+  geometry.forEachLatLng(latLng => bounds.extend(latLng));
+  if (!bounds.isEmpty()) gmap.fitBounds(bounds, { top: 130, right: 170, bottom: 130, left: 330 });
 }
 
 function openBoundaryInfo(event, expectedLevel) {
@@ -2271,6 +2295,10 @@ function openBoundaryInfo(event, expectedLevel) {
   const originalSource = feature.getProperty('originalSource') || 'geoBoundaries';
   const constituency = level === 'Ward' ? WARDS[name]?.constituency : name;
   const boundaryColour = CONSTITUENCY_BOUNDARY_STYLES[constituency]?.stroke || '#172033';
+  selectedWardBoundary = level === 'Ward' ? name : null;
+  selectedConstituencyBoundary = constituency || null;
+  refreshBoundaryLayers();
+  frameBoundaryFeature(feature);
   const surveyCount = level === 'Ward'
     ? wardCount(name, selDay === 'all' ? null : selDay)
     : constituencyCount(name, selDay === 'all' ? null : selDay);
@@ -2282,6 +2310,7 @@ function openBoundaryInfo(event, expectedLevel) {
         <div style="font-size:10px;color:#667085;margin-top:2px">${level} boundary${sourceYear ? ` (${sourceYear})` : ''}</div>
         ${level === 'Ward' && constituency ? `<div style="font-size:10px;color:${boundaryColour};font-weight:700;margin-top:3px">${constituency}</div>` : ''}
       </div>
+      ${level === 'Ward' ? `<div style="font-size:10px;color:#475467;margin-top:8px">This ward is highlighted within the outlined ${constituency} constituency.</div>` : ''}
       <div style="margin-top:9px;padding:7px 9px;background:#f7f9fc;border:1px solid #e5e7eb;border-radius:6px">
         <div style="font-size:9px;color:#667085;text-transform:uppercase;letter-spacing:.04em">Survey records</div>
         <div style="font-size:16px;font-weight:700;color:#172033;margin-top:2px">${surveyCount}</div>
