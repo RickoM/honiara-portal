@@ -138,16 +138,27 @@
   th { text-align: left; padding: 8px 12px; background: var(--gray-50); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); border-bottom: 1px solid var(--border); white-space: nowrap; }
   td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
-  .data-table-scroll { overflow-x: auto; position: relative; }
-  #data-table { min-width: 1680px; }
-  #data-table th:last-child, #data-table td:last-child {
-    position: sticky;
-    right: 0;
+#view-data { min-height: 0; overflow: hidden; }
+#view-data .data-card { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#view-data .data-toolbar { flex: 0 0 auto; }
+.data-table-scroll {
+  flex: 1;
+  min-height: 260px;
+  overflow: auto;
+  position: relative;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+#data-table { min-width: 1680px; }
+#data-table thead th { position: sticky; top: 0; z-index: 2; }
+#data-table th:last-child, #data-table td:last-child {
+  position: sticky;
+  right: 0;
     z-index: 3;
     background: #fff;
     box-shadow: -5px 0 8px rgba(15, 35, 60, 0.08);
   }
-  #data-table th:last-child { background: var(--gray-50); z-index: 4; }
+#data-table th:last-child { background: var(--gray-50); z-index: 5; }
   tr:hover td { background: var(--gray-50); }
   
   /* ── BADGE ── */
@@ -471,7 +482,8 @@
   /* ── Data table ── */
   @media (max-width: 1024px) {
     .view-panel { padding: 12px; }
-    .data-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    #view-data .data-card { overflow: hidden; }
+    #view-data .data-table-scroll { -webkit-overflow-scrolling: touch; }
   }
 
   /* ── Dashboard ── */
@@ -1817,6 +1829,8 @@ function gpsStatusBadge(status) {
 }
 
 let points   = [];   // all survey & cell site data points
+let towerPoints = []; // unique tower waypoints derived from Step 7 survey fields
+let duplicateRespondentIds = new Set();
 let selDay   = 'all';
 let apiKey   = 'AIzaSyDTQZWZb7YxaIl2sBAk7P50SqTorOe6zl8';
 let gmap     = null;
@@ -2085,6 +2099,7 @@ function renderDayStrip() {
 
 function updateSidebarMetrics() {
   const src   = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
+  const towerSrc = selDay === 'all' ? towerPoints : towerPoints.filter(p => p.date <= selDay);
   const surveys = src.filter(p => p.type === 'survey');
   const mapped = surveys.filter(p => gpsStatus(p.lat, p.lng) !== 'Missing');
   const missingGps = surveys.length - mapped.length;
@@ -2102,7 +2117,7 @@ function updateSidebarMetrics() {
   if (quality) {
     const valid = surveys.filter(p => gpsStatus(p.lat, p.lng) === 'Valid').length;
     const outside = surveys.filter(p => gpsStatus(p.lat, p.lng) === 'Outside study area').length;
-    const towers = src.filter(p => p.type === 'cell' && gpsStatus(p.lat, p.lng) !== 'Missing').length;
+    const towers = towerSrc.filter(p => gpsStatus(p.lat, p.lng) !== 'Missing').length;
     const operators = [...new Set(surveys.map(p => p.fd_s1_op || p.operator || p.op).filter(Boolean))];
     const row = (label, value, colour = 'var(--navy)') =>
       `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 9px;background:var(--gray-50);border:1px solid var(--border);border-radius:6px;font-size:11px">
@@ -2112,6 +2127,7 @@ function updateSidebarMetrics() {
       row('Valid Honiara waypoints', valid, 'var(--green)') +
       row('Outside study area', outside, outside ? 'var(--amber)' : 'var(--green)') +
       row('Mobile tower points', towers) +
+      row('Duplicate respondent IDs', duplicateRespondentIds.size, duplicateRespondentIds.size ? 'var(--red)' : 'var(--green)') +
       row('Operators represented', operators.join(', ') || 'None');
   }
 }
@@ -2406,6 +2422,7 @@ function refreshMap() {
   if (heatmap) { heatmap.setMap(null); heatmap = null; }
 
   const src = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
+  const towerSrc = selDay === 'all' ? towerPoints : towerPoints.filter(p => p.date <= selDay);
   const hasMapCoordinates = p =>
     Number.isFinite(parseCoordinate(p.lat)) && Number.isFinite(parseCoordinate(p.lng)) &&
     parseCoordinate(p.lat) >= -90 && parseCoordinate(p.lat) <= 90 &&
@@ -2483,7 +2500,7 @@ function refreshMap() {
 
   // Cell site markers
   if (showCells && window.google) {
-    src.filter(p => p.type === 'cell' && hasMapCoordinates(p)).forEach(p => {
+    towerSrc.filter(hasMapCoordinates).forEach(p => {
       const marker = new google.maps.Marker({
         position: { lat: parseCoordinate(p.lat), lng: parseCoordinate(p.lng) },
         map: gmap,
@@ -2739,7 +2756,9 @@ function renderDataTable() {
   if (fo) rows = rows.filter(p => p.op === fo);
   if (ft) rows = rows.filter(p => p.type === ft);
 
-  document.getElementById('data-count').textContent = `${rows.length} of ${points.length} records`;
+  const duplicateCount = duplicateRespondentIds.size;
+  document.getElementById('data-count').textContent =
+    `${rows.length} of ${points.length} records${duplicateCount ? ` · ${duplicateCount} duplicate respondent ID${duplicateCount === 1 ? '' : 's'} flagged` : ''}`;
 
   const tbody = document.getElementById('dt-body');
   if (!rows.length) {
@@ -2765,7 +2784,7 @@ function renderDataTable() {
       String(p.submittedBy || '').toLowerCase() === String(currentUser.username || '').toLowerCase()
     );
     return `<tr>
-      <td style="${mono};font-weight:500">${p.id || '\u2014'}</td>
+      <td style="${mono};font-weight:500">${p.id || '\u2014'}${duplicateRespondentIds.has(String(p.id || '').trim().toUpperCase()) ? '<div><span class="badge badge-red" style="font-family:Inter,sans-serif;margin-top:3px">Duplicate ID</span></div>' : ''}</td>
       <td><span class="badge ${typeBdg}">${p.type === 'cell' ? 'Cell site' : 'Survey'}</span></td>
       <td style="color:var(--gray-600)">${p.date || '\u2014'}</td>
       <td style="font-weight:500">${p.ward || '\u2014'}</td>
@@ -4283,7 +4302,7 @@ function addTowerToMap() {
   const tlonEl = document.getElementById('fd-s7-tlon');
   if (tlatEl && !tlatEl.value) tlatEl.value = parseFloat(lastTowerResult.lat).toFixed(6);
   if (tlonEl && !tlonEl.value) tlonEl.value = parseFloat(lastTowerResult.lon).toFixed(6);
-  points.push({
+  towerPoints.push({
     id: 'CS-' + enb, ward,
     constituency: WARDS[ward]?.constituency || '', op, type: 'cell',
     date: document.getElementById('sf-date').value || new Date().toISOString().split('T')[0],
@@ -4526,7 +4545,7 @@ function seedDemoData() {
   // Add a few cell site markers
   wards.slice(0, 6).forEach(ward => {
     const base = WARDS[ward];
-    points.push({
+    towerPoints.push({
       id: 'CS-' + (points.length + 1).toString().padStart(2, '0'),
       ward, constituency: base.constituency,
       op: ops[Math.floor(Math.random() * 2)],
@@ -4553,6 +4572,50 @@ function surveyFingerprint(surveys) {
   return JSON.stringify(surveys);
 }
 
+function findDuplicateRespondentIds(surveys) {
+  const counts = new Map();
+  surveys.forEach(s => {
+    const id = String(s.respondentId || '').trim().toUpperCase();
+    if (id) counts.set(id, (counts.get(id) || 0) + 1);
+  });
+  return new Set([...counts.entries()].filter(([, count]) => count > 1).map(([id]) => id));
+}
+
+function deriveUniqueTowerPoints(surveys) {
+  const unique = new Map();
+  surveys.forEach(s => {
+    const lat = parseCoordinate(s.fd_s7_tlat);
+    const lng = parseCoordinate(s.fd_s7_tlon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
+        lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+    const enb = String(s.fd_s7_newenb || s.fd_s2a_enb || s.enb || '').trim();
+    const operator = String(s.fd_s7_top || s.fd_s1_op || s.operator || s.op || '').trim();
+    // Prefer the network identifier; otherwise group observations within roughly 10 metres.
+    const key = enb
+      ? `${operator.toLowerCase()}|${enb.toLowerCase()}`
+      : `${operator.toLowerCase()}|${lat.toFixed(4)}|${lng.toFixed(4)}`;
+    if (!unique.has(key)) {
+      unique.set(key, {
+        ...s,
+        id: enb ? `Tower ${enb}` : `Tower near ${s.ward || 'Honiara'}`,
+        sourceSurveyId: String(s._id || ''),
+        sourceRespondentId: s.respondentId || '',
+        type: 'cell',
+        ward: s.ward || '',
+        constituency: s.constituency || WARDS[s.ward]?.constituency || '',
+        op: operator || 'Unknown',
+        operator: operator || 'Unknown',
+        date: s.date || '',
+        lat,
+        lng,
+        enb,
+        towerType: s.fd_s7_ttype || '',
+      });
+    }
+  });
+  return [...unique.values()];
+}
+
 async function loadSurveysFromAPI({ silent = false } = {}) {
   if (DEMO_MODE) return; // demo data already seeded in showApp
   if (surveySyncInFlight) return false;
@@ -4565,6 +4628,8 @@ async function loadSurveysFromAPI({ silent = false } = {}) {
     const fingerprint = surveyFingerprint(data.surveys);
     if (silent && fingerprint === lastSurveyFingerprint) return false;
     lastSurveyFingerprint = fingerprint;
+    duplicateRespondentIds = findDuplicateRespondentIds(data.surveys);
+    towerPoints = deriveUniqueTowerPoints(data.surveys);
     points = data.surveys.map(s => ({
       // Keep full raw survey data, then normalize summary/map fields afterward.
       ...s,
