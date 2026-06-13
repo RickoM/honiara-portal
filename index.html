@@ -634,7 +634,7 @@
       <div class="sidebar-section" id="daily-summary">
         <div class="ssec-title">Map overview</div>
         <div class="metric-grid" id="day-metrics">
-          <div class="metric-card"><div class="metric-val" id="m-today">0</div><div class="metric-lbl">Mapped waypoints</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-today">0</div><div class="metric-lbl">Mapped survey records</div></div>
           <div class="metric-card"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Survey records</div></div>
           <div class="metric-card"><div class="metric-val" id="m-avgdl">—</div><div class="metric-lbl">Avg DL (Mbps)</div></div>
           <div class="metric-card"><div class="metric-val" id="m-below1">0</div><div class="metric-lbl">Missing GPS</div></div>
@@ -1828,6 +1828,53 @@ function gpsStatusBadge(status) {
   return `<span class="badge ${cls}">${status}</span>`;
 }
 
+function surveyMarkerLayout(surveys) {
+  const groups = new Map();
+  surveys.forEach(p => {
+    const lat = parseCoordinate(p.lat);
+    const lng = parseCoordinate(p.lng);
+    // Coordinates within roughly one metre are treated as one map location.
+    const key = `${lat.toFixed(5)}|${lng.toFixed(5)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(p);
+  });
+
+  const layout = new Map();
+  groups.forEach(group => {
+    const count = group.length;
+    group.forEach((p, index) => {
+      const lat = parseCoordinate(p.lat);
+      const lng = parseCoordinate(p.lng);
+      if (count === 1) {
+        layout.set(p, { position: { lat, lng }, count, index });
+        return;
+      }
+
+      // Fan overlapping markers out slightly so each record becomes clickable
+      // when zoomed in. Stored GPS coordinates remain unchanged.
+      const bearing = (360 / count) * index * Math.PI / 180;
+      const angularDistance = Math.min(28, 12 + count * 3) / 6378137;
+      const latRadians = lat * Math.PI / 180;
+      const lngRadians = lng * Math.PI / 180;
+      const displayLat = Math.asin(
+        Math.sin(latRadians) * Math.cos(angularDistance) +
+        Math.cos(latRadians) * Math.sin(angularDistance) * Math.cos(bearing)
+      );
+      const displayLng = lngRadians + Math.atan2(
+        Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latRadians),
+        Math.cos(angularDistance) - Math.sin(latRadians) * Math.sin(displayLat)
+      );
+      layout.set(p, {
+        position: { lat: displayLat * 180 / Math.PI, lng: displayLng * 180 / Math.PI },
+        count,
+        index,
+      });
+    });
+  });
+
+  return { layout, locationCount: groups.size, overlapCount: surveys.length - groups.size };
+}
+
 let points   = [];   // all survey & cell site data points
 let towerPoints = []; // unique tower waypoints derived from Step 7 survey fields
 let duplicateRespondentIds = new Set();
@@ -2117,6 +2164,7 @@ function updateSidebarMetrics() {
   if (quality) {
     const valid = surveys.filter(p => gpsStatus(p.lat, p.lng) === 'Valid').length;
     const outside = surveys.filter(p => gpsStatus(p.lat, p.lng) === 'Outside study area').length;
+    const mappedLayout = surveyMarkerLayout(mapped);
     const towers = towerSrc.filter(p => gpsStatus(p.lat, p.lng) !== 'Missing').length;
     const operators = [...new Set(surveys.map(p => p.fd_s1_op || p.operator || p.op).filter(Boolean))];
     const row = (label, value, colour = 'var(--navy)') =>
@@ -2126,6 +2174,7 @@ function updateSidebarMetrics() {
     quality.innerHTML =
       row('Valid Honiara waypoints', valid, 'var(--green)') +
       row('Outside study area', outside, outside ? 'var(--amber)' : 'var(--green)') +
+      row('Overlapping GPS records', mappedLayout.overlapCount, mappedLayout.overlapCount ? 'var(--amber)' : 'var(--green)') +
       row('Mobile tower points', towers) +
       row('Duplicate respondent IDs', duplicateRespondentIds.size, duplicateRespondentIds.size ? 'var(--red)' : 'var(--green)') +
       row('Operators represented', operators.join(', ') || 'None');
@@ -2429,8 +2478,13 @@ function refreshMap() {
     parseCoordinate(p.lng) >= -180 && parseCoordinate(p.lng) <= 180;
   const plottedSurveys = src.filter(p => p.type === 'survey' && hasMapCoordinates(p));
   const validStudyWaypoints = plottedSurveys.filter(p => gpsStatus(p.lat, p.lng) === 'Valid');
+  const markerLayout = surveyMarkerLayout(plottedSurveys);
   const waypointCount = document.getElementById('ms-waypoints');
-  if (waypointCount) waypointCount.textContent = `${plottedSurveys.length} waypoint${plottedSurveys.length === 1 ? '' : 's'} plotted`;
+  if (waypointCount) {
+    waypointCount.textContent = markerLayout.overlapCount
+      ? `${plottedSurveys.length} records at ${markerLayout.locationCount} locations (${markerLayout.overlapCount} overlapping)`
+      : `${plottedSurveys.length} survey location${plottedSurveys.length === 1 ? '' : 's'} plotted`;
+  }
 
   // Signal heatmap
   if (showSignal && window.google) {
@@ -2463,7 +2517,8 @@ function refreshMap() {
         maxWidth: 680,
       });
 
-      const position = { lat: parseCoordinate(p.lat), lng: parseCoordinate(p.lng) };
+      const layout = markerLayout.layout.get(p);
+      const position = layout.position;
       const marker = new google.maps.Marker({
         map: gmap,
         position,
@@ -2478,14 +2533,16 @@ function refreshMap() {
           labelOrigin: new google.maps.Point(0, -22),
         },
         label: {
-          text: 'S',
+          text: layout.count > 1 && layout.index === 0 ? String(layout.count) : 'S',
           color: '#ffffff',
           fontSize: '12px',
           fontWeight: '700',
         },
-        title: `Survey participant — ${p.id || p.ward || 'waypoint'}`,
+        title: layout.count > 1
+          ? `${layout.count} survey records share this GPS location — ${p.id || p.ward || 'waypoint'}`
+          : `Survey participant — ${p.id || p.ward || 'waypoint'}`,
         optimized: false,
-        zIndex: 1000,
+        zIndex: layout.count > 1 && layout.index === 0 ? 1100 : 1000 - layout.index,
       });
       const openWaypointInfo = () => {
         markers.forEach(m => m.infoWindow && m.infoWindow.close());
