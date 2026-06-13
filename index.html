@@ -1829,14 +1829,27 @@ function gpsStatusBadge(status) {
 }
 
 function surveyMarkerLayout(surveys) {
-  const groups = new Map();
+  const exactLocations = new Set();
+  const groups = [];
+  const distanceMetres = (a, b) => {
+    const lat1 = parseCoordinate(a.lat) * Math.PI / 180;
+    const lat2 = parseCoordinate(b.lat) * Math.PI / 180;
+    const dLat = lat2 - lat1;
+    const dLng = (parseCoordinate(b.lng) - parseCoordinate(a.lng)) * Math.PI / 180;
+    const h = Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+    return 6378137 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+  };
+
   surveys.forEach(p => {
     const lat = parseCoordinate(p.lat);
     const lng = parseCoordinate(p.lng);
-    // Coordinates within roughly one metre are treated as one map location.
-    const key = `${lat.toFixed(5)}|${lng.toFixed(5)}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(p);
+    exactLocations.add(`${lat.toFixed(5)}|${lng.toFixed(5)}`);
+    // Nearby records would hide each other at the normal map zoom, so group them
+    // for visual separation while preserving their original coordinates.
+    const nearbyGroup = groups.find(group => group.some(existing => distanceMetres(existing, p) <= 90));
+    if (nearbyGroup) nearbyGroup.push(p);
+    else groups.push([p]);
   });
 
   const layout = new Map();
@@ -1853,7 +1866,7 @@ function surveyMarkerLayout(surveys) {
       // Fan overlapping markers out slightly so each record becomes clickable
       // when zoomed in. Stored GPS coordinates remain unchanged.
       const bearing = (360 / count) * index * Math.PI / 180;
-      const angularDistance = Math.min(28, 12 + count * 3) / 6378137;
+      const angularDistance = Math.min(140, 55 + count * 14) / 6378137;
       const latRadians = lat * Math.PI / 180;
       const lngRadians = lng * Math.PI / 180;
       const displayLat = Math.asin(
@@ -1872,12 +1885,18 @@ function surveyMarkerLayout(surveys) {
     });
   });
 
-  return { layout, locationCount: groups.size, overlapCount: surveys.length - groups.size };
+  return {
+    layout,
+    locationCount: exactLocations.size,
+    overlapCount: surveys.length - exactLocations.size,
+    nearbyGroupCount: groups.filter(group => group.length > 1).length,
+  };
 }
 
 let points   = [];   // all survey & cell site data points
 let towerPoints = []; // unique tower waypoints derived from Step 7 survey fields
 let duplicateRespondentIds = new Set();
+const reservedRespondentIds = new Map();
 let selDay   = 'all';
 let apiKey   = 'AIzaSyDTQZWZb7YxaIl2sBAk7P50SqTorOe6zl8';
 let gmap     = null;
@@ -2533,9 +2552,9 @@ function refreshMap() {
           labelOrigin: new google.maps.Point(0, -22),
         },
         label: {
-          text: layout.count > 1 && layout.index === 0 ? String(layout.count) : 'S',
+          text: layout.count > 1 ? String(p.id || 'S').split('-').pop().slice(-3) : 'S',
           color: '#ffffff',
-          fontSize: '12px',
+          fontSize: layout.count > 1 ? '9px' : '12px',
           fontWeight: '700',
         },
         title: layout.count > 1
@@ -3883,15 +3902,40 @@ const WARD_CODES = {
   'Panatina':       'EH-PA',
 };
 
-function generateRespondentId(ward) {
+async function generateRespondentId(ward) {
   const el = document.getElementById('sf-respondent-id');
   if (!el) return;
   if (!ward || !WARD_CODES[ward]) { el.value = ''; return; }
+  // Never replace the ID while viewing or editing an existing record.
+  if (editingId || openRecordReadOnly || surveyReadOnlyMode) return;
+  if (reservedRespondentIds.has(ward)) {
+    el.value = reservedRespondentIds.get(ward);
+    return;
+  }
+  if (el.dataset.allocatingWard === ward) return;
+
   const prefix = WARD_CODES[ward];
-  const existing = points.filter(p => p.ward === ward && p.type === 'survey').length;
-  const num = String(existing + 1).padStart(3, '0');
-  const id = `${prefix}-${num}`;
-  el.value = id;
+  el.value = 'Allocating…';
+  el.dataset.allocatingWard = ward;
+  try {
+    const res = await apiCall('GET', '/api/surveys/next-id/' + encodeURIComponent(ward));
+    if (!res || !res.ok) throw new Error('ID allocation failed');
+    const result = await res.json();
+    reservedRespondentIds.set(ward, result.respondentId);
+    if (document.querySelector('#view-survey input[name="sf-a1"]:checked')?.value === ward) {
+      el.value = result.respondentId;
+    }
+  } catch (err) {
+    // Preview fallback only; the API still assigns the authoritative ID on submit.
+    const sequences = points
+      .map(p => String(p.id || '').match(new RegExp(`^${prefix}-(\\d+)$`, 'i')))
+      .filter(Boolean)
+      .map(match => Number(match[1]));
+    el.value = `${prefix}-${String((sequences.length ? Math.max(...sequences) : 0) + 1).padStart(3, '0')}`;
+    console.error('Respondent ID preview allocation failed:', err);
+  } finally {
+    if (el.dataset.allocatingWard === ward) delete el.dataset.allocatingWard;
+  }
 }
 
 // ── Step 1: operator "Other" text field ──────────────────────────────
@@ -4062,8 +4106,9 @@ async function sfSubmit() {
     document.getElementById('sf-form-body').classList.add('hide');
     document.getElementById('sf-success').classList.add('show');
     localStorage.removeItem('honiara_sf_draft');
+    reservedRespondentIds.delete(data.ward);
     document.getElementById('sf-success-txt').textContent =
-      `Survey ${data.respondentId || ''} — ${data.ward} — saved to database. Point added to Live Map.`;
+      `Survey ${result.survey?.respondentId || data.respondentId || ''} — ${data.ward} — saved to database. Point added to Live Map.`;
     updateTopBadge();
     // Reload all surveys from server so table and map stay in sync with MongoDB
     await syncSurveyViews();
@@ -4227,6 +4272,7 @@ function sfRestoreDraft() {
 
 function sfReset(keepEditingId) {
   if (!keepEditingId) editingId = null;
+  if (!keepEditingId) reservedRespondentIds.clear();
   setSurveyReadOnly(false);
   const banner = document.getElementById('sf-edit-banner');
   if (banner && !keepEditingId) banner.style.display = 'none';
