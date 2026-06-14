@@ -643,6 +643,16 @@
       </div>
 
       <div class="sidebar-section">
+        <div class="ssec-title">RF & performance summary</div>
+        <div id="rf-summary" style="display:flex;flex-direction:column;gap:7px"></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="ssec-title">Selected serving LTE cell</div>
+        <div id="sector-summary" style="font-size:10px;color:var(--gray-600);padding:8px;border:1px dashed var(--border);border-radius:6px">Click a serving-cell marker on the map to inspect its observed performance.</div>
+      </div>
+
+      <div class="sidebar-section">
         <div class="ssec-title">Map data summary</div>
         <div id="map-quality" style="display:grid;gap:7px"></div>
       </div>
@@ -681,6 +691,11 @@
           <input type="checkbox" id="layer-cells" checked onchange="refreshMap()">
           <svg width="22" height="24" viewBox="-16 -21 32 34" aria-hidden="true"><g fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0-17L-7 11M0-17L7 11M-5 4H5M-3-3H3M-1-10H1"/><path d="M-7-14C-12-10-12-4-8 0M7-14C12-10 12-4 8 0M-12-17C-19-11-19-2-13 4M12-17C19-11 19-2 13 4"/></g></svg>
           <span class="layer-toggle-label">Mobile tower points</span>
+        </label>
+        <label class="layer-toggle">
+          <input type="checkbox" id="layer-sectors" checked onchange="refreshMap()">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12L22 7A11 11 0 0 1 20 18Z" fill="#7C3AED" stroke="#fff"/><circle cx="12" cy="12" r="3" fill="#7C3AED" stroke="#fff"/></svg>
+          <span class="layer-toggle-label">Serving LTE cell performance</span>
         </label>
         <label class="layer-toggle">
           <input type="checkbox" id="layer-wards" checked onchange="refreshBoundaryLayers()">
@@ -1927,6 +1942,7 @@ let gmap     = null;
 let markers  = [];
 let surveyOverlays = [];
 let waypointShapes = [];
+let selectedSectorKey = '';
 let heatmap  = null;
 let wardBoundaryLayer = null;
 let constituencyBoundaryLayer = null;
@@ -2224,6 +2240,82 @@ function updateSidebarMetrics() {
       row('Duplicate respondent IDs', duplicateRespondentIds.size, duplicateRespondentIds.size ? 'var(--red)' : 'var(--green)') +
       row('Operators represented', operators.join(', ') || 'None');
   }
+  renderRfPerformanceSummary(surveys);
+}
+
+function renderRfPerformanceSummary(surveys) {
+  const target = document.getElementById('rf-summary');
+  if (!target) return;
+  const numeric = (record, fields) => {
+    for (const field of fields) {
+      const value = parseFloat(record[field]);
+      if (Number.isFinite(value)) return value;
+    }
+    return null;
+  };
+  const values = surveys.map(record => ({
+    record,
+    rsrp: numeric(record, ['rsrp', 'fd_s2a_rsrp']),
+    rsrq: numeric(record, ['fd_s2a_rsrq']),
+    sinr: numeric(record, ['fd_s2a_rssnr']),
+    dl: numeric(record, ['dl', 'fd_s1_ookla_dl', 'fd_s1_nperf_dl']),
+  }));
+  const withValue = field => values.filter(item => item[field] != null);
+  const average = field => {
+    const rows = withValue(field);
+    return rows.length ? (rows.reduce((sum, item) => sum + item[field], 0) / rows.length).toFixed(1) : '—';
+  };
+  const count = (field, test) => withValue(field).filter(item => test(item[field])).length;
+  const pct = (value, total) => total ? Math.round(value / total * 100) : 0;
+  const rsrpRows = withValue('rsrp');
+  const rsrqRows = withValue('rsrq');
+  const sinrRows = withValue('sinr');
+  const dlRows = withValue('dl');
+  const goodCoverage = count('rsrp', value => value >= -90);
+  const poorCoverage = count('rsrp', value => value < -100);
+  const degradedQuality = count('rsrq', value => value < -15);
+  const noisySignal = count('sinr', value => value <= 0);
+  const goodSinr = count('sinr', value => value >= 10);
+  const slowDownload = count('dl', value => value < 1);
+  const misleadingBars = values.filter(item =>
+    item.rsrp != null && item.rsrp >= -90 &&
+    ((item.rsrq != null && item.rsrq < -15) || (item.sinr != null && item.sinr <= 0) || (item.dl != null && item.dl < 1))
+  );
+  const card = (title, main, detail, colour) => `<div style="padding:8px 9px;border:1px solid var(--border);border-left:4px solid ${colour};border-radius:6px;background:#fff">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><span style="font-size:10px;font-weight:700;color:#344054">${title}</span><strong style="font-size:13px;color:${colour}">${main}</strong></div>
+    <div style="font-size:9px;color:var(--gray-600);line-height:1.35;margin-top:3px">${detail}</div>
+  </div>`;
+  const completeness = [
+    `RSRP ${rsrpRows.length}/${surveys.length}`,
+    `RSRQ ${rsrqRows.length}/${surveys.length}`,
+    `SINR ${sinrRows.length}/${surveys.length}`,
+    `DL ${dlRows.length}/${surveys.length}`,
+  ].join(' · ');
+
+  if (!surveys.length) {
+    target.innerHTML = '<div style="font-size:10px;color:var(--gray-400);padding:8px;border:1px dashed var(--border);border-radius:6px">No survey readings available for the selected period.</div>';
+    return;
+  }
+  target.innerHTML =
+    card('Coverage · RSRP', `${average('rsrp')} dBm`,
+      `${goodCoverage} good/excellent (${pct(goodCoverage, rsrpRows.length)}%); ${poorCoverage} poor/very poor. RSRP shows how strongly the serving cell is heard.`,
+      goodCoverage >= poorCoverage ? '#3B7A18' : '#A32D2D') +
+    card('Signal quality · RSRQ', `${average('rsrq')} dB`,
+      `${degradedQuality} degraded below -15 dB (${pct(degradedQuality, rsrqRows.length)}%). Low RSRQ can indicate congestion or interference.`,
+      degradedQuality ? '#BA7517' : '#3B7A18') +
+    card('Signal cleanliness · SINR', `${average('sinr')} dB`,
+      `${goodSinr} good/excellent at 10 dB or above; ${noisySignal} noisy at 0 dB or below. SINR best predicts usable performance.`,
+      noisySignal ? '#A32D2D' : '#3B7A18') +
+    card('Experienced performance', `${average('dl')} Mbps`,
+      `${slowDownload} reading${slowDownload === 1 ? '' : 's'} below 1 Mbps. Average uses recorded SIM 1 download results.`,
+      slowDownload ? '#BA7517' : '#3B7A18') +
+    `<div style="padding:8px 9px;border-radius:6px;background:${misleadingBars.length ? '#fff4e5' : '#eef8f4'};border:1px solid ${misleadingBars.length ? '#efb366' : '#86b7a8'}">
+      <div style="font-size:10px;font-weight:700;color:${misleadingBars.length ? '#8a4b08' : '#205c43'}">${misleadingBars.length ? `${misleadingBars.length} strong-signal warning${misleadingBars.length === 1 ? '' : 's'}` : 'Coverage and quality broadly agree'}</div>
+      <div style="font-size:9px;color:var(--gray-600);line-height:1.35;margin-top:3px">${misleadingBars.length
+        ? `Good RSRP but degraded RSRQ, noisy SINR, or slow download: ${misleadingBars.map(item => item.record.id || item.record.respondentId).join(', ')}.`
+        : 'No current point shows good RSRP combined with clearly degraded quality or sub-1 Mbps download.'}</div>
+    </div>
+    <div style="font-size:8px;color:var(--gray-600);line-height:1.35">Reading completeness: ${completeness}. Thresholds follow the field recording sheet; interpret small samples cautiously.</div>`;
 }
 
 function renderWardBars() {
@@ -2517,6 +2609,7 @@ function refreshMap() {
   refreshBoundaryLayers();
   const showSurveys = document.getElementById('layer-surveys').checked;
   const showCells   = document.getElementById('layer-cells').checked;
+  const showSectors = document.getElementById('layer-sectors')?.checked ?? true;
   const showSignal  = false;
   const colMode     = 'signal';
 
@@ -2616,7 +2709,7 @@ function refreshMap() {
           scale: 1.25,
           anchor: new google.maps.Point(0, 11),
         },
-        title: `Cell site — ${p.ward} (${p.op})`,
+        title: `Tower eNB ${p.enb || 'unknown'} — ${(p.connectedSurveys || []).length} connected survey record${(p.connectedSurveys || []).length === 1 ? '' : 's'}`,
         zIndex: 20,
       });
       const info = new google.maps.InfoWindow({
@@ -2624,6 +2717,47 @@ function refreshMap() {
         maxWidth: 240,
       });
       marker.addListener('click', () => { markers.forEach(m => m.infoWindow && m.infoWindow.close()); info.open(gmap, marker); });
+      marker.infoWindow = info;
+      markers.push(marker);
+    });
+  }
+
+  // Serving LTE cell markers: primary identity is PLMN (MCC + MNC) + ECI.
+  if (showSectors && window.google) {
+    buildCellSectorGroups(src.filter(p => p.type === 'survey')).forEach(sector => {
+      const positions = sector.records.map(record => ({
+        lat: parseCoordinate(record.lat),
+        lng: parseCoordinate(record.lng),
+      })).filter(position => Number.isFinite(position.lat) && Number.isFinite(position.lng));
+      if (!positions.length) return;
+      const position = {
+        lat: positions.reduce((sum, item) => sum + item.lat, 0) / positions.length,
+        lng: positions.reduce((sum, item) => sum + item.lng, 0) / positions.length,
+      };
+      const stats = sectorStatistics(sector);
+      const colour = stats.rsrp.average == null ? '#7C3AED' : rsrpColor(stats.rsrp.average);
+      const marker = new google.maps.Marker({
+        position,
+        map: gmap,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: colour,
+          fillOpacity: selectedSectorKey === sector.key ? 1 : .82,
+          strokeColor: selectedSectorKey === sector.key ? '#7C3AED' : '#ffffff',
+          strokeWeight: selectedSectorKey === sector.key ? 4 : 2,
+          scale: selectedSectorKey === sector.key ? 16 : 13,
+        },
+        label: { text: String(sector.lcid || sector.eci.slice(-2)), color: '#fff', fontSize: '9px', fontWeight: '700' },
+        title: `Serving LTE cell ECI ${sector.eci} — ${sector.records.length} survey records`,
+        optimized: false,
+        zIndex: selectedSectorKey === sector.key ? 1450 : 1250,
+      });
+      const info = new google.maps.InfoWindow({ content: sectorSummaryHTML(sector), maxWidth: 520 });
+      marker.addListener('click', () => {
+        markers.forEach(item => item.infoWindow && item.infoWindow.close());
+        selectCellSector(sector);
+        info.open(gmap, marker);
+      });
       marker.infoWindow = info;
       markers.push(marker);
     });
@@ -2713,14 +2847,142 @@ function infoWindowHTML(p) {
 }
 
 function cellInfoWindowHTML(p) {
-  return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:200px">
-    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Cell site — ${p.ward}</div>
-    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.date}</div>
+  const connected = p.connectedSurveys || [];
+  const values = field => connected.map(s => parseFloat(s[field])).filter(Number.isFinite);
+  const average = field => {
+    const nums = values(field);
+    return nums.length ? (nums.reduce((sum, value) => sum + value, 0) / nums.length).toFixed(1) : '—';
+  };
+  return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:320px;max-width:420px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Mobile tower — eNB ${p.enb || 'unknown'}</div>
+    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.ward || 'Ward not recorded'}</div>
     <div style="background:#f8f9fa;border-radius:6px;padding:8px;font-size:11px">
-      <div style="margin-bottom:4px"><span style="color:#666">eNB-LCID: </span><strong style="font-family:'JetBrains Mono',monospace">${p.enb||'—'}</strong></div>
-      <div><span style="color:#666">TAC-ECI: </span><strong style="font-family:'JetBrains Mono',monospace">${p.taceci||'—'}</strong></div>
+      <div style="margin-bottom:4px"><span style="color:#666">Tower GPS: </span><strong>${parseCoordinate(p.lat).toFixed(5)}, ${parseCoordinate(p.lng).toFixed(5)}</strong></div>
+      <div><span style="color:#666">Tower type: </span><strong>${p.towerType || 'Not recorded'}</strong></div>
     </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px">
+      <div style="background:#eef4ff;border-radius:5px;padding:6px"><div style="font-size:8px;color:#667085">CONNECTED SURVEYS</div><strong>${connected.length}</strong></div>
+      <div style="background:#eef4ff;border-radius:5px;padding:6px"><div style="font-size:8px;color:#667085">AVG RSRP</div><strong>${average('rsrp')} dBm</strong></div>
+      <div style="background:#eef4ff;border-radius:5px;padding:6px"><div style="font-size:8px;color:#667085">AVG DOWNLOAD</div><strong>${average('dl')} Mbps</strong></div>
+    </div>
+    <div style="font-size:10px;font-weight:700;color:#344054;margin:9px 0 4px">Survey records connected to this eNB</div>
+    <div style="max-height:180px;overflow:auto;border:1px solid #e5e7eb;border-radius:6px">
+      ${connected.length ? connected.map(s => `<div style="display:grid;grid-template-columns:70px 1fr 62px 62px;gap:5px;padding:6px;border-bottom:1px solid #e5e7eb;font-size:9px">
+        <strong>${s.respondentId || s.id || '—'}</strong><span>ECI ${s.fd_s2a_eci || '—'} / LCID ${s.fd_s2a_lcid || '—'}</span><span>${s.rsrp || s.fd_s2a_rsrp || '—'} dBm</span><span>${s.dl || '—'} Mbps</span>
+      </div>`).join('') : '<div style="padding:8px;color:#667085;font-size:10px">No survey records matched to this tower.</div>'}
+    </div>
+    <div style="font-size:9px;color:#667085;margin-top:7px">Provisional tower association: matching reported eNB and operator. This does not independently prove the physical serving tower.</div>
   </div>`;
+}
+
+function surveyTowerAssociation(p) {
+  const enb = String(p.fd_s2a_enb || String(p.enb || '').split('-')[0] || '').trim();
+  const operator = String(p.fd_s1_op || p.operator || p.op || '').trim().toLowerCase();
+  if (!enb) return { enb: '', tower: null };
+  const tower = towerPoints.find(t =>
+    String(t.enb || '').trim() === enb &&
+    (!operator || !String(t.op || t.operator || '').trim() ||
+      String(t.op || t.operator || '').trim().toLowerCase() === operator)
+  ) || null;
+  return { enb, tower };
+}
+
+function surveyTowerAssociationHTML(p) {
+  const association = surveyTowerAssociation(p);
+  if (!association.enb) {
+    return '<div style="margin-top:8px;padding:7px;border:1px dashed #d0d5dd;border-radius:6px;color:#667085;font-size:10px">Serving tower cannot be identified because eNB was not recorded.</div>';
+  }
+  const tower = association.tower;
+  return `<div style="margin-top:8px;padding:8px;border:1px solid ${tower ? '#86b7a8' : '#e7b35b'};background:${tower ? '#eef8f4' : '#fff8e8'};border-radius:6px">
+    <div style="font-size:9px;color:#667085;text-transform:uppercase;font-weight:700">Serving tower association</div>
+    <div style="font-size:11px;font-weight:700;color:#1A1A2E;margin-top:3px">eNB ${association.enb} · ECI ${p.fd_s2a_eci || '—'} · LCID ${p.fd_s2a_lcid || '—'}</div>
+    <div style="font-size:9px;color:#667085;margin-top:3px">${tower
+      ? `Mapped tower GPS: ${parseCoordinate(tower.lat).toFixed(5)}, ${parseCoordinate(tower.lng).toFixed(5)}`
+      : 'eNB identified, but this tower location has not yet been mapped in Step 7.'}</div>
+  </div>`;
+}
+
+function buildCellSectorGroups(surveys) {
+  const groups = new Map();
+  surveys.forEach(p => {
+    const operator = String(p.fd_s1_op || p.operator || p.op || 'Unknown').trim();
+    const enb = String(p.fd_s2a_enb || String(p.enb || '').split('-')[0] || '').trim();
+    const mcc = String(p.fd_s2a_mcc || '').trim();
+    const mnc = String(p.fd_s2a_mnc || '').trim();
+    const eci = String(p.fd_s2a_eci || '').trim();
+    if (!eci) return;
+    const hasPlmn = Boolean(mcc && mnc);
+    const plmnKey = hasPlmn ? `${mcc}-${mnc}` : `operator:${operator.toLowerCase()}`;
+    const key = `${plmnKey}|${eci}`;
+    if (!groups.has(key)) groups.set(key, {
+      key, operator, enb, mcc, mnc, eci,
+      identificationBasis: hasPlmn ? 'PLMN (MCC + MNC) + ECI' : 'Operator fallback + ECI',
+      tac: String(p.fd_s2a_tac || '').trim(),
+      lcid: String(p.fd_s2a_lcid || '').trim(),
+      pci: String(p.fd_s2a_pci || '').trim(),
+      records: [],
+    });
+    groups.get(key).records.push(p);
+  });
+  return [...groups.values()];
+}
+
+function sectorStatistics(sector) {
+  const values = fields => sector.records.map(record => {
+    for (const field of fields) {
+      const value = parseFloat(record[field]);
+      if (Number.isFinite(value)) return value;
+    }
+    return NaN;
+  }).filter(Number.isFinite);
+  const summary = fields => {
+    const nums = values(fields).sort((a, b) => a - b);
+    if (!nums.length) return { average: null, median: null, min: null, max: null, count: 0 };
+    const middle = Math.floor(nums.length / 2);
+    return {
+      average: nums.reduce((sum, value) => sum + value, 0) / nums.length,
+      median: nums.length % 2 ? nums[middle] : (nums[middle - 1] + nums[middle]) / 2,
+      min: nums[0], max: nums[nums.length - 1], count: nums.length,
+    };
+  };
+  const rsrp = summary(['rsrp', 'fd_s2a_rsrp']);
+  const rsrq = summary(['fd_s2a_rsrq']);
+  const sinr = summary(['fd_s2a_rssnr']);
+  const dl = summary(['dl', 'fd_s1_ookla_dl', 'fd_s1_nperf_dl']);
+  const ul = summary(['ul', 'fd_s1_ookla_ul', 'fd_s1_nperf_ul']);
+  const ping = summary(['ping', 'fd_s1_ookla_ping', 'fd_s1_nperf_ping']);
+  const jitter = summary(['jitter', 'fd_s1_ookla_jitter', 'fd_s1_nperf_jitter']);
+  const degradedRsrq = values(['fd_s2a_rsrq']).filter(value => value < -15).length;
+  const noisySinr = values(['fd_s2a_rssnr']).filter(value => value <= 0).length;
+  const slowDl = values(['dl', 'fd_s1_ookla_dl', 'fd_s1_nperf_dl']).filter(value => value < 1).length;
+  return { rsrp, rsrq, sinr, dl, ul, ping, jitter, degradedRsrq, noisySinr, slowDl };
+}
+
+function sectorSummaryHTML(sector, compact = false) {
+  const stats = sectorStatistics(sector);
+  const show = (value, suffix = '') => value == null ? '—' : `${value.toFixed(1)}${suffix}`;
+  const ids = sector.records.map(record => record.id || record.respondentId).join(', ');
+  const plmn = sector.mcc && sector.mnc ? `${sector.mcc}-${sector.mnc}` : 'not recorded';
+  return `<div style="font-family:'Inter',sans-serif;${compact ? '' : 'min-width:380px;max-width:480px;'}">
+    <div style="font-size:${compact ? '12px' : '14px'};font-weight:700;color:#1A1A2E">${sector.operator} · ECI ${sector.eci}</div>
+    <div style="font-size:9px;color:#667085;margin:3px 0 3px">PLMN ${plmn} · reported eNB ${sector.enb || '—'} · LCID ${sector.lcid || '—'} · PCI ${sector.pci || '—'} · TAC ${sector.tac || '—'}</div>
+    <div style="font-size:8px;color:#667085;margin:0 0 8px">Identification basis: ${sector.identificationBasis} · ${sector.records.length} survey point${sector.records.length === 1 ? '' : 's'}</div>
+    <div style="display:grid;grid-template-columns:repeat(${compact ? 2 : 4},1fr);gap:5px">
+      ${[['Avg RSRP', show(stats.rsrp.average, ' dBm')], ['Avg RSRQ', show(stats.rsrq.average, ' dB')], ['Avg SINR', show(stats.sinr.average, ' dB')], ['Median DL', show(stats.dl.median, ' Mbps')], ['Avg DL', show(stats.dl.average, ' Mbps')], ['Avg UL', show(stats.ul.average, ' Mbps')], ['Avg ping', show(stats.ping.average, ' ms')], ['Avg jitter', show(stats.jitter.average, ' ms')]].map(([label, value]) => `<div style="padding:5px;background:#f7f9fc;border:1px solid #e5e7eb;border-radius:5px"><div style="font-size:8px;color:#667085;text-transform:uppercase">${label}</div><strong style="font-size:10px">${value}</strong></div>`).join('')}
+    </div>
+    <div style="font-size:9px;color:#667085;margin-top:7px">Warnings: ${stats.degradedRsrq} degraded RSRQ · ${stats.noisySinr} noisy SINR · ${stats.slowDl} below 1 Mbps</div>
+    <div style="font-size:9px;color:#667085;margin-top:5px;line-height:1.35">Survey records: ${ids}</div>
+    <div style="font-size:8px;color:#667085;margin-top:5px;line-height:1.35">This is observed sample performance for one serving LTE cell, not a measurement of cell capacity or proof of a physical antenna sector. Association assumes the serving-cell reading remained valid during the linked performance tests. The marker is placed at the centroid of its survey points, not at the physical tower.</div>
+  </div>`;
+}
+
+function selectCellSector(sector) {
+  selectedSectorKey = sector.key;
+  const target = document.getElementById('sector-summary');
+  if (target) {
+    target.style.cssText = 'font-size:10px;color:var(--gray-600);padding:8px;border:1px solid #c7b5ef;border-radius:6px;background:#f7f3ff';
+    target.innerHTML = sectorSummaryHTML(sector, true);
+  }
 }
 
 function enhancedInfoWindowHTML(p) {
@@ -2746,6 +3008,7 @@ function enhancedInfoWindowHTML(p) {
     </div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.constituency)} &middot; ${show(p.date)} ${show(p.time)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:7px">GPS waypoint: ${parseCoordinate(p.lat).toFixed(5)}, ${parseCoordinate(p.lng).toFixed(5)}</div>
+    ${surveyTowerAssociationHTML(p)}
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px">
       ${card('RSRQ', p.fd_s2a_rsrq, has(p.fd_s2a_rsrq) ? ' dB' : '')}
@@ -2842,7 +3105,88 @@ function renderDashboard() {
     '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">Coverage flags</div>' +
     (flags.map(f => `<div class="flag-item ${f.cls}"><span>${f.msg}</span></div>`).join('') || '<p style="color:var(--gray-400);font-size:12px">Add surveys to see flags</p>');
 
+  renderNetworkIdentityAggregation(surv);
   renderWardBars();
+}
+
+function renderNetworkIdentityAggregation(surveys) {
+  const target = document.getElementById('dash-ward-detail');
+  if (!target) return;
+  const clean = value => String(value ?? '').trim();
+  const operatorOf = p => clean(p.fd_s1_op || p.operator || p.op || 'Unknown');
+  const enbOf = p => clean(p.fd_s2a_enb || String(p.enb || '').split('-')[0]);
+  const groups = new Map();
+
+  surveys.forEach(p => {
+    const operator = operatorOf(p);
+    const enb = enbOf(p);
+    const mcc = clean(p.fd_s2a_mcc);
+    const mnc = clean(p.fd_s2a_mnc);
+    const tac = clean(p.fd_s2a_tac);
+    const eci = clean(p.fd_s2a_eci);
+    if (!eci) return;
+    const lcid = clean(p.fd_s2a_lcid);
+    const pci = clean(p.fd_s2a_pci);
+    const plmn = mcc && mnc ? `${mcc}-${mnc}` : '';
+    const towerKey = `${plmn || `operator:${operator.toLowerCase()}`}|${eci}`;
+    const cellKey = 'serving-cell';
+    if (!groups.has(towerKey)) groups.set(towerKey, { operator, enb, mcc, mnc, eci, cells: new Map(), records: [] });
+    const tower = groups.get(towerKey);
+    tower.records.push(p);
+    if (!tower.cells.has(cellKey)) tower.cells.set(cellKey, { tac, eci, lcid, pci, records: [] });
+    tower.cells.get(cellKey).records.push(p);
+  });
+
+  const numericValues = (records, fields) => records.map(record => {
+    for (const field of fields) {
+      const value = parseFloat(record[field]);
+      if (Number.isFinite(value)) return value;
+    }
+    return NaN;
+  }).filter(Number.isFinite);
+  const avg = (records, fields, digits = 1) => {
+    const values = numericValues(records, fields);
+    return values.length ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(digits) : '—';
+  };
+  const mappedTower = (operator, enb) => towerPoints.find(t =>
+    clean(t.enb) === enb && (!clean(t.op) || clean(t.op).toLowerCase() === operator.toLowerCase())
+  );
+  const towerRows = [...groups.values()].sort((a, b) => a.operator.localeCompare(b.operator) || a.enb.localeCompare(b.enb));
+
+  target.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px">
+    <div>
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">Serving LTE Cell Performance Aggregation</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:3px">Primary serving-cell identity: PLMN (MCC + MNC) + ECI. Operator + ECI is used only when MCC/MNC is missing. Reported eNB/LCID, PCI and TAC are supporting cross-checks and do not alone prove a physical antenna sector.</div>
+    </div>
+    <div style="font-size:10px;color:var(--gray-600);text-align:right">${towerRows.length} identified serving cell${towerRows.length === 1 ? '' : 's'} · ${surveys.filter(p => clean(p.fd_s2a_eci)).length}/${surveys.length} surveys with ECI</div>
+  </div>
+  <div style="overflow:auto;max-height:520px;border:1px solid var(--border);border-radius:7px">
+    <table style="min-width:1160px;width:100%;font-size:10px">
+      <thead><tr>
+        <th>Operator / PLMN / reported eNB</th><th>TAC</th><th>ECI</th><th>LCID</th><th>PCI</th><th>Survey records</th>
+        <th>Avg RSRP</th><th>Avg RSRQ</th><th>Avg SNR</th><th>Avg DL</th><th>Avg UL</th><th>Mapped tower GPS</th>
+      </tr></thead>
+      <tbody>${towerRows.length ? towerRows.map(tower => {
+        const towerPoint = mappedTower(tower.operator, tower.enb);
+        const cells = [...tower.cells.values()].sort((a, b) => b.records.length - a.records.length);
+        return cells.map((cell, index) => `<tr>
+          <td>${index === 0 ? `<strong>${tower.operator}</strong><div style="font-family:'JetBrains Mono',monospace;color:var(--navy)">PLMN ${tower.mcc && tower.mnc ? `${tower.mcc}-${tower.mnc}` : 'not recorded'} · eNB ${tower.enb || '—'}</div><div style="font-size:9px;color:var(--gray-600)">${tower.records.length} serving-cell observation${tower.records.length === 1 ? '' : 's'}</div>` : ''}</td>
+          <td style="font-family:'JetBrains Mono',monospace">${cell.tac || '—'}</td>
+          <td style="font-family:'JetBrains Mono',monospace">${cell.eci || '—'}</td>
+          <td style="font-family:'JetBrains Mono',monospace">${cell.lcid || '—'}</td>
+          <td style="font-family:'JetBrains Mono',monospace">${cell.pci || '—'}</td>
+          <td><strong>${cell.records.length}</strong><div style="font-size:9px;color:var(--gray-600)">${cell.records.map(p => p.id || p.respondentId).join(', ')}</div></td>
+          <td>${avg(cell.records, ['rsrp', 'fd_s2a_rsrp'])} dBm</td>
+          <td>${avg(cell.records, ['fd_s2a_rsrq'])} dB</td>
+          <td>${avg(cell.records, ['fd_s2a_rssnr'])} dB</td>
+          <td>${avg(cell.records, ['dl', 'fd_s1_ookla_dl', 'fd_s1_nperf_dl'])} Mbps</td>
+          <td>${avg(cell.records, ['ul', 'fd_s1_ookla_ul', 'fd_s1_nperf_ul'])} Mbps</td>
+          <td>${index === 0 ? (towerPoint ? `${parseCoordinate(towerPoint.lat).toFixed(5)}, ${parseCoordinate(towerPoint.lng).toFixed(5)}` : '<span style="color:var(--amber)">Not yet mapped</span>') : ''}</td>
+        </tr>`).join('');
+      }).join('') : '<tr><td colspan="12" style="padding:20px;text-align:center;color:var(--gray-400)">No survey records contain an eNB tower identity yet.</td></tr>'}</tbody>
+    </table>
+  </div>
+  <div style="font-size:9px;color:var(--gray-600);margin-top:8px">These summaries describe observed performance among sampled locations and times, not cell capacity. Valid attribution assumes the serving-cell identity was captured immediately before or during each performance test and no handover occurred. PCI and TAC are not unique cell identifiers.</div>`;
 }
 
 // ══════════════════════════════════════════════════════
@@ -4825,12 +5169,14 @@ function findDuplicateRespondentIds(surveys) {
 
 function deriveUniqueTowerPoints(surveys) {
   const unique = new Map();
+  const surveyEnb = s => String(s.fd_s2a_enb || String(s.enb || '').split('-')[0] || '').trim();
+  const surveyOperator = s => String(s.fd_s1_op || s.operator || s.op || '').trim();
   surveys.forEach(s => {
     const lat = parseCoordinate(s.fd_s7_tlat);
     const lng = parseCoordinate(s.fd_s7_tlon);
     if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
         lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
-    const enb = String(s.fd_s7_newenb || s.fd_s2a_enb || s.enb || '').trim();
+    const enb = String(s.fd_s7_newenb || surveyEnb(s) || '').trim();
     const operator = String(s.fd_s7_top || s.fd_s1_op || s.operator || s.op || '').trim();
     // Prefer the network identifier; otherwise group observations within roughly 10 metres.
     const key = enb
@@ -4852,6 +5198,11 @@ function deriveUniqueTowerPoints(surveys) {
         lng,
         enb,
         towerType: s.fd_s7_ttype || '',
+        connectedSurveys: surveys.filter(candidate => {
+          if (surveyEnb(candidate) !== enb) return false;
+          const candidateOperator = surveyOperator(candidate);
+          return !operator || !candidateOperator || candidateOperator.toLowerCase() === operator.toLowerCase();
+        }),
       });
     }
   });
