@@ -2964,6 +2964,96 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
   const show = (value, suffix = '') => value == null ? '—' : `${value.toFixed(1)}${suffix}`;
   const ids = sector.records.map(record => record.id || record.respondentId).join(', ');
   const plmn = sector.mcc && sector.mnc ? `${sector.mcc}-${sector.mnc}` : 'not recorded';
+  const value = (record, fields) => {
+    for (const field of fields) {
+      const result = record[field];
+      if (result !== '' && result != null) return result;
+    }
+    return '—';
+  };
+  const coverageClass = stats.rsrp.average == null ? 'not assessable' :
+    stats.rsrp.average >= -80 ? 'excellent' : stats.rsrp.average >= -90 ? 'good' :
+    stats.rsrp.average >= -100 ? 'fair' : stats.rsrp.average >= -110 ? 'poor' : 'very poor';
+  const qualityClass = stats.rsrq.average == null ? 'not assessable' :
+    stats.rsrq.average >= -10 ? 'good' : stats.rsrq.average >= -15 ? 'fair' : 'degraded';
+  const sinrClass = stats.sinr.average == null ? 'not assessable' :
+    stats.sinr.average >= 20 ? 'excellent' : stats.sinr.average >= 10 ? 'good' :
+    stats.sinr.average > 0 ? 'usable' : 'noisy';
+  const performanceConclusion = `Across ${sector.records.length} contributing survey point${sector.records.length === 1 ? '' : 's'}, this serving LTE cell showed ${coverageClass} average coverage strength (RSRP ${show(stats.rsrp.average, ' dBm')}), ${qualityClass} average reference-signal quality (RSRQ ${show(stats.rsrq.average, ' dB')}), and ${sinrClass} app-reported SINR (${show(stats.sinr.average, ' dB')}). Observed download performance had a median of ${show(stats.dl.median, ' Mbps')} and mean of ${show(stats.dl.average, ' Mbps')} from ${stats.dl.count} reading${stats.dl.count === 1 ? '' : 's'}.`;
+  if (expanded) {
+    const definitions = [
+      ['PLMN', `${plmn}`, 'Public Land Mobile Network, formed from MCC + MNC. It identifies the operator network used to interpret the ECI.'],
+      ['ECI', sector.eci || '—', 'E-UTRAN Cell Identifier. PLMN + ECI is the primary identity used to group these LTE observations.'],
+      ['eNB', sector.enb || '—', 'Reported evolved NodeB identifier. It supports base-station association but does not independently prove the physical tower.'],
+      ['LCID', sector.lcid || '—', 'Reported local cell identifier. It supports interpretation of the ECI but does not prove antenna direction.'],
+      ['PCI', sector.pci || '—', 'Physical Cell Identity used by LTE radio procedures. PCI is reused and is not a unique cell identifier.'],
+      ['TAC', sector.tac || '—', 'Tracking Area Code. It identifies a mobility-management area containing multiple cells, not an individual cell.'],
+    ];
+    const metricCards = [
+      ['RSRP coverage', show(stats.rsrp.average, ' dBm'), `Average: ${coverageClass}; median ${show(stats.rsrp.median, ' dBm')}; range ${show(stats.rsrp.min)} to ${show(stats.rsrp.max)} dBm; n=${stats.rsrp.count}.`],
+      ['RSRQ quality', show(stats.rsrq.average, ' dB'), `Average: ${qualityClass}; median ${show(stats.rsrq.median, ' dB')}; range ${show(stats.rsrq.min)} to ${show(stats.rsrq.max)} dB; n=${stats.rsrq.count}.`],
+      ['App-reported SINR', show(stats.sinr.average, ' dB'), `Average: ${sinrClass}; median ${show(stats.sinr.median, ' dB')}; range ${show(stats.sinr.min)} to ${show(stats.sinr.max)} dB; n=${stats.sinr.count}.`],
+      ['Download', show(stats.dl.median, ' Mbps'), `Median shown; mean ${show(stats.dl.average, ' Mbps')}; range ${show(stats.dl.min)} to ${show(stats.dl.max)} Mbps; n=${stats.dl.count}.`],
+      ['Upload', show(stats.ul.median, ' Mbps'), `Median shown; mean ${show(stats.ul.average, ' Mbps')}; range ${show(stats.ul.min)} to ${show(stats.ul.max)} Mbps; n=${stats.ul.count}.`],
+      ['Latency', show(stats.ping.median, ' ms'), `Median ping shown; mean ${show(stats.ping.average, ' ms')}; median jitter ${show(stats.jitter.median, ' ms')}; n=${stats.ping.count}.`],
+    ];
+    return `<div style="font-family:'Inter',sans-serif;color:#1A1A2E">
+      <div style="font-size:15px;font-weight:700">${sector.operator} · Serving LTE cell ECI ${sector.eci}</div>
+      <div style="font-size:9px;color:#667085;margin-top:3px">Grouping basis: ${sector.identificationBasis}. ${sector.records.length} survey point${sector.records.length === 1 ? '' : 's'} contributed to this marker.</div>
+
+      <div style="margin-top:12px;padding:10px;border-left:4px solid #315d8f;background:#eef4fb;border-radius:6px">
+        <div style="font-size:10px;font-weight:700;color:#203F67">Observed performance summary</div>
+        <div style="font-size:10px;color:#344054;line-height:1.45;margin-top:4px">${performanceConclusion}</div>
+        <div style="font-size:8px;color:#667085;line-height:1.4;margin-top:5px">Classification labels use this study's field-sheet thresholds. Results describe sampled locations and times, not engineered cell capacity.</div>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;margin:14px 0 6px">Cell identity and importance</div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
+        ${definitions.map(([label, itemValue, detail]) => `<div style="padding:8px;border:1px solid #dfe5ec;border-radius:6px;background:#fff">
+          <div style="font-size:8px;color:#667085;text-transform:uppercase;font-weight:700">${label}</div>
+          <div style="font-size:11px;font-weight:700;color:#203F67;margin:2px 0">${itemValue}</div>
+          <div style="font-size:8px;color:#667085;line-height:1.35">${detail}</div>
+        </div>`).join('')}
+      </div>
+
+      <div style="font-size:11px;font-weight:700;margin:14px 0 6px">Aggregated performance evidence</div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
+        ${metricCards.map(([label, main, detail]) => `<div style="padding:8px;background:#f7f9fc;border:1px solid #dfe5ec;border-radius:6px">
+          <div style="font-size:8px;color:#667085;text-transform:uppercase;font-weight:700">${label}</div>
+          <div style="font-size:12px;font-weight:700;margin:2px 0">${main}</div>
+          <div style="font-size:8px;color:#667085;line-height:1.35">${detail}</div>
+        </div>`).join('')}
+      </div>
+
+      <div style="font-size:11px;font-weight:700;margin:14px 0 6px">Contributing survey-point evidence</div>
+      <div style="overflow:auto;border:1px solid #dfe5ec;border-radius:6px">
+        <table style="border-collapse:collapse;min-width:1220px;width:100%;font-size:8px">
+          <thead><tr style="background:#eef2f6;text-align:left">
+            ${['Survey ID','Ward','PLMN','ECI','eNB','LCID','PCI','TAC','Band','RSRP','RSRQ','SINR','DL','UL','Ping','GPS'].map(label => `<th style="padding:6px;border-bottom:1px solid #dfe5ec;white-space:nowrap">${label}</th>`).join('')}
+          </tr></thead>
+          <tbody>${sector.records.map(record => `<tr>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4;font-weight:700">${record.id || record.respondentId || '—'}</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${record.ward || '—'}</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_mcc'])}-${value(record, ['fd_s2a_mnc'])}</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_eci'])}</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_enb'])}</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_lcid'])}</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_pci'])}</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_tac'])}</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_band'])}</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['rsrp','fd_s2a_rsrp'])} dBm</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_rsrq'])} dB</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_rssnr'])} dB</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['dl','fd_s1_ookla_dl','fd_s1_nperf_dl'])} Mbps</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['ul','fd_s1_ookla_ul','fd_s1_nperf_ul'])} Mbps</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['ping','fd_s1_ookla_ping','fd_s1_nperf_ping'])} ms</td>
+            <td style="padding:6px;border-bottom:1px solid #edf0f4;white-space:nowrap">${value(record, ['lat'])}, ${value(record, ['lng'])}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div style="font-size:8px;color:#667085;line-height:1.4;margin-top:7px">Attribution limitation: grouping assumes the recorded serving-cell identity remained valid during each linked performance test and that no handover occurred. PCI, TAC, LCID, and reported eNB are supporting evidence; PLMN + ECI is the primary grouping identity.</div>
+    </div>`;
+  }
   return `<div style="font-family:'Inter',sans-serif;${compact ? '' : 'min-width:380px;max-width:480px;'}">
     <div style="font-size:${compact ? '12px' : '14px'};font-weight:700;color:#1A1A2E">${sector.operator} · ECI ${sector.eci}</div>
     <div style="font-size:9px;color:#667085;margin:3px 0 3px">PLMN ${plmn} · reported eNB ${sector.enb || '—'} · LCID ${sector.lcid || '—'} · PCI ${sector.pci || '—'} · TAC ${sector.tac || '—'}</div>
@@ -2974,7 +3064,6 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
     <div style="font-size:9px;color:#667085;margin-top:7px">Warnings: ${stats.degradedRsrq} degraded RSRQ · ${stats.noisySinr} noisy SINR · ${stats.slowDl} below 1 Mbps</div>
     <div style="font-size:9px;color:#667085;margin-top:5px;line-height:1.35">Survey records: ${ids}</div>
     <div style="font-size:8px;color:#667085;margin-top:5px;line-height:1.35">This is observed sample performance for one serving LTE cell, not a measurement of cell capacity or proof of a physical antenna sector. Association assumes the serving-cell reading remained valid during the linked performance tests. The marker is placed at the centroid of its survey points, not at the physical tower.</div>
-    ${compact || expanded ? '' : `<button type="button" onclick="openServingCellDetail()" style="width:100%;margin-top:9px;padding:8px 10px;border:0;border-radius:6px;background:#203F67;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Open larger view</button>`}
   </div>`;
 }
 
@@ -2984,7 +3073,7 @@ function selectCellSector(sector) {
   const target = document.getElementById('sector-summary');
   if (target) {
     target.style.cssText = 'font-size:10px;color:var(--gray-600);padding:8px;border:1px solid #c7b5ef;border-radius:6px;background:#f7f3ff';
-    target.innerHTML = `${sectorSummaryHTML(sector, true)}<button type="button" onclick="openServingCellDetail()" style="width:100%;margin-top:8px;padding:7px;border:0;border-radius:5px;background:#203F67;color:#fff;font-size:10px;font-weight:700;cursor:pointer">Open larger view</button>`;
+    target.innerHTML = sectorSummaryHTML(sector, true);
   }
 }
 
@@ -3037,7 +3126,7 @@ function openServingCellDetail() {
     applyScale(scale + (event.deltaY < 0 ? .15 : -.15));
   }, { passive: false });
   overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
-  applyScale(1.75);
+  applyScale(1.25);
 }
 
 function enhancedInfoWindowHTML(p) {
