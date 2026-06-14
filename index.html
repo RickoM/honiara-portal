@@ -1860,75 +1860,41 @@ function parseCoordinate(value) {
   return match ? Number(match[0]) : NaN;
 }
 
+function displayCoordinate(value) {
+  if (value === '' || value == null) return '—';
+  return String(value).trim();
+}
+
 function gpsStatusBadge(status) {
   const cls = status === 'Valid' ? 'badge-ok' : status === 'Outside study area' ? 'badge-red' : 'badge-warn';
   return `<span class="badge ${cls}">${status}</span>`;
 }
 
 function surveyMarkerLayout(surveys) {
-  const exactLocations = new Set();
-  const groups = [];
-  const distanceMetres = (a, b) => {
-    const lat1 = parseCoordinate(a.lat) * Math.PI / 180;
-    const lat2 = parseCoordinate(b.lat) * Math.PI / 180;
-    const dLat = lat2 - lat1;
-    const dLng = (parseCoordinate(b.lng) - parseCoordinate(a.lng)) * Math.PI / 180;
-    const h = Math.sin(dLat / 2) ** 2 +
-      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-    return 6378137 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-  };
-
+  const groups = new Map();
   surveys.forEach(p => {
     const lat = parseCoordinate(p.lat);
     const lng = parseCoordinate(p.lng);
-    exactLocations.add(`${lat.toFixed(5)}|${lng.toFixed(5)}`);
-    // Nearby records would hide each other at the normal map zoom, so group them
-    // for visual separation while preserving their original coordinates.
-    const nearbyGroup = groups.find(group => group.some(existing => distanceMetres(existing, p) <= 90));
-    if (nearbyGroup) nearbyGroup.push(p);
-    else groups.push([p]);
+    const key = `${lat}|${lng}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(p);
   });
 
   const layout = new Map();
   groups.forEach(group => {
     const count = group.length;
-    const centreLat = group.reduce((sum, p) => sum + parseCoordinate(p.lat), 0) / count;
-    const centreLng = group.reduce((sum, p) => sum + parseCoordinate(p.lng), 0) / count;
     group.forEach((p, index) => {
       const lat = parseCoordinate(p.lat);
       const lng = parseCoordinate(p.lng);
-      if (count === 1) {
-        layout.set(p, { position: { lat, lng }, count, index });
-        return;
-      }
-
-      // Fan overlapping markers out slightly so each record becomes clickable
-      // when zoomed in. Stored GPS coordinates remain unchanged.
-      const bearing = (360 / count) * index * Math.PI / 180;
-      const angularDistance = Math.min(140, 55 + count * 14) / 6378137;
-      const latRadians = centreLat * Math.PI / 180;
-      const lngRadians = centreLng * Math.PI / 180;
-      const displayLat = Math.asin(
-        Math.sin(latRadians) * Math.cos(angularDistance) +
-        Math.cos(latRadians) * Math.sin(angularDistance) * Math.cos(bearing)
-      );
-      const displayLng = lngRadians + Math.atan2(
-        Math.sin(bearing) * Math.sin(angularDistance) * Math.cos(latRadians),
-        Math.cos(angularDistance) - Math.sin(latRadians) * Math.sin(displayLat)
-      );
-      layout.set(p, {
-        position: { lat: displayLat * 180 / Math.PI, lng: displayLng * 180 / Math.PI },
-        count,
-        index,
-      });
+      layout.set(p, { position: { lat, lng }, count, index });
     });
   });
 
   return {
     layout,
-    locationCount: exactLocations.size,
-    overlapCount: surveys.length - exactLocations.size,
-    nearbyGroupCount: groups.filter(group => group.length > 1).length,
+    locationCount: groups.size,
+    overlapCount: surveys.length - groups.size,
+    nearbyGroupCount: [...groups.values()].filter(group => group.length > 1).length,
   };
 }
 
@@ -2394,6 +2360,8 @@ window.initMap = function() {
     streetViewControl: false,
     fullscreenControl: true,
   });
+  gmap.addListener('zoom_changed', collapseSurveyPointDetail);
+  gmap.addListener('dragstart', collapseSurveyPointDetail);
   const apiBadgeEl = document.getElementById('api-badge');
   if (apiBadgeEl) { apiBadgeEl.textContent = '✓ Map loaded'; apiBadgeEl.classList.remove('missing'); }
   initializeBoundaryLayers();
@@ -2665,10 +2633,6 @@ function refreshMap() {
     plottedSurveys.forEach(p => {
       const status = gpsStatus(p.lat, p.lng);
       const col = p.rsrp == null || p.rsrp === '' ? '#378ADD' : rsrpColor(p.rsrp);
-      const info = new google.maps.InfoWindow({
-        content: enhancedInfoWindowHTML(p),
-        maxWidth: 680,
-      });
 
       const layout = markerLayout.layout.get(p);
       const position = layout.position;
@@ -2688,7 +2652,6 @@ function refreshMap() {
         markers.forEach(m => m.infoWindow && m.infoWindow.close());
         openSurveyPointDetail(p);
       };
-      marker.infoWindow = info;
       marker.addListener('click', openWaypointInfo);
       markers.push(marker);
     });
@@ -2819,7 +2782,7 @@ function infoWindowHTML(p) {
   return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:340px;max-width:380px">
     <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} — ${show(p.ward)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} · ${show(p.constituency)} · ${show(p.date)} ${show(p.time)}</div>
-    <div style="font-size:10px;color:#667085;margin-bottom:4px">GPS waypoint: ${parseCoordinate(p.lat).toFixed(5)}, ${parseCoordinate(p.lng).toFixed(5)}</div>
+    <div style="font-size:10px;color:#667085;margin-bottom:4px">GPS waypoint: ${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</div>
     <div style="margin-bottom:8px">${gpsStatusBadge(gpsState)}</div>
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
@@ -2857,7 +2820,7 @@ function cellInfoWindowHTML(p) {
     <div style="font-weight:600;font-size:13px;margin-bottom:4px">Mobile tower — eNB ${p.enb || 'unknown'}</div>
     <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.ward || 'Ward not recorded'}</div>
     <div style="background:#f8f9fa;border-radius:6px;padding:8px;font-size:11px">
-      <div style="margin-bottom:4px"><span style="color:#666">Tower GPS: </span><strong>${parseCoordinate(p.lat).toFixed(5)}, ${parseCoordinate(p.lng).toFixed(5)}</strong></div>
+      <div style="margin-bottom:4px"><span style="color:#666">Tower GPS: </span><strong>${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</strong></div>
       <div><span style="color:#666">Tower type: </span><strong>${p.towerType || 'Not recorded'}</strong></div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px">
@@ -2897,7 +2860,7 @@ function surveyTowerAssociationHTML(p) {
     <div style="font-size:9px;color:#667085;text-transform:uppercase;font-weight:700">Serving tower association</div>
     <div style="font-size:11px;font-weight:700;color:#1A1A2E;margin-top:3px">eNB ${association.enb} · ECI ${p.fd_s2a_eci || '—'} · LCID ${p.fd_s2a_lcid || '—'}</div>
     <div style="font-size:9px;color:#667085;margin-top:3px">${tower
-      ? `Mapped tower GPS: ${parseCoordinate(tower.lat).toFixed(5)}, ${parseCoordinate(tower.lng).toFixed(5)}`
+      ? `Mapped tower GPS: ${displayCoordinate(tower.lat)}, ${displayCoordinate(tower.lng)}`
       : 'eNB identified, but this tower location has not yet been mapped in Step 7.'}</div>
   </div>`;
 }
@@ -3156,28 +3119,47 @@ function closeSurveyPointDetail() {
   document.getElementById('survey-point-detail-overlay')?.remove();
 }
 
+function toggleSurveyPointDetail(forceCollapsed) {
+  const overlay = document.getElementById('survey-point-detail-overlay');
+  const panel = overlay?.querySelector('[data-survey-detail-panel]');
+  const content = overlay?.querySelector('[data-survey-detail-content]');
+  const button = overlay?.querySelector('[data-survey-detail-toggle]');
+  if (!panel || !content || !button) return;
+  const collapsed = forceCollapsed == null ? content.style.display !== 'none' : forceCollapsed;
+  content.style.display = collapsed ? 'none' : 'block';
+  panel.style.height = collapsed ? 'auto' : 'min(760px,calc(100vh - 140px))';
+  button.textContent = collapsed ? 'Expand' : 'Collapse';
+  button.title = collapsed ? 'Expand survey details' : 'Collapse survey details';
+}
+
+function collapseSurveyPointDetail() {
+  toggleSurveyPointDetail(true);
+}
+
 function openSurveyPointDetail(p) {
   closeSurveyPointDetail();
   closeMapScreenshot();
   const overlay = document.createElement('div');
   overlay.id = 'survey-point-detail-overlay';
   overlay.tabIndex = -1;
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(9,21,37,.78);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
+  overlay.style.cssText = 'position:fixed;top:110px;right:16px;z-index:9999;width:min(780px,calc(100vw - 32px));max-height:calc(100vh - 126px);box-sizing:border-box';
   overlay.innerHTML = `
-    <div style="background:#fff;width:min(920px,100%);height:min(900px,calc(100vh - 32px));border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden;min-height:0">
+    <div data-survey-detail-panel style="background:#fff;width:100%;height:min(760px,calc(100vh - 140px));border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden;min-height:0;border:1px solid #cfd8e3">
       <div style="flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#10243d;color:#fff">
         <div>
           <div style="font-size:15px;font-weight:700">Survey data point ${p.id || p.respondentId || ''}</div>
-          <div style="font-size:10px;color:#cbd5e1;margin-top:2px">Responsive detail view · scroll to inspect all readings and screenshots</div>
+          <div style="font-size:10px;color:#cbd5e1;margin-top:2px">Automatically collapses when the map is zoomed or dragged</div>
         </div>
-        <button type="button" onclick="closeSurveyPointDetail()" title="Close survey point" style="flex:none;width:38px;height:34px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#10243d;cursor:pointer;font-size:20px;font-weight:700">×</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button type="button" data-survey-detail-toggle onclick="toggleSurveyPointDetail()" title="Collapse survey details" style="height:34px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#10243d;cursor:pointer;font-size:11px;font-weight:700;padding:0 10px">Collapse</button>
+          <button type="button" onclick="closeSurveyPointDetail()" title="Close survey point" style="flex:none;width:38px;height:34px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#10243d;cursor:pointer;font-size:20px;font-weight:700">×</button>
+        </div>
       </div>
       <div data-survey-detail-content style="flex:1;min-height:0;overflow:auto;padding:16px;box-sizing:border-box;scrollbar-gutter:stable;overscroll-behavior:contain">
         ${enhancedInfoWindowHTML(p)}
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  overlay.addEventListener('click', event => { if (event.target === overlay) closeSurveyPointDetail(); });
   overlay.addEventListener('keydown', event => { if (event.key === 'Escape') closeSurveyPointDetail(); });
   overlay.focus();
   hydrateWaypointEvidence(p);
@@ -3304,7 +3286,7 @@ function enhancedInfoWindowHTML(p) {
       ${badge(`${rsrpLabel(rsrp)} ${has(rsrp) ? `(${rsrp} dBm)` : ''}`, signalColour)}
     </div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.constituency)} &middot; ${show(p.date)} ${show(p.time)}</div>
-    <div style="font-size:10px;color:#667085;margin-bottom:7px">GPS waypoint: ${parseCoordinate(p.lat).toFixed(5)}, ${parseCoordinate(p.lng).toFixed(5)}</div>
+    <div style="font-size:10px;color:#667085;margin-bottom:7px">GPS waypoint: ${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</div>
     ${surveyTowerAssociationHTML(p)}
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px">
@@ -3478,7 +3460,7 @@ function renderNetworkIdentityAggregation(surveys) {
           <td>${avg(cell.records, ['fd_s2a_rssnr'])} dB</td>
           <td>${avg(cell.records, ['dl', 'fd_s1_ookla_dl', 'fd_s1_nperf_dl'])} Mbps</td>
           <td>${avg(cell.records, ['ul', 'fd_s1_ookla_ul', 'fd_s1_nperf_ul'])} Mbps</td>
-          <td>${index === 0 ? (towerPoint ? `${parseCoordinate(towerPoint.lat).toFixed(5)}, ${parseCoordinate(towerPoint.lng).toFixed(5)}` : '<span style="color:var(--amber)">Not yet mapped</span>') : ''}</td>
+          <td>${index === 0 ? (towerPoint ? `${displayCoordinate(towerPoint.lat)}, ${displayCoordinate(towerPoint.lng)}` : '<span style="color:var(--amber)">Not yet mapped</span>') : ''}</td>
         </tr>`).join('');
       }).join('') : '<tr><td colspan="12" style="padding:20px;text-align:center;color:var(--gray-400)">No survey records contain an eNB tower identity yet.</td></tr>'}</tbody>
     </table>
@@ -3519,8 +3501,8 @@ function renderDataTable() {
     const brCol   = browseVal == null ? 'var(--gray-400)' : +browseVal >= 70 ? 'var(--green)' : +browseVal >= 50 ? 'var(--amber)' : 'var(--red)';
     const stCol   = streamVal == null ? 'var(--gray-400)' : +streamVal >= 70 ? 'var(--green)' : +streamVal >= 50 ? 'var(--amber)' : 'var(--red)';
     const typeBdg = p.type === 'cell' ? 'badge-warn' : 'badge-blue';
-    const latStr  = (p.lat != null && p.lat !== '') ? parseFloat(p.lat).toFixed(5) : '\u2014';
-    const lngStr  = (p.lng != null && p.lng !== '') ? parseFloat(p.lng).toFixed(5) : '\u2014';
+    const latStr  = displayCoordinate(p.lat);
+    const lngStr  = displayCoordinate(p.lng);
     const gpsState = gpsStatus(p.lat, p.lng);
     const mono    = "font-family:'JetBrains Mono',monospace";
     const canEdit = currentUser && (
@@ -4174,7 +4156,8 @@ async function dtEdit(btn) {
   };
 
   // ── Header ──────────────────────────────────
-  s('sf-respondent-id', survey.respondentId);
+  const existingRespondentId = survey.respondentId || survey.id || '';
+  s('sf-respondent-id', existingRespondentId);
   s('sf-name', survey.name);
   s('sf-interviewer', survey.interviewer);
   s('sf-app-recorder', survey.appRecorder);
@@ -4206,7 +4189,7 @@ async function dtEdit(btn) {
   // A1 Ward
   if (survey.ward) {
     document.querySelectorAll('#view-survey input[name="sf-a1"]').forEach(r => {
-      if (r.value === survey.ward) { r.checked = true; generateRespondentId(survey.ward); }
+      if (r.value === survey.ward) r.checked = true;
     });
   }
   setRadio('sf-a2', survey.a2);  // How long lived here
@@ -4260,6 +4243,8 @@ async function dtEdit(btn) {
 
   // ── Notes ────────────────────────────────────
   s('sf-notes', survey.notes);
+  // Existing records must always retain their authoritative stored Respondent ID.
+  s('sf-respondent-id', existingRespondentId);
 
   if (readOnly) {
     switchView('survey', document.getElementById('tnav-survey'));
@@ -4273,7 +4258,7 @@ async function dtEdit(btn) {
       formBody.insertBefore(viewBanner, formBody.firstChild);
     }
     viewBanner.style.cssText = 'background:#E8F5EE;border:1px solid #2E7D5B;border-radius:6px;padding:10px 14px;margin:10px 14px;font-size:12px;color:#205C43;display:flex;align-items:center;justify-content:space-between';
-    viewBanner.innerHTML = '<span><strong>Read-only record:</strong> ' + (survey.respondentId || mongoId) + ' — viewing only; no changes can be made</span>' +
+    viewBanner.innerHTML = '<span><strong>Read-only record:</strong> ' + (existingRespondentId || mongoId) + ' — viewing only; no changes can be made</span>' +
       '<button onclick="sfCancelEdit()" style="border:none;background:transparent;color:#205C43;cursor:pointer;font-weight:600;font-size:12px">Back to Data Table</button>';
     viewBanner.querySelector('button').disabled = false;
     return;
@@ -4306,7 +4291,7 @@ async function dtEdit(btn) {
     const formBody = document.getElementById('sf-form-body');
     formBody.insertBefore(banner, formBody.firstChild);
   }
-  banner.innerHTML = '<span>✏️ <strong>Editing:</strong> ' + (survey.respondentId || mongoId) + ' — make changes then click Save changes</span>' +
+  banner.innerHTML = '<span>✏️ <strong>Editing:</strong> ' + (existingRespondentId || mongoId) + ' — make changes then click Save changes</span>' +
     '<button onclick="sfCancelEdit()" style="border:none;background:transparent;color:#92400E;cursor:pointer;font-weight:600;font-size:12px">✕ Cancel edit</button>';
   banner.style.display = 'flex';
 }
@@ -5198,7 +5183,7 @@ function addTowerToMap() {
   const mapBtn = document.querySelector('.tnav[onclick*="\'map\'"]');
   if (mapBtn) switchView('map', mapBtn);
   refresh();
-  alert(`Tower CS-${enb} added to Live Map at ${parseFloat(lastTowerResult.lat).toFixed(5)}, ${parseFloat(lastTowerResult.lon).toFixed(5)}`);
+  alert(`Tower CS-${enb} added to Live Map at ${displayCoordinate(lastTowerResult.lat)}, ${displayCoordinate(lastTowerResult.lon)}`);
 }
 
 function copyTowerCoords() {
@@ -5478,7 +5463,7 @@ function deriveUniqueTowerPoints(surveys) {
     // Prefer the network identifier; otherwise group observations within roughly 10 metres.
     const key = enb
       ? `${operator.toLowerCase()}|${enb.toLowerCase()}`
-      : `${operator.toLowerCase()}|${lat.toFixed(4)}|${lng.toFixed(4)}`;
+      : `${operator.toLowerCase()}|${lat}|${lng}`;
     if (!unique.has(key)) {
       unique.set(key, {
         ...s,
