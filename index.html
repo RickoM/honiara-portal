@@ -2980,6 +2980,51 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
     stats.sinr.average >= 20 ? 'excellent' : stats.sinr.average >= 10 ? 'good' :
     stats.sinr.average > 0 ? 'usable' : 'noisy';
   const performanceConclusion = `Across ${sector.records.length} contributing survey point${sector.records.length === 1 ? '' : 's'}, this serving LTE cell showed ${coverageClass} average coverage strength (RSRP ${show(stats.rsrp.average, ' dBm')}), ${qualityClass} average reference-signal quality (RSRQ ${show(stats.rsrq.average, ' dB')}), and ${sinrClass} app-reported SINR (${show(stats.sinr.average, ' dB')}). Observed download performance had a median of ${show(stats.dl.median, ' Mbps')} and mean of ${show(stats.dl.average, ' Mbps')} from ${stats.dl.count} reading${stats.dl.count === 1 ? '' : 's'}.`;
+  const coverageOutcome = stats.rsrp.average == null ? 'Coverage reliability cannot be interpreted because no RSRP reading is available.' :
+    stats.rsrp.average >= -90 ? 'The sampled signal strength should generally support a stable LTE connection at these locations. Signal strength alone does not guarantee high throughput.' :
+    stats.rsrp.average >= -100 ? 'The sampled signal is usable but has less radio margin. Indoor use, movement, or additional obstruction may produce slower or less stable service.' :
+    stats.rsrp.average >= -110 ? 'Users may experience unstable service, slower data, or transitions to another cell or technology, particularly indoors or while moving.' :
+    'The sampled signal is very weak. Connection loss, failed data sessions, or fallback to another available network layer may occur.';
+  const qualityOutcome = stats.rsrq.average == null ? 'Interference and loading effects cannot be interpreted because no RSRQ reading is available.' :
+    stats.rsrq.average >= -10 ? 'The sampled reference-signal quality is good, so interference or cell loading is unlikely to be the dominant limitation at the measured locations.' :
+    stats.rsrq.average >= -15 ? 'The sampled quality is moderate. Interference, cell loading, or overlapping signals may reduce consistency even where RSRP appears adequate.' :
+    'The sampled quality is degraded. Interference, loading, or other radio conditions may cause retransmissions and reduce usable throughput; the measurement alone cannot identify the exact cause.';
+  const sinrOutcome = stats.sinr.average == null ? 'Data-decoding conditions cannot be interpreted because no app-reported SINR reading is available.' :
+    stats.sinr.average >= 20 ? 'The sampled signal is very clean relative to interference and noise, supporting efficient modulation and stable data transfer.' :
+    stats.sinr.average >= 10 ? 'The sampled SINR should generally support efficient and stable data transfer.' :
+    stats.sinr.average > 0 ? 'The sampled SINR is usable, but lower-order modulation or retransmissions may reduce speed and make performance variable.' :
+    'Interference and noise are at least as strong as the useful signal in the app-reported reading. Slow, unstable, or failed data transfers may occur.';
+  const downloadOutcome = stats.dl.median == null ? 'Download experience cannot be interpreted because no download result is available.' :
+    stats.dl.median < 1 ? 'The typical sampled download speed is severely constrained; web pages may load slowly and video or large downloads are likely to be impractical.' :
+    stats.dl.median < 5 ? 'The typical sampled download speed should support messaging and basic browsing, but video streaming, updates, and large downloads may buffer or take time.' :
+    stats.dl.median < 10 ? 'The typical sampled download speed should support ordinary browsing and standard-definition video, although concurrent or high-definition use may be inconsistent.' :
+    stats.dl.median < 25 ? 'The typical sampled download speed should support general browsing, video calls, and many streaming uses, subject to application and network conditions.' :
+    'The typical sampled download speed should support responsive browsing, video calls, HD streaming, and routine large downloads at the measured times.';
+  const uploadOutcome = stats.ul.average == null ? 'Upload experience cannot be interpreted because no upload result is available.' :
+    stats.ul.average < 1 ? 'Uploads, cloud backup, and sending media may be slow or unreliable.' :
+    stats.ul.average < 5 ? 'Messaging and small uploads should work, but large media uploads or high-quality live video may be slow.' :
+    'The sampled upload speed should generally support sending media, cloud applications, and video calls.';
+  const latencyOutcome = stats.ping.average == null ? 'Responsiveness cannot be interpreted because no ping result is available.' :
+    stats.ping.average <= 50 ? 'The sampled latency should feel responsive for browsing, calls, and interactive applications.' :
+    stats.ping.average <= 100 ? 'The sampled latency is generally usable, although delay may become noticeable in highly interactive applications.' :
+    'The sampled latency may produce noticeable delays in calls, gaming, and other interactive applications.';
+  const jitterOutcome = stats.jitter.average == null ? 'Latency stability cannot be interpreted because no jitter result is available.' :
+    stats.jitter.average <= 20 ? 'The sampled latency variation should generally support stable voice and video sessions.' :
+    stats.jitter.average <= 30 ? 'Some variation may be noticeable during real-time voice or video sessions.' :
+    'The sampled latency variation may cause uneven voice, video freezing, or other real-time instability.';
+  const combinedDiagnosis = stats.rsrp.average == null ? 'There is insufficient RSRP evidence to distinguish coverage strength from radio-quality limitations.' :
+    stats.rsrp.average >= -90 && ((stats.rsrq.average != null && stats.rsrq.average < -15) || (stats.sinr.average != null && stats.sinr.average <= 0))
+      ? 'Signal strength is adequate, but quality or SINR is degraded. Users may still experience poor data performance despite apparently strong coverage. Interference, loading, or overlapping signals are possible explanations, but further network-side evidence is required.'
+      : stats.rsrp.average < -100 && (stats.rsrq.average == null || stats.rsrq.average >= -15) && (stats.sinr.average == null || stats.sinr.average > 0)
+        ? 'Radio quality is comparatively usable, but signal strength is weak. Limited coverage margin is a plausible constraint, particularly indoors, behind obstructions, or while moving.'
+        : stats.rsrp.average < -100 && ((stats.rsrq.average != null && stats.rsrq.average < -15) || (stats.sinr.average != null && stats.sinr.average <= 0))
+          ? 'Both signal strength and radio quality are weak or degraded. Users may experience unstable connections and low throughput; additional measurements are needed to separate coverage, interference, and loading effects.'
+          : 'Coverage strength and radio quality broadly agree across the sampled observations. The recorded user-experience results should still be interpreted by location and time because network load and propagation conditions can change.';
+  const sampleCaution = sector.records.length < 3
+    ? `Only ${sector.records.length} survey point${sector.records.length === 1 ? '' : 's'} contributed. Treat this as an initial observation, not a representative estimate of the cell's overall performance.`
+    : sector.records.length < 10
+      ? `${sector.records.length} survey points contributed. The pattern is useful for exploratory analysis but remains sensitive to location, time, and outliers.`
+      : `${sector.records.length} survey points contributed. This provides stronger descriptive evidence, although it still does not establish engineered cell capacity or performance at all times.`;
   if (expanded) {
     const identityRows = [
       ['PLMN', plmn, 'Public Land Mobile Network: MCC + MNC.', 'Provides the operator-network context required to interpret ECI.'],
@@ -2992,14 +3037,14 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
       ['TAC', sector.tac || '—', 'Tracking Area Code used for mobility management.', 'Identifies an area containing multiple cells, not an individual cell.'],
     ];
     const metricRows = [
-      ['Average RSRP', show(stats.rsrp.average, ' dBm'), 'Mean received reference-signal power.', `${coverageClass} average coverage strength; median ${show(stats.rsrp.median, ' dBm')}; range ${show(stats.rsrp.min)} to ${show(stats.rsrp.max)} dBm; n=${stats.rsrp.count}.`],
-      ['Average RSRQ', show(stats.rsrq.average, ' dB'), 'Mean reference-signal quality.', `${qualityClass} average signal quality; median ${show(stats.rsrq.median, ' dB')}; range ${show(stats.rsrq.min)} to ${show(stats.rsrq.max)} dB; n=${stats.rsrq.count}.`],
-      ['Average SINR', show(stats.sinr.average, ' dB'), 'Mean app-reported signal-to-interference-plus-noise ratio.', `${sinrClass} average signal cleanliness; median ${show(stats.sinr.median, ' dB')}; range ${show(stats.sinr.min)} to ${show(stats.sinr.max)} dB; n=${stats.sinr.count}.`],
-      ['Median download', show(stats.dl.median, ' Mbps'), 'Middle observed download result; less affected by extreme values.', `Typical sampled download result. Mean ${show(stats.dl.average, ' Mbps')}; range ${show(stats.dl.min)} to ${show(stats.dl.max)} Mbps; n=${stats.dl.count}.`],
-      ['Average download', show(stats.dl.average, ' Mbps'), 'Arithmetic mean of observed download results.', `Overall sampled download performance; compare with the median to identify possible skew or outliers.`],
-      ['Average upload', show(stats.ul.average, ' Mbps'), 'Arithmetic mean of observed upload results.', `Observed uplink performance; median ${show(stats.ul.median, ' Mbps')}; range ${show(stats.ul.min)} to ${show(stats.ul.max)} Mbps; n=${stats.ul.count}.`],
-      ['Average ping', show(stats.ping.average, ' ms'), 'Mean round-trip latency recorded by the speed-test app.', `Lower values indicate more responsive sampled connections; median ${show(stats.ping.median, ' ms')}; n=${stats.ping.count}.`],
-      ['Average jitter', show(stats.jitter.average, ' ms'), 'Mean variation in recorded latency.', `Lower values indicate more stable latency; median ${show(stats.jitter.median, ' ms')}; n=${stats.jitter.count}.`],
+      ['Average RSRP', show(stats.rsrp.average, ' dBm'), 'Mean received reference-signal power.', `${coverageOutcome} Median ${show(stats.rsrp.median, ' dBm')}; range ${show(stats.rsrp.min)} to ${show(stats.rsrp.max)} dBm; n=${stats.rsrp.count}.`],
+      ['Average RSRQ', show(stats.rsrq.average, ' dB'), 'Mean reference-signal quality.', `${qualityOutcome} Median ${show(stats.rsrq.median, ' dB')}; range ${show(stats.rsrq.min)} to ${show(stats.rsrq.max)} dB; n=${stats.rsrq.count}.`],
+      ['Average SINR', show(stats.sinr.average, ' dB'), 'Mean app-reported signal-to-interference-plus-noise ratio.', `${sinrOutcome} Median ${show(stats.sinr.median, ' dB')}; range ${show(stats.sinr.min)} to ${show(stats.sinr.max)} dB; n=${stats.sinr.count}.`],
+      ['Median download', show(stats.dl.median, ' Mbps'), 'Middle observed download result; less affected by extreme values.', `${downloadOutcome} Mean ${show(stats.dl.average, ' Mbps')}; range ${show(stats.dl.min)} to ${show(stats.dl.max)} Mbps; n=${stats.dl.count}.`],
+      ['Average download', show(stats.dl.average, ' Mbps'), 'Arithmetic mean of observed download results.', `${downloadOutcome} Compare the mean with the median to identify possible skew or outliers.`],
+      ['Average upload', show(stats.ul.average, ' Mbps'), 'Arithmetic mean of observed upload results.', `${uploadOutcome} Median ${show(stats.ul.median, ' Mbps')}; range ${show(stats.ul.min)} to ${show(stats.ul.max)} Mbps; n=${stats.ul.count}.`],
+      ['Average ping', show(stats.ping.average, ' ms'), 'Mean round-trip latency recorded by the speed-test app.', `${latencyOutcome} Median ${show(stats.ping.median, ' ms')}; n=${stats.ping.count}.`],
+      ['Average jitter', show(stats.jitter.average, ' ms'), 'Mean variation in recorded latency.', `${jitterOutcome} Median ${show(stats.jitter.median, ' ms')}; n=${stats.jitter.count}.`],
     ];
     const sectionTitle = title => `<div style="font-size:12px;font-weight:700;color:#fff;background:#203F67;padding:8px 10px;border-radius:6px 6px 0 0">${title}</div>`;
     const head = labels => `<thead><tr style="background:#eef2f6;text-align:left">${labels.map(label => `<th style="padding:7px;border-bottom:1px solid #cfd8e3;white-space:normal;overflow-wrap:anywhere">${label}</th>`).join('')}</tr></thead>`;
@@ -3072,10 +3117,12 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
           <div style="font-size:11px;font-weight:700;color:#203F67">Plain-language finding</div>
           <div style="font-size:10px;line-height:1.55;color:#344054;margin-top:4px">${performanceConclusion}</div>
           <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px">
-            <div style="padding:9px;border-left:4px solid #3B7A18;background:#fff;border-radius:5px"><strong style="font-size:9px">Coverage</strong><div style="font-size:9px;color:#475467;margin-top:3px">${coverageClass}; average RSRP ${show(stats.rsrp.average, ' dBm')}.</div></div>
-            <div style="padding:9px;border-left:4px solid #BA7517;background:#fff;border-radius:5px"><strong style="font-size:9px">Radio quality</strong><div style="font-size:9px;color:#475467;margin-top:3px">${qualityClass} RSRQ and ${sinrClass} app-reported SINR.</div></div>
-            <div style="padding:9px;border-left:4px solid #315d8f;background:#fff;border-radius:5px"><strong style="font-size:9px">User experience</strong><div style="font-size:9px;color:#475467;margin-top:3px">Median download ${show(stats.dl.median, ' Mbps')}; average ping ${show(stats.ping.average, ' ms')}.</div></div>
+            <div style="padding:9px;border-left:4px solid #3B7A18;background:#fff;border-radius:5px"><strong style="font-size:9px">Expected connection reliability</strong><div style="font-size:9px;color:#475467;margin-top:3px;line-height:1.45">${coverageOutcome}</div></div>
+            <div style="padding:9px;border-left:4px solid #BA7517;background:#fff;border-radius:5px"><strong style="font-size:9px">Expected radio behaviour</strong><div style="font-size:9px;color:#475467;margin-top:3px;line-height:1.45">${qualityOutcome} ${sinrOutcome}</div></div>
+            <div style="padding:9px;border-left:4px solid #315d8f;background:#fff;border-radius:5px"><strong style="font-size:9px">Expected user experience</strong><div style="font-size:9px;color:#475467;margin-top:3px;line-height:1.45">${downloadOutcome} ${latencyOutcome} ${jitterOutcome}</div></div>
           </div>
+          <div style="padding:10px;border-left:4px solid #7C3AED;background:#fff;border-radius:5px;margin-top:9px"><strong style="font-size:9px">Combined interpretation</strong><div style="font-size:9px;color:#475467;margin-top:3px;line-height:1.5">${combinedDiagnosis}</div></div>
+          <div style="padding:10px;border-left:4px solid #667085;background:#fff;border-radius:5px;margin-top:9px"><strong style="font-size:9px">Strength of evidence</strong><div style="font-size:9px;color:#475467;margin-top:3px;line-height:1.5">${sampleCaution}</div></div>
           <div style="font-size:9px;line-height:1.5;color:#667085;margin-top:9px"><strong>Warnings:</strong> ${stats.degradedRsrq} degraded RSRQ observation${stats.degradedRsrq === 1 ? '' : 's'}, ${stats.noisySinr} noisy SINR observation${stats.noisySinr === 1 ? '' : 's'}, and ${stats.slowDl} download observation${stats.slowDl === 1 ? '' : 's'} below 1 Mbps.</div>
           <div style="font-size:9px;line-height:1.5;color:#667085;margin-top:7px"><strong>Benchmark interpretation:</strong> ITU-T E.804 supports mobile QoS measurement methodology and ITU-T E.800 defines QoS terminology, but neither supplies universal LTE pass/fail thresholds for these RF and throughput results. Any performance threshold must be explicitly identified as study-defined, application-based, regulatory, or operator-specific.</div>
           <div style="font-size:8px;color:#667085;line-height:1.45;margin-top:7px"><strong>Methodological limitation:</strong> results describe the sampled locations and times, not engineered cell capacity. Attribution assumes the serving-cell identity remained valid during each linked performance test and no handover occurred. PCI, TAC, LCID, and reported eNB are supporting evidence; PLMN + ECI is the primary grouping identity.</div>
