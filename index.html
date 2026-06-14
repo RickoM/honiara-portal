@@ -3104,9 +3104,9 @@ function openServingCellDetail() {
   document.getElementById('serving-cell-detail-overlay')?.remove();
   const overlay = document.createElement('div');
   overlay.id = 'serving-cell-detail-overlay';
-  overlay.style.cssText = 'position:absolute;inset:6px;z-index:80;background:rgba(9,21,37,.72);display:flex;align-items:center;justify-content:center;border-radius:10px;padding:10px';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(9,21,37,.78);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
   overlay.innerHTML = `
-    <div style="background:#fff;width:100%;height:100%;border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:#fff;width:min(1600px,100%);height:calc(100vh - 32px);border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden;min-height:0">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#10243d;color:#fff">
         <div>
           <div style="font-size:15px;font-weight:700">Serving LTE cell analysis</div>
@@ -3119,11 +3119,11 @@ function openServingCellDetail() {
           <button type="button" onclick="document.getElementById('serving-cell-detail-overlay')?.remove()" title="Close" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:18px">×</button>
         </div>
       </div>
-      <div data-cell-detail-content title="Scroll to view the report. Use A− and A+ to change text size." style="flex:1;font-size:16px;padding:24px;overflow:scroll;overflow-x:auto;overflow-y:scroll;line-height:1.5;min-height:0;scrollbar-gutter:stable both-edges;overscroll-behavior:contain">
+      <div data-cell-detail-content tabindex="0" title="Scroll to view the report. Use A− and A+ to change text size." style="flex:1;font-size:16px;padding:24px;overflow:scroll;overflow-x:auto;overflow-y:scroll;line-height:1.5;min-height:0;scrollbar-gutter:stable both-edges;overscroll-behavior:contain;outline:none">
         ${sectorSummaryHTML(selectedServingCell, false, true)}
       </div>
     </div>`;
-  document.querySelector('#view-map .map-area')?.appendChild(overlay);
+  document.body.appendChild(overlay);
   const content = overlay.querySelector('[data-cell-detail-content]');
   const reset = overlay.querySelector('[data-cell-text="reset"]');
   let scale = 1;
@@ -3143,8 +3143,26 @@ function openServingCellDetail() {
   overlay.querySelector('[data-cell-text="in"]')?.addEventListener('click', () => applyScale(scale + .25));
   overlay.querySelector('[data-cell-text="out"]')?.addEventListener('click', () => applyScale(scale - .25));
   reset?.addEventListener('click', () => applyScale(1));
+  const stopMapInteraction = event => event.stopPropagation();
+  ['mousedown','mouseup','mousemove','pointerdown','pointerup','touchstart','touchmove'].forEach(type =>
+    content.addEventListener(type, stopMapInteraction, { passive: true })
+  );
+  content.addEventListener('wheel', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    content.scrollTop += event.deltaY;
+    content.scrollLeft += event.deltaX;
+  }, { passive: false });
+  content.addEventListener('keydown', event => {
+    const amounts = { ArrowDown: 60, ArrowUp: -60, PageDown: content.clientHeight * .8, PageUp: -content.clientHeight * .8 };
+    if (amounts[event.key] != null) {
+      event.preventDefault();
+      content.scrollTop += amounts[event.key];
+    }
+  });
   overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
   applyScale(1);
+  content.focus();
 }
 
 function enhancedInfoWindowHTML(p) {
