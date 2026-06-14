@@ -2757,7 +2757,7 @@ function refreshMap() {
       marker.addListener('click', () => {
         markers.forEach(item => item.infoWindow && item.infoWindow.close());
         selectCellSector(sector);
-        info.open(gmap, marker);
+        openServingCellDetail();
       });
       marker.infoWindow = info;
       markers.push(marker);
@@ -2959,7 +2959,7 @@ function sectorStatistics(sector) {
   return { rsrp, rsrq, sinr, dl, ul, ping, jitter, degradedRsrq, noisySinr, slowDl };
 }
 
-function sectorSummaryHTML(sector, compact = false) {
+function sectorSummaryHTML(sector, compact = false, expanded = false) {
   const stats = sectorStatistics(sector);
   const show = (value, suffix = '') => value == null ? '—' : `${value.toFixed(1)}${suffix}`;
   const ids = sector.records.map(record => record.id || record.respondentId).join(', ');
@@ -2974,7 +2974,7 @@ function sectorSummaryHTML(sector, compact = false) {
     <div style="font-size:9px;color:#667085;margin-top:7px">Warnings: ${stats.degradedRsrq} degraded RSRQ · ${stats.noisySinr} noisy SINR · ${stats.slowDl} below 1 Mbps</div>
     <div style="font-size:9px;color:#667085;margin-top:5px;line-height:1.35">Survey records: ${ids}</div>
     <div style="font-size:8px;color:#667085;margin-top:5px;line-height:1.35">This is observed sample performance for one serving LTE cell, not a measurement of cell capacity or proof of a physical antenna sector. Association assumes the serving-cell reading remained valid during the linked performance tests. The marker is placed at the centroid of its survey points, not at the physical tower.</div>
-    ${compact ? '' : `<button type="button" onclick="openServingCellDetail()" style="width:100%;margin-top:9px;padding:8px 10px;border:0;border-radius:6px;background:#203F67;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Open larger view</button>`}
+    ${compact || expanded ? '' : `<button type="button" onclick="openServingCellDetail()" style="width:100%;margin-top:9px;padding:8px 10px;border:0;border-radius:6px;background:#203F67;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Open larger view</button>`}
   </div>`;
 }
 
@@ -2995,7 +2995,7 @@ function openServingCellDetail() {
   overlay.id = 'serving-cell-detail-overlay';
   overlay.style.cssText = 'position:absolute;inset:12px;z-index:80;background:rgba(9,21,37,.72);display:flex;align-items:center;justify-content:center;border-radius:10px;padding:18px';
   overlay.innerHTML = `
-    <div style="background:#fff;width:min(880px,94%);max-height:92%;border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:#fff;width:min(1050px,96%);height:min(760px,94%);border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#10243d;color:#fff">
         <div>
           <div style="font-size:15px;font-weight:700">Serving LTE cell analysis</div>
@@ -3008,28 +3008,36 @@ function openServingCellDetail() {
           <button type="button" onclick="document.getElementById('serving-cell-detail-overlay')?.remove()" title="Close" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:18px">×</button>
         </div>
       </div>
-      <div data-cell-detail-content title="Use the mouse wheel to change text size" style="font-size:16px;padding:20px;overflow:auto;line-height:1.5">
-        ${sectorSummaryHTML(selectedServingCell, false)}
+      <div data-cell-detail-content title="Use the mouse wheel to change text size" style="font-size:16px;padding:24px;overflow:auto;line-height:1.5">
+        ${sectorSummaryHTML(selectedServingCell, false, true)}
       </div>
     </div>`;
   document.querySelector('#view-map .map-area')?.appendChild(overlay);
   const content = overlay.querySelector('[data-cell-detail-content]');
   const reset = overlay.querySelector('[data-cell-text="reset"]');
   let scale = 1;
+  const scalableElements = [content, ...content.querySelectorAll('*')];
+  scalableElements.forEach(element => {
+    const size = parseFloat(getComputedStyle(element).fontSize);
+    if (Number.isFinite(size)) element.dataset.cellBaseFontSize = String(size);
+  });
   const applyScale = value => {
-    scale = Math.min(1.8, Math.max(.8, value));
-    content.style.zoom = scale;
+    scale = Math.min(2.5, Math.max(.8, value));
+    scalableElements.forEach(element => {
+      const base = parseFloat(element.dataset.cellBaseFontSize);
+      if (Number.isFinite(base)) element.style.fontSize = `${base * scale}px`;
+    });
     reset.textContent = `${Math.round(scale * 100)}%`;
   };
-  overlay.querySelector('[data-cell-text="in"]')?.addEventListener('click', () => applyScale(scale + .15));
-  overlay.querySelector('[data-cell-text="out"]')?.addEventListener('click', () => applyScale(scale - .15));
+  overlay.querySelector('[data-cell-text="in"]')?.addEventListener('click', () => applyScale(scale + .25));
+  overlay.querySelector('[data-cell-text="out"]')?.addEventListener('click', () => applyScale(scale - .25));
   reset?.addEventListener('click', () => applyScale(1));
   content.addEventListener('wheel', event => {
     event.preventDefault();
-    applyScale(scale + (event.deltaY < 0 ? .1 : -.1));
+    applyScale(scale + (event.deltaY < 0 ? .15 : -.15));
   }, { passive: false });
   overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
-  applyScale(1.25);
+  applyScale(1.75);
 }
 
 function enhancedInfoWindowHTML(p) {
