@@ -3194,12 +3194,77 @@ function openMapScreenshot(carouselId) {
   overlay.id = 'map-screenshot-lightbox';
   overlay.style.cssText = 'position:absolute;inset:0;z-index:80;background:rgba(8,18,32,.92);display:flex;align-items:center;justify-content:center;padding:28px';
   overlay.innerHTML = `<div style="position:relative;width:min(920px,92%);height:min(720px,88%);display:flex;flex-direction:column;gap:8px">
-    <button type="button" onclick="closeMapScreenshot()" style="position:absolute;right:-12px;top:-12px;z-index:2;width:34px;height:34px;border:0;border-radius:50%;background:#fff;color:#1A1A2E;font-size:20px;cursor:pointer">&times;</button>
-    <img src="${slide.url}" alt="${slide.label}" style="flex:1;min-height:0;width:100%;object-fit:contain;background:#111827;border-radius:8px">
+    <button type="button" onclick="closeMapScreenshot()" title="Close" style="position:absolute;right:-12px;top:-12px;z-index:4;width:34px;height:34px;border:0;border-radius:50%;background:#fff;color:#1A1A2E;font-size:20px;cursor:pointer">&times;</button>
+    <div data-role="zoom-controls" style="position:absolute;left:10px;top:10px;z-index:4;display:flex;align-items:center;gap:5px;background:rgba(17,24,39,.88);padding:5px;border-radius:7px">
+      <button type="button" data-zoom-action="out" title="Zoom out" style="width:30px;height:28px;border:1px solid #667085;border-radius:5px;background:#fff;cursor:pointer;font-size:17px">−</button>
+      <button type="button" data-zoom-action="reset" title="Reset zoom" style="height:28px;border:1px solid #667085;border-radius:5px;background:#fff;cursor:pointer;font-size:10px;padding:0 8px">100%</button>
+      <button type="button" data-zoom-action="in" title="Zoom in" style="width:30px;height:28px;border:1px solid #667085;border-radius:5px;background:#fff;cursor:pointer;font-size:17px">+</button>
+    </div>
+    <div data-role="zoom-viewport" title="Use mouse wheel to zoom. Drag to move the image." style="flex:1;min-height:0;width:100%;overflow:hidden;background:#111827;border-radius:8px;position:relative;cursor:grab;user-select:none;touch-action:none">
+      <img data-role="zoom-image" src="${slide.url}" alt="${slide.label}" draggable="false" style="position:absolute;left:50%;top:50%;max-width:100%;max-height:100%;object-fit:contain;transform-origin:center center;will-change:transform;pointer-events:none">
+    </div>
     <div style="color:#fff;text-align:center;font-size:12px;font-weight:600">${slide.sim ? slide.sim + ' - ' : ''}${slide.label}</div>
+    <div style="color:#cbd5e1;text-align:center;font-size:10px">Mouse wheel to zoom · Drag image to move · Double-click to reset</div>
   </div>`;
   overlay.addEventListener('click', event => { if (event.target === overlay) closeMapScreenshot(); });
+  overlay.tabIndex = -1;
+  overlay.addEventListener('keydown', event => { if (event.key === 'Escape') closeMapScreenshot(); });
   document.querySelector('#view-map .map-area').appendChild(overlay);
+  overlay.focus();
+  initializeMapScreenshotZoom(overlay);
+}
+
+function initializeMapScreenshotZoom(overlay) {
+  const viewport = overlay.querySelector('[data-role="zoom-viewport"]');
+  const image = overlay.querySelector('[data-role="zoom-image"]');
+  const resetButton = overlay.querySelector('[data-zoom-action="reset"]');
+  if (!viewport || !image) return;
+
+  const state = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0 };
+  const render = () => {
+    image.style.transform = `translate(-50%, -50%) translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+    viewport.style.cursor = state.dragging ? 'grabbing' : state.scale > 1 ? 'grab' : 'zoom-in';
+    if (resetButton) resetButton.textContent = `${Math.round(state.scale * 100)}%`;
+  };
+  const setScale = nextScale => {
+    state.scale = Math.max(1, Math.min(8, nextScale));
+    if (state.scale === 1) { state.x = 0; state.y = 0; }
+    render();
+  };
+  const reset = () => { state.scale = 1; state.x = 0; state.y = 0; render(); };
+
+  overlay.querySelector('[data-zoom-action="in"]')?.addEventListener('click', () => setScale(state.scale * 1.35));
+  overlay.querySelector('[data-zoom-action="out"]')?.addEventListener('click', () => setScale(state.scale / 1.35));
+  resetButton?.addEventListener('click', reset);
+  viewport.addEventListener('wheel', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    setScale(state.scale * (event.deltaY < 0 ? 1.18 : 1 / 1.18));
+  }, { passive: false });
+  viewport.addEventListener('dblclick', event => { event.preventDefault(); reset(); });
+  viewport.addEventListener('pointerdown', event => {
+    if (state.scale <= 1) { setScale(1.7); return; }
+    state.dragging = true;
+    state.startX = event.clientX - state.x;
+    state.startY = event.clientY - state.y;
+    viewport.setPointerCapture(event.pointerId);
+    render();
+  });
+  viewport.addEventListener('pointermove', event => {
+    if (!state.dragging) return;
+    state.x = event.clientX - state.startX;
+    state.y = event.clientY - state.startY;
+    render();
+  });
+  const endDrag = event => {
+    if (!state.dragging) return;
+    state.dragging = false;
+    if (viewport.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId);
+    render();
+  };
+  viewport.addEventListener('pointerup', endDrag);
+  viewport.addEventListener('pointercancel', endDrag);
+  render();
 }
 
 function closeMapScreenshot() {
