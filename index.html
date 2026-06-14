@@ -1608,11 +1608,11 @@
       <div class="sf-sec-hdr interviewer">Step 6 — GPS Location (survey point — record before moving on)</div>
       <div class="sf-sec-body">
         <div style="background:var(--gray-50);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--gray-600);margin-bottom:10px;line-height:1.6">
-          <strong>Primary:</strong> Google Maps → tap blue dot → read coordinates. &nbsp;<strong>Fallback:</strong> NCIL → MAP tab → read LAT/LON. &nbsp;Always 4 decimal places. Latitude negative e.g. −9.4318. Longitude positive e.g. 160.0523.
+          <strong>Primary:</strong> Google Maps → tap blue dot → record the complete coordinates shown. &nbsp;<strong>Fallback:</strong> NCIL → MAP tab → record LAT/LON exactly as displayed. &nbsp;Do not round the values. Latitude negative e.g. −9.4318123. Longitude positive e.g. 160.0523456.
         </div>
         <div class="sf-fgrid">
-          <div class="sf-fcell"><label>Latitude</label><input type="number" step="0.0001" id="sf-lat" placeholder="e.g. -9.4318"></div>
-          <div class="sf-fcell"><label>Longitude</label><input type="number" step="0.0001" id="sf-lon" placeholder="e.g. 160.0523"></div>
+          <div class="sf-fcell"><label>Latitude</label><input type="number" step="any" id="sf-lat" placeholder="e.g. -9.4318123"></div>
+          <div class="sf-fcell"><label>Longitude</label><input type="number" step="any" id="sf-lon" placeholder="e.g. 160.0523456"></div>
           <div class="sf-fcell">
             <label>Upload GPS screenshot</label>
             <input type="file" id="fd-s6-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
@@ -1632,8 +1632,8 @@
 
         <div id="tower-fields" style="opacity:1;pointer-events:auto;transition:all 0.3s">
           <div class="step7-primary-grid">
-            <div class="sf-fcell"><label>Tower Latitude</label><input type="number" step="0.0001" id="fd-s7-tlat" placeholder="e.g. -9.4305"></div>
-            <div class="sf-fcell"><label>Tower Longitude</label><input type="number" step="0.0001" id="fd-s7-tlon" placeholder="e.g. 160.0498"></div>
+            <div class="sf-fcell"><label>Tower Latitude</label><input type="number" step="any" id="fd-s7-tlat" placeholder="e.g. -9.4305123"></div>
+            <div class="sf-fcell"><label>Tower Longitude</label><input type="number" step="any" id="fd-s7-tlon" placeholder="e.g. 160.0498456"></div>
             <div class="sf-fcell">
               <label>Operator</label>
               <select id="fd-s7-top" style="width:100%;margin-top:2px" onchange="s7OpChange()">
@@ -5512,8 +5512,10 @@ async function loadSurveysFromAPI({ silent = false } = {}) {
       ward: s.ward, constituency: s.constituency || WARDS[s.ward]?.constituency || '',
       op: s.operator || s.op || s.a3 || '',
       date: s.date, type: s.type || 'survey',
-      lat: Number.isFinite(parseCoordinate(s.lat)) ? parseCoordinate(s.lat) : null,
-      lng: Number.isFinite(parseCoordinate(s.lng)) ? parseCoordinate(s.lng) : null,
+      // Preserve the surveyor-entered coordinate text exactly. Parse only when
+      // Google Maps or calculations require a numeric coordinate.
+      lat: Number.isFinite(parseCoordinate(s.lat)) ? s.lat : null,
+      lng: Number.isFinite(parseCoordinate(s.lng)) ? s.lng : null,
       gps_status: gpsStatus(s.lat, s.lng),
       r: s.rsrp != null ? parseFloat(s.rsrp) : null,
       rsrp: s.rsrp != null ? parseFloat(s.rsrp) : null,
