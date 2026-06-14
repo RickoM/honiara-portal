@@ -1855,6 +1855,8 @@ function surveyMarkerLayout(surveys) {
   const layout = new Map();
   groups.forEach(group => {
     const count = group.length;
+    const centreLat = group.reduce((sum, p) => sum + parseCoordinate(p.lat), 0) / count;
+    const centreLng = group.reduce((sum, p) => sum + parseCoordinate(p.lng), 0) / count;
     group.forEach((p, index) => {
       const lat = parseCoordinate(p.lat);
       const lng = parseCoordinate(p.lng);
@@ -1867,8 +1869,8 @@ function surveyMarkerLayout(surveys) {
       // when zoomed in. Stored GPS coordinates remain unchanged.
       const bearing = (360 / count) * index * Math.PI / 180;
       const angularDistance = Math.min(140, 55 + count * 14) / 6378137;
-      const latRadians = lat * Math.PI / 180;
-      const lngRadians = lng * Math.PI / 180;
+      const latRadians = centreLat * Math.PI / 180;
+      const lngRadians = centreLng * Math.PI / 180;
       const displayLat = Math.asin(
         Math.sin(latRadians) * Math.cos(angularDistance) +
         Math.cos(latRadians) * Math.sin(angularDistance) * Math.cos(bearing)
@@ -2298,6 +2300,20 @@ function personMarkerIcon(colour) {
   };
 }
 
+function numberedSurveyMarkerIcon(colour, suffix) {
+  const label = String(suffix || '---').replace(/[^0-9-]/g, '').slice(-3) || '---';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="54" viewBox="0 0 44 54">
+    <path d="M22 52C16 43 4 33 4 21a18 18 0 1 1 36 0c0 12-12 22-18 31z" fill="${colour}" stroke="#fff" stroke-width="3"/>
+    <circle cx="22" cy="21" r="12.5" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.65)" stroke-width="1"/>
+    <text x="22" y="25" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="11" font-weight="700">${label}</text>
+  </svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(44, 54),
+    anchor: new google.maps.Point(22, 52),
+  };
+}
+
 function initializeBoundaryLayers() {
   if (!gmap || !window.google || wardBoundaryLayer || constituencyBoundaryLayer || boundaryHighlightLayer) return;
 
@@ -2543,22 +2559,7 @@ function refreshMap() {
       const marker = new google.maps.Marker({
         map: gmap,
         position,
-        icon: {
-          path: 'M 0,0 C -2,-9 -10,-13 -10,-22 A 10,10 0 1,1 10,-22 C 10,-13 2,-9 0,0 Z',
-          fillColor: col,
-          fillOpacity: 1,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
-          scale: 1.45,
-          anchor: new google.maps.Point(0, 0),
-          labelOrigin: new google.maps.Point(0, -22),
-        },
-        label: {
-          text: respondentSuffix,
-          color: '#ffffff',
-          fontSize: '9px',
-          fontWeight: '700',
-        },
+        icon: numberedSurveyMarkerIcon(col, respondentSuffix),
         title: layout.count > 1
           ? `${layout.count} survey records share this GPS location — ${p.id || p.ward || 'waypoint'}`
           : `Survey participant — ${p.id || p.ward || 'waypoint'}`,
