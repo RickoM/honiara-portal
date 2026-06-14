@@ -3002,7 +3002,7 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
       ['Average jitter', show(stats.jitter.average, ' ms'), 'Mean variation in recorded latency.', `Lower values indicate more stable latency; median ${show(stats.jitter.median, ' ms')}; n=${stats.jitter.count}.`],
     ];
     const sectionTitle = title => `<div style="font-size:12px;font-weight:700;color:#fff;background:#203F67;padding:8px 10px;border-radius:6px 6px 0 0">${title}</div>`;
-    const head = labels => `<thead><tr style="background:#eef2f6;text-align:left">${labels.map(label => `<th style="padding:7px;border-bottom:1px solid #cfd8e3;white-space:nowrap">${label}</th>`).join('')}</tr></thead>`;
+    const head = labels => `<thead><tr style="background:#eef2f6;text-align:left">${labels.map(label => `<th style="padding:7px;border-bottom:1px solid #cfd8e3;white-space:normal;overflow-wrap:anywhere">${label}</th>`).join('')}</tr></thead>`;
     return `<div style="font-family:'Inter',sans-serif;color:#1A1A2E;width:100%;box-sizing:border-box">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;width:100%;padding-bottom:10px;border-bottom:2px solid #203F67">
         <div><div style="font-size:16px;font-weight:700">${sector.operator}</div><div style="font-size:11px;color:#667085;margin-top:2px">Serving LTE cell analysis · ECI ${sector.eci}</div></div>
@@ -3015,10 +3015,10 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
           <table style="border-collapse:collapse;width:100%;table-layout:fixed;font-size:9px">
             ${head(['Identifier','Recorded value','Technical definition','Importance to this analysis'])}
             <tbody>${identityRows.map(([label,itemValue,definition,importance]) => `<tr>
-              <td style="width:10%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;color:#203F67">${label}</td>
-              <td style="width:15%;padding:7px;border-bottom:1px solid #edf0f4;font-family:'JetBrains Mono',monospace;font-weight:700">${itemValue}</td>
-              <td style="width:30%;padding:7px;border-bottom:1px solid #edf0f4">${definition}</td>
-              <td style="width:45%;padding:7px;border-bottom:1px solid #edf0f4;color:#475467">${importance}</td>
+              <td style="width:10%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;color:#203F67;overflow-wrap:anywhere">${label}</td>
+              <td style="width:15%;padding:7px;border-bottom:1px solid #edf0f4;font-family:'JetBrains Mono',monospace;font-weight:700;overflow-wrap:anywhere">${itemValue}</td>
+              <td style="width:30%;padding:7px;border-bottom:1px solid #edf0f4;overflow-wrap:anywhere">${definition}</td>
+              <td style="width:45%;padding:7px;border-bottom:1px solid #edf0f4;color:#475467;overflow-wrap:anywhere">${importance}</td>
             </tr>`).join('')}</tbody>
           </table>
         </div>
@@ -3057,10 +3057,10 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
           <table style="border-collapse:collapse;width:100%;table-layout:fixed;font-size:9px">
             ${head(['Aggregated measure','Value','What it measures','What the sampled result indicates'])}
             <tbody>${metricRows.map(([label,main,measurement,interpretation]) => `<tr>
-              <td style="width:18%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700">${label}</td>
-              <td style="width:15%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;color:#203F67">${main}</td>
-              <td style="width:30%;padding:7px;border-bottom:1px solid #edf0f4">${measurement}</td>
-              <td style="width:37%;padding:7px;border-bottom:1px solid #edf0f4;color:#475467">${interpretation}</td>
+              <td style="width:18%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;overflow-wrap:anywhere">${label}</td>
+              <td style="width:15%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;color:#203F67;overflow-wrap:anywhere">${main}</td>
+              <td style="width:30%;padding:7px;border-bottom:1px solid #edf0f4;overflow-wrap:anywhere">${measurement}</td>
+              <td style="width:37%;padding:7px;border-bottom:1px solid #edf0f4;color:#475467;overflow-wrap:anywhere">${interpretation}</td>
             </tr>`).join('')}</tbody>
           </table>
         </div>
@@ -3135,17 +3135,17 @@ function openServingCellDetail() {
   const reset = overlay.querySelector('[data-cell-text="reset"]');
   let scale = 1;
   const report = content.firstElementChild;
-  const baseReportWidth = report?.scrollWidth || content.clientWidth;
   const scalableElements = [content, ...content.querySelectorAll('*')];
   scalableElements.forEach(element => {
     const size = parseFloat(getComputedStyle(element).fontSize);
     if (Number.isFinite(size)) element.dataset.cellBaseFontSize = String(size);
   });
   const applyScale = value => {
-    scale = Math.min(2.5, Math.max(.8, value));
+    scale = Math.min(1.8, Math.max(.8, value));
     if (report) {
-      report.style.width = `${baseReportWidth * scale}px`;
-      report.style.maxWidth = 'none';
+      report.style.width = '100%';
+      report.style.maxWidth = '100%';
+      report.style.boxSizing = 'border-box';
     }
     scalableElements.forEach(element => {
       const base = parseFloat(element.dataset.cellBaseFontSize);
