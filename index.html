@@ -3069,8 +3069,15 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
       <div style="margin-top:12px;width:100%">
         ${sectionTitle('Technical Analysis')}
         <div style="padding:12px;border:1px solid #cfd8e3;border-top:0;border-radius:0 0 6px 6px;background:#f8fafc">
-          <div style="font-size:10px;line-height:1.55;color:#344054">${performanceConclusion}</div>
-          <div style="font-size:9px;line-height:1.5;color:#667085;margin-top:7px"><strong>Warnings:</strong> ${stats.degradedRsrq} degraded RSRQ observation${stats.degradedRsrq === 1 ? '' : 's'}, ${stats.noisySinr} noisy SINR observation${stats.noisySinr === 1 ? '' : 's'}, and ${stats.slowDl} download observation${stats.slowDl === 1 ? '' : 's'} below 1 Mbps.</div>
+          <div style="font-size:11px;font-weight:700;color:#203F67">Plain-language finding</div>
+          <div style="font-size:10px;line-height:1.55;color:#344054;margin-top:4px">${performanceConclusion}</div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px">
+            <div style="padding:9px;border-left:4px solid #3B7A18;background:#fff;border-radius:5px"><strong style="font-size:9px">Coverage</strong><div style="font-size:9px;color:#475467;margin-top:3px">${coverageClass}; average RSRP ${show(stats.rsrp.average, ' dBm')}.</div></div>
+            <div style="padding:9px;border-left:4px solid #BA7517;background:#fff;border-radius:5px"><strong style="font-size:9px">Radio quality</strong><div style="font-size:9px;color:#475467;margin-top:3px">${qualityClass} RSRQ and ${sinrClass} app-reported SINR.</div></div>
+            <div style="padding:9px;border-left:4px solid #315d8f;background:#fff;border-radius:5px"><strong style="font-size:9px">User experience</strong><div style="font-size:9px;color:#475467;margin-top:3px">Median download ${show(stats.dl.median, ' Mbps')}; average ping ${show(stats.ping.average, ' ms')}.</div></div>
+          </div>
+          <div style="font-size:9px;line-height:1.5;color:#667085;margin-top:9px"><strong>Warnings:</strong> ${stats.degradedRsrq} degraded RSRQ observation${stats.degradedRsrq === 1 ? '' : 's'}, ${stats.noisySinr} noisy SINR observation${stats.noisySinr === 1 ? '' : 's'}, and ${stats.slowDl} download observation${stats.slowDl === 1 ? '' : 's'} below 1 Mbps.</div>
+          <div style="font-size:9px;line-height:1.5;color:#667085;margin-top:7px"><strong>Benchmark interpretation:</strong> ITU-T E.804 supports mobile QoS measurement methodology and ITU-T E.800 defines QoS terminology, but neither supplies universal LTE pass/fail thresholds for these RF and throughput results. Any performance threshold must be explicitly identified as study-defined, application-based, regulatory, or operator-specific.</div>
           <div style="font-size:8px;color:#667085;line-height:1.45;margin-top:7px"><strong>Methodological limitation:</strong> results describe the sampled locations and times, not engineered cell capacity. Attribution assumes the serving-cell identity remained valid during each linked performance test and no handover occurred. PCI, TAC, LCID, and reported eNB are supporting evidence; PLMN + ECI is the primary grouping identity.</div>
         </div>
       </div>
@@ -3110,7 +3117,7 @@ function openServingCellDetail() {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#10243d;color:#fff">
         <div>
           <div style="font-size:15px;font-weight:700">Serving LTE cell analysis</div>
-          <div style="font-size:10px;color:#cbd5e1;margin-top:2px">Scroll with the mouse wheel or scrollbar · Use A− and A+ only for text size</div>
+          <div style="font-size:10px;color:#cbd5e1;margin-top:2px">Drag with the left mouse button to pan · Mouse wheel scrolls · A− and A+ change text size</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <button type="button" data-cell-text="out" title="Decrease text size" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-weight:700">A−</button>
@@ -3119,7 +3126,7 @@ function openServingCellDetail() {
           <button type="button" onclick="document.getElementById('serving-cell-detail-overlay')?.remove()" title="Close" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:18px">×</button>
         </div>
       </div>
-      <div data-cell-detail-content tabindex="0" title="Scroll to view the report. Use A− and A+ to change text size." style="flex:1;font-size:16px;padding:24px;overflow:scroll;overflow-x:auto;overflow-y:scroll;line-height:1.5;min-height:0;scrollbar-gutter:stable both-edges;overscroll-behavior:contain;outline:none">
+      <div data-cell-detail-content tabindex="0" title="Drag to pan or scroll to view the report. Use A− and A+ to change text size." style="flex:1;font-size:16px;padding:24px;overflow:scroll;overflow-x:auto;overflow-y:scroll;line-height:1.5;min-height:0;scrollbar-gutter:stable both-edges;overscroll-behavior:contain;outline:none;cursor:grab;user-select:none">
         ${sectorSummaryHTML(selectedServingCell, false, true)}
       </div>
     </div>`;
@@ -3160,8 +3167,34 @@ function openServingCellDetail() {
       content.scrollTop += amounts[event.key];
     }
   });
+  const pan = { active: false, x: 0, y: 0, left: 0, top: 0 };
+  content.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || event.target.closest('button,a,input,select,textarea')) return;
+    pan.active = true;
+    pan.x = event.clientX;
+    pan.y = event.clientY;
+    pan.left = content.scrollLeft;
+    pan.top = content.scrollTop;
+    content.style.cursor = 'grabbing';
+    content.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  });
+  content.addEventListener('pointermove', event => {
+    if (!pan.active) return;
+    content.scrollLeft = pan.left - (event.clientX - pan.x);
+    content.scrollTop = pan.top - (event.clientY - pan.y);
+    event.preventDefault();
+  });
+  const endPan = event => {
+    if (!pan.active) return;
+    pan.active = false;
+    content.style.cursor = 'grab';
+    content.releasePointerCapture?.(event.pointerId);
+  };
+  content.addEventListener('pointerup', endPan);
+  content.addEventListener('pointercancel', endPan);
   overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
-  applyScale(1);
+  applyScale(1.2);
   content.focus();
 }
 
