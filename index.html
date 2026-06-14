@@ -3134,6 +3134,8 @@ function openServingCellDetail() {
   const content = overlay.querySelector('[data-cell-detail-content]');
   const reset = overlay.querySelector('[data-cell-text="reset"]');
   let scale = 1;
+  const report = content.firstElementChild;
+  const baseReportWidth = report?.scrollWidth || content.clientWidth;
   const scalableElements = [content, ...content.querySelectorAll('*')];
   scalableElements.forEach(element => {
     const size = parseFloat(getComputedStyle(element).fontSize);
@@ -3141,6 +3143,10 @@ function openServingCellDetail() {
   });
   const applyScale = value => {
     scale = Math.min(2.5, Math.max(.8, value));
+    if (report) {
+      report.style.width = `${baseReportWidth * scale}px`;
+      report.style.maxWidth = 'none';
+    }
     scalableElements.forEach(element => {
       const base = parseFloat(element.dataset.cellBaseFontSize);
       if (Number.isFinite(base)) element.style.fontSize = `${base * scale}px`;
@@ -3151,7 +3157,7 @@ function openServingCellDetail() {
   overlay.querySelector('[data-cell-text="out"]')?.addEventListener('click', () => applyScale(scale - .25));
   reset?.addEventListener('click', () => applyScale(1));
   const stopMapInteraction = event => event.stopPropagation();
-  ['mousedown','mouseup','mousemove','pointerdown','pointerup','touchstart','touchmove'].forEach(type =>
+  ['mousedown','mouseup','mousemove','touchstart','touchmove'].forEach(type =>
     content.addEventListener(type, stopMapInteraction, { passive: true })
   );
   content.addEventListener('wheel', event => {
@@ -3183,6 +3189,7 @@ function openServingCellDetail() {
     if (!pan.active) return;
     content.scrollLeft = pan.left - (event.clientX - pan.x);
     content.scrollTop = pan.top - (event.clientY - pan.y);
+    event.stopPropagation();
     event.preventDefault();
   });
   const endPan = event => {
