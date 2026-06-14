@@ -1943,6 +1943,7 @@ let markers  = [];
 let surveyOverlays = [];
 let waypointShapes = [];
 let selectedSectorKey = '';
+let selectedServingCell = null;
 let heatmap  = null;
 let wardBoundaryLayer = null;
 let constituencyBoundaryLayer = null;
@@ -2973,16 +2974,62 @@ function sectorSummaryHTML(sector, compact = false) {
     <div style="font-size:9px;color:#667085;margin-top:7px">Warnings: ${stats.degradedRsrq} degraded RSRQ · ${stats.noisySinr} noisy SINR · ${stats.slowDl} below 1 Mbps</div>
     <div style="font-size:9px;color:#667085;margin-top:5px;line-height:1.35">Survey records: ${ids}</div>
     <div style="font-size:8px;color:#667085;margin-top:5px;line-height:1.35">This is observed sample performance for one serving LTE cell, not a measurement of cell capacity or proof of a physical antenna sector. Association assumes the serving-cell reading remained valid during the linked performance tests. The marker is placed at the centroid of its survey points, not at the physical tower.</div>
+    ${compact ? '' : `<button type="button" onclick="openServingCellDetail()" style="width:100%;margin-top:9px;padding:8px 10px;border:0;border-radius:6px;background:#203F67;color:#fff;font-size:11px;font-weight:700;cursor:pointer">Open larger view</button>`}
   </div>`;
 }
 
 function selectCellSector(sector) {
   selectedSectorKey = sector.key;
+  selectedServingCell = sector;
   const target = document.getElementById('sector-summary');
   if (target) {
     target.style.cssText = 'font-size:10px;color:var(--gray-600);padding:8px;border:1px solid #c7b5ef;border-radius:6px;background:#f7f3ff';
-    target.innerHTML = sectorSummaryHTML(sector, true);
+    target.innerHTML = `${sectorSummaryHTML(sector, true)}<button type="button" onclick="openServingCellDetail()" style="width:100%;margin-top:8px;padding:7px;border:0;border-radius:5px;background:#203F67;color:#fff;font-size:10px;font-weight:700;cursor:pointer">Open larger view</button>`;
   }
+}
+
+function openServingCellDetail() {
+  if (!selectedServingCell) return;
+  document.getElementById('serving-cell-detail-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'serving-cell-detail-overlay';
+  overlay.style.cssText = 'position:absolute;inset:12px;z-index:80;background:rgba(9,21,37,.72);display:flex;align-items:center;justify-content:center;border-radius:10px;padding:18px';
+  overlay.innerHTML = `
+    <div style="background:#fff;width:min(880px,94%);max-height:92%;border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#10243d;color:#fff">
+        <div>
+          <div style="font-size:15px;font-weight:700">Serving LTE cell analysis</div>
+          <div style="font-size:10px;color:#cbd5e1;margin-top:2px">Enlarged technical summary of the selected map marker</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button type="button" data-cell-text="out" title="Decrease text size" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-weight:700">A−</button>
+          <button type="button" data-cell-text="reset" title="Reset text size" style="height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:10px;padding:0 8px">100%</button>
+          <button type="button" data-cell-text="in" title="Increase text size" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-weight:700">A+</button>
+          <button type="button" onclick="document.getElementById('serving-cell-detail-overlay')?.remove()" title="Close" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:18px">×</button>
+        </div>
+      </div>
+      <div data-cell-detail-content title="Use the mouse wheel to change text size" style="font-size:16px;padding:20px;overflow:auto;line-height:1.5">
+        ${sectorSummaryHTML(selectedServingCell, false)}
+      </div>
+    </div>`;
+  document.querySelector('#view-map .map-area')?.appendChild(overlay);
+  const content = overlay.querySelector('[data-cell-detail-content]');
+  const reset = overlay.querySelector('[data-cell-text="reset"]');
+  let scale = 1;
+  const applyScale = value => {
+    scale = Math.min(1.8, Math.max(.8, value));
+    content.style.zoom = scale;
+    reset.textContent = `${Math.round(scale * 100)}%`;
+  };
+  overlay.querySelector('[data-cell-text="in"]')?.addEventListener('click', () => applyScale(scale + .15));
+  overlay.querySelector('[data-cell-text="out"]')?.addEventListener('click', () => applyScale(scale - .15));
+  reset?.addEventListener('click', () => applyScale(1));
+  content.addEventListener('wheel', event => {
+    event.preventDefault();
+    applyScale(scale + (event.deltaY < 0 ? .1 : -.1));
+  }, { passive: false });
+  overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
+  applyScale(1.25);
 }
 
 function enhancedInfoWindowHTML(p) {
