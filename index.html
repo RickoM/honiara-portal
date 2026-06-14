@@ -3200,8 +3200,8 @@ function openMapScreenshot(carouselId) {
       <button type="button" data-zoom-action="reset" title="Reset zoom" style="height:28px;border:1px solid #667085;border-radius:5px;background:#fff;cursor:pointer;font-size:10px;padding:0 8px">100%</button>
       <button type="button" data-zoom-action="in" title="Zoom in" style="width:30px;height:28px;border:1px solid #667085;border-radius:5px;background:#fff;cursor:pointer;font-size:17px">+</button>
     </div>
-    <div data-role="zoom-viewport" title="Use mouse wheel to zoom. Drag to move the image." style="flex:1;min-height:0;width:100%;overflow:hidden;background:#111827;border-radius:8px;position:relative;cursor:grab;user-select:none;touch-action:none">
-      <img data-role="zoom-image" src="${slide.url}" alt="${slide.label}" draggable="false" style="position:absolute;left:50%;top:50%;max-width:100%;max-height:100%;object-fit:contain;transform-origin:center center;will-change:transform;pointer-events:none">
+    <div data-role="zoom-viewport" title="Use mouse wheel to zoom. Drag to move the image." style="flex:1;min-height:0;width:100%;overflow:hidden;background:#111827;border-radius:8px;position:relative;cursor:grab;user-select:none;touch-action:none;overscroll-behavior:contain">
+      <img data-role="zoom-image" src="${slide.url}" alt="${slide.label}" draggable="false" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform-origin:center center;will-change:transform;pointer-events:none">
     </div>
     <div style="color:#fff;text-align:center;font-size:12px;font-weight:600">${slide.sim ? slide.sim + ' - ' : ''}${slide.label}</div>
     <div style="color:#cbd5e1;text-align:center;font-size:10px">Mouse wheel to zoom · Drag image to move · Double-click to reset</div>
@@ -3222,7 +3222,7 @@ function initializeMapScreenshotZoom(overlay) {
 
   const state = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0 };
   const render = () => {
-    image.style.transform = `translate(-50%, -50%) translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+    image.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
     viewport.style.cursor = state.dragging ? 'grabbing' : state.scale > 1 ? 'grab' : 'zoom-in';
     if (resetButton) resetButton.textContent = `${Math.round(state.scale * 100)}%`;
   };
@@ -3236,11 +3236,17 @@ function initializeMapScreenshotZoom(overlay) {
   overlay.querySelector('[data-zoom-action="in"]')?.addEventListener('click', () => setScale(state.scale * 1.35));
   overlay.querySelector('[data-zoom-action="out"]')?.addEventListener('click', () => setScale(state.scale / 1.35));
   resetButton?.addEventListener('click', reset);
-  viewport.addEventListener('wheel', event => {
+  const handleWheelZoom = event => {
+    if (!event.target.closest?.('[data-role="zoom-viewport"]')) return;
     event.preventDefault();
+    event.stopImmediatePropagation();
     event.stopPropagation();
-    setScale(state.scale * (event.deltaY < 0 ? 1.18 : 1 / 1.18));
-  }, { passive: false });
+    const delta = Number.isFinite(event.deltaY) ? event.deltaY : -(event.wheelDelta || 0);
+    setScale(state.scale * (delta < 0 ? 1.22 : 1 / 1.22));
+  };
+  // Capture the wheel before Google Maps or the browser page can consume it.
+  overlay.addEventListener('wheel', handleWheelZoom, { capture: true, passive: false });
+  overlay.addEventListener('mousewheel', handleWheelZoom, { capture: true, passive: false });
   viewport.addEventListener('dblclick', event => { event.preventDefault(); reset(); });
   viewport.addEventListener('pointerdown', event => {
     if (state.scale <= 1) { setScale(1.7); return; }
