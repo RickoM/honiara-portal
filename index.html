@@ -3012,13 +3012,13 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
       <div style="margin-top:12px;width:100%">
         ${sectionTitle('LTE Cell Information')}
         <div style="overflow:auto;border:1px solid #cfd8e3;border-top:0;border-radius:0 0 6px 6px">
-          <table style="border-collapse:collapse;width:100%;table-layout:fixed;font-size:9px">
+          <table style="border-collapse:collapse;width:100%;table-layout:auto;font-size:9px">
             ${head(['Identifier','Recorded value','Technical definition','Importance to this analysis'])}
             <tbody>${identityRows.map(([label,itemValue,definition,importance]) => `<tr>
-              <td style="width:10%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;color:#203F67;overflow-wrap:anywhere">${label}</td>
-              <td style="width:15%;padding:7px;border-bottom:1px solid #edf0f4;font-family:'JetBrains Mono',monospace;font-weight:700;overflow-wrap:anywhere">${itemValue}</td>
-              <td style="width:30%;padding:7px;border-bottom:1px solid #edf0f4;overflow-wrap:anywhere">${definition}</td>
-              <td style="width:45%;padding:7px;border-bottom:1px solid #edf0f4;color:#475467;overflow-wrap:anywhere">${importance}</td>
+              <td style="width:1%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;color:#203F67;white-space:nowrap">${label}</td>
+              <td style="width:1%;padding:7px;border-bottom:1px solid #edf0f4;font-family:'JetBrains Mono',monospace;font-weight:700;white-space:nowrap">${itemValue}</td>
+              <td style="width:34%;padding:7px;border-bottom:1px solid #edf0f4;overflow-wrap:anywhere">${definition}</td>
+              <td style="padding:7px;border-bottom:1px solid #edf0f4;color:#475467;overflow-wrap:anywhere">${importance}</td>
             </tr>`).join('')}</tbody>
           </table>
         </div>
@@ -3027,7 +3027,7 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
       <div style="margin-top:12px;width:100%">
         ${sectionTitle('Survey Records Supporting This LTE Cell Marker')}
         <div style="overflow:auto;border:1px solid #cfd8e3;border-top:0;border-radius:0 0 6px 6px">
-          <table style="border-collapse:collapse;min-width:1160px;width:100%;font-size:8px">
+          <table style="border-collapse:collapse;width:max-content;min-width:100%;font-size:8px">
             ${head(['Survey ID','Ward','PLMN','ECI','eNB','LCID','PCI','TAC','Band','RSRP','RSRQ','SINR','DL','UL','Ping','GPS'])}
             <tbody>${sector.records.map(record => `<tr>
               <td style="padding:6px;border-bottom:1px solid #edf0f4;font-weight:700">${record.id || record.respondentId || '—'}</td>
@@ -3054,13 +3054,13 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
       <div style="margin-top:12px;width:100%">
         ${sectionTitle('Aggregation Summary')}
         <div style="overflow:auto;border:1px solid #cfd8e3;border-top:0;border-radius:0 0 6px 6px">
-          <table style="border-collapse:collapse;width:100%;table-layout:fixed;font-size:9px">
+          <table style="border-collapse:collapse;width:100%;table-layout:auto;font-size:9px">
             ${head(['Aggregated measure','Value','What it measures','What the sampled result indicates'])}
             <tbody>${metricRows.map(([label,main,measurement,interpretation]) => `<tr>
-              <td style="width:18%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;overflow-wrap:anywhere">${label}</td>
-              <td style="width:15%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;color:#203F67;overflow-wrap:anywhere">${main}</td>
-              <td style="width:30%;padding:7px;border-bottom:1px solid #edf0f4;overflow-wrap:anywhere">${measurement}</td>
-              <td style="width:37%;padding:7px;border-bottom:1px solid #edf0f4;color:#475467;overflow-wrap:anywhere">${interpretation}</td>
+              <td style="width:1%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;white-space:nowrap">${label}</td>
+              <td style="width:1%;padding:7px;border-bottom:1px solid #edf0f4;font-weight:700;color:#203F67;white-space:nowrap">${main}</td>
+              <td style="width:34%;padding:7px;border-bottom:1px solid #edf0f4;overflow-wrap:anywhere">${measurement}</td>
+              <td style="padding:7px;border-bottom:1px solid #edf0f4;color:#475467;overflow-wrap:anywhere">${interpretation}</td>
             </tr>`).join('')}</tbody>
           </table>
         </div>
