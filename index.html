@@ -4872,8 +4872,8 @@ async function sfSubmit() {
   if (matchingDuplicateRecords.length) {
     const matchingIds = matchingDuplicateRecords.map(point => point.id || point._id).filter(Boolean).join(', ');
     if (!confirm(
-      `Possible duplicate survey detected. The GPS coordinates and main radio/performance readings exactly match: ${matchingIds}.\n\n` +
-      'Only submit if this is a separate, verified survey.'
+      `Strong duplicate warning: the GPS coordinates and main radio/performance readings exactly match: ${matchingIds}.\n\n` +
+      'Continue only if the complete respondent survey is genuinely different. The API will block an identical complete submission.'
     )) {
       if (btn) { btn.textContent = editingId ? 'Save changes' : 'Submit survey'; btn.disabled = false; }
       return;
