@@ -743,6 +743,7 @@
         <div class="sig-row"><div class="sig-dot" style="background:#BA7517"></div>Fair (-90 to -100)</div>
         <div class="sig-row"><div class="sig-dot" style="background:#D85A30"></div>Poor (-100 to -110)</div>
         <div class="sig-row"><div class="sig-dot" style="background:#A32D2D"></div>Very poor (&lt; -110)</div>
+        <div class="sig-row" style="margin-top:6px;border-top:1px solid var(--border);padding-top:6px"><div class="sig-dot" style="background:#D92D20;border:2px solid #B42318"></div>Red ! pin = plotted outside study area</div>
       </div>
 
       <!-- MAP DIV -->
@@ -2110,7 +2111,7 @@ function switchView(id, btn) {
     if (!gmap && apiKey) loadGoogleMaps(apiKey);
     else if (gmap) {
       refreshMap();
-      setTimeout(() => fitSurveyWaypoints(false, true), 100);
+      setTimeout(() => fitSurveyWaypoints(false, false), 100);
     }
   }
   if (id === 'dashboard') { document.getElementById('view-dashboard').classList.add('on'); renderDashboard(); }
@@ -2371,7 +2372,7 @@ window.initMap = function() {
   // Only refresh map visuals if Live Map tab is currently active
   if (activeView === 'map') {
     refreshMap();
-    setTimeout(() => fitSurveyWaypoints(false, true), 100);
+    setTimeout(() => fitSurveyWaypoints(false, false), 100);
   }
 };
 
@@ -2388,11 +2389,18 @@ function personMarkerIcon(colour) {
   };
 }
 
-function numberedSurveyMarkerIcon(colour, suffix) {
+function numberedSurveyMarkerIcon(colour, suffix, status = 'Valid') {
   const label = String(suffix || '---').replace(/[^0-9-]/g, '').slice(-3) || '---';
+  const outside = status === 'Outside study area';
+  const stroke = outside ? '#B42318' : '#fff';
+  const strokeWidth = outside ? 4.5 : 3;
+  const warning = outside
+    ? '<text x="22" y="14" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="10" font-weight="900">!</text>'
+    : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="54" viewBox="0 0 44 54">
-    <path d="M22 52C16 43 4 33 4 21a18 18 0 1 1 36 0c0 12-12 22-18 31z" fill="${colour}" stroke="#fff" stroke-width="3"/>
+    <path d="M22 52C16 43 4 33 4 21a18 18 0 1 1 36 0c0 12-12 22-18 31z" fill="${colour}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
     <circle cx="22" cy="21" r="12.5" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.65)" stroke-width="1"/>
+    ${warning}
     <text x="22" y="25" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="11" font-weight="700">${label}</text>
   </svg>`;
   return {
@@ -2644,7 +2652,7 @@ function refreshMap() {
       const marker = new google.maps.Marker({
         map: gmap,
         position,
-        icon: numberedSurveyMarkerIcon(col, respondentSuffix),
+        icon: numberedSurveyMarkerIcon(status === 'Outside study area' ? '#D92D20' : col, respondentSuffix, status),
         title: layout.count > 1
           ? `${layout.count} survey records share this GPS location — ${p.id || p.ward || 'waypoint'}`
           : `Survey participant — ${p.id || p.ward || 'waypoint'}`,
@@ -5666,7 +5674,7 @@ async function loadSurveysFromAPI({ silent = false } = {}) {
     towerPoints = deriveUniqueTowerPoints(data.surveys);
     points = data.surveys.map(normalizeSurveyForPoint);
     refresh();
-    if (!silent && activeView === 'map') setTimeout(() => fitSurveyWaypoints(false, true), 100);
+    if (!silent && activeView === 'map') setTimeout(() => fitSurveyWaypoints(false, false), 100);
     return true;
   } catch (err) {
     console.error('Load surveys error:', err);
@@ -5685,7 +5693,7 @@ async function syncSurveyViews() {
   if (activeView === 'data') renderDataTable();
   if (activeView === 'map') {
     refreshMap();
-    setTimeout(() => fitSurveyWaypoints(false, true), 100);
+    setTimeout(() => fitSurveyWaypoints(false, false), 100);
   }
 }
 
