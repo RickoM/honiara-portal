@@ -1361,9 +1361,9 @@
         </div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Signal strength</div>
         <div class="sf-fgrid">
-          <div class="sf-fcell"><label>RSRP (dBm)</label><input type="number" id="fd-s2a-rsrp" placeholder="e.g. -108"></div>
-          <div class="sf-fcell"><label>RSRQ (dB)</label><input type="number" id="fd-s2a-rsrq" placeholder="e.g. -15"></div>
-          <div class="sf-fcell"><label>RSSNR (dB)</label><input type="number" id="fd-s2a-rssnr" placeholder="e.g. 5"></div>
+          <div class="sf-fcell"><label>RSRP (dBm)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rsrp',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rsrp',1)">+</button><input type="number" id="fd-s2a-rsrp" placeholder="e.g. -108" style="flex:1;min-width:0"></div></div>
+          <div class="sf-fcell"><label>RSRQ (dB)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rsrq',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rsrq',1)">+</button><input type="number" id="fd-s2a-rsrq" placeholder="e.g. -15" style="flex:1;min-width:0"></div></div>
+          <div class="sf-fcell"><label>RSSNR / SINR (dB)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rssnr',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rssnr',1)">+</button><input type="number" id="fd-s2a-rssnr" placeholder="e.g. 5 or -3" style="flex:1;min-width:0"></div></div>
         </div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Tower identity — most important for mapping</div>
         <div class="sf-fgrid">
@@ -1403,9 +1403,9 @@
           </div>
           <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Signal strength</div>
           <div class="sf-fgrid">
-            <div class="sf-fcell"><label>RSRP (dBm)</label><input type="number" id="fd-s2b-rsrp" placeholder="e.g. -105"></div>
-            <div class="sf-fcell"><label>RSRQ (dB)</label><input type="number" id="fd-s2b-rsrq" placeholder="e.g. -14"></div>
-            <div class="sf-fcell"><label>RSSNR (dB)</label><input type="number" id="fd-s2b-rssnr" placeholder="e.g. 3"></div>
+            <div class="sf-fcell"><label>RSRP (dBm)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2b-rsrp',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2b-rsrp',1)">+</button><input type="number" id="fd-s2b-rsrp" placeholder="e.g. -105" style="flex:1;min-width:0"></div></div>
+            <div class="sf-fcell"><label>RSRQ (dB)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2b-rsrq',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2b-rsrq',1)">+</button><input type="number" id="fd-s2b-rsrq" placeholder="e.g. -14" style="flex:1;min-width:0"></div></div>
+            <div class="sf-fcell"><label>RSSNR / SINR (dB)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2b-rssnr',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2b-rssnr',1)">+</button><input type="number" id="fd-s2b-rssnr" placeholder="e.g. 3 or -2" style="flex:1;min-width:0"></div></div>
           </div>
           <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Tower identity</div>
           <div class="sf-fgrid">
@@ -1612,7 +1612,7 @@
           <strong>Primary:</strong> Google Maps → tap blue dot → record the complete coordinates shown. &nbsp;<strong>Fallback:</strong> NCIL → MAP tab → record LAT/LON exactly as displayed. &nbsp;Do not round the values. Latitude negative e.g. −9.4318123. Longitude positive e.g. 160.0523456.
         </div>
         <div class="sf-fgrid">
-          <div class="sf-fcell"><label>Survey-point Latitude</label><input type="number" step="any" id="sf-lat" placeholder="e.g. -9.4318123"></div>
+          <div class="sf-fcell"><label>Survey-point Latitude</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('sf-lat',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('sf-lat',1)">+</button><input type="number" step="any" id="sf-lat" placeholder="e.g. -9.4318123" style="flex:1;min-width:0"></div></div>
           <div class="sf-fcell"><label>Survey-point Longitude</label><input type="number" step="any" id="sf-lon" placeholder="e.g. 160.0523456"></div>
           <div class="sf-fcell">
             <label>Upload GPS screenshot</label>
@@ -1633,7 +1633,7 @@
 
         <div id="tower-fields" style="opacity:1;pointer-events:auto;transition:all 0.3s">
           <div class="step7-primary-grid">
-            <div class="sf-fcell"><label>Tower Latitude (separate from survey point)</label><input type="number" step="any" id="fd-s7-tlat" placeholder="e.g. -9.4305123"></div>
+            <div class="sf-fcell"><label>Tower Latitude (separate from survey point)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s7-tlat',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s7-tlat',1)">+</button><input type="number" step="any" id="fd-s7-tlat" placeholder="e.g. -9.4305123" style="flex:1;min-width:0"></div></div>
             <div class="sf-fcell"><label>Tower Longitude (separate from survey point)</label><input type="number" step="any" id="fd-s7-tlon" placeholder="e.g. 160.0498456"></div>
             <div class="sf-fcell">
               <label>Operator</label>
@@ -2609,13 +2609,14 @@ function refreshMap() {
     parseCoordinate(p.lat) >= -90 && parseCoordinate(p.lat) <= 90 &&
     parseCoordinate(p.lng) >= -180 && parseCoordinate(p.lng) <= 180;
   const plottedSurveys = src.filter(p => p.type === 'survey' && hasMapCoordinates(p));
-  const validStudyWaypoints = plottedSurveys.filter(p => gpsStatus(p.lat, p.lng) === 'Valid');
   const markerLayout = surveyMarkerLayout(plottedSurveys);
   const waypointCount = document.getElementById('ms-waypoints');
   if (waypointCount) {
+    const outsideCount = plottedSurveys.filter(p => gpsStatus(p.lat, p.lng) === 'Outside study area').length;
+    const outsideNote = outsideCount ? `, ${outsideCount} outside study area` : '';
     waypointCount.textContent = markerLayout.overlapCount
-      ? `${plottedSurveys.length} records at ${markerLayout.locationCount} locations (${markerLayout.overlapCount} overlapping)`
-      : `${plottedSurveys.length} survey location${plottedSurveys.length === 1 ? '' : 's'} plotted`;
+      ? `${plottedSurveys.length} records at ${markerLayout.locationCount} locations (${markerLayout.overlapCount} overlapping${outsideNote})`
+      : `${plottedSurveys.length} survey location${plottedSurveys.length === 1 ? '' : 's'} plotted${outsideNote}`;
   }
 
   // Signal heatmap
@@ -2735,12 +2736,6 @@ function refreshMap() {
       marker.infoWindow = info;
       markers.push(marker);
     });
-  }
-
-  // Keep a single valid study waypoint unmistakably centred and close enough to see.
-  if (showSurveys && validStudyWaypoints.length === 1) {
-    gmap.setCenter({ lat: parseCoordinate(validStudyWaypoints[0].lat), lng: parseCoordinate(validStudyWaypoints[0].lng) });
-    if (gmap.getZoom() < 17) gmap.setZoom(17);
   }
 
   updateLegend(colMode);
@@ -4465,6 +4460,21 @@ function syncAppRecorder() {
     recorder.style.background = '';
     recorder.style.color = '';
   }
+}
+
+function setSignedField(id, sign) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const raw = String(el.value || '').trim().replace(/[−–—]/g, '-');
+  const numeric = parseFloat(raw);
+  if (!Number.isFinite(numeric)) {
+    el.value = sign < 0 ? '-' : '';
+    el.focus();
+    return;
+  }
+  el.value = String(Math.abs(numeric) * (sign < 0 ? -1 : 1));
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  el.focus();
 }
 
 function sfGetData() {
