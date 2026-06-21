@@ -83,18 +83,21 @@
   .boundary-source a { color: var(--blue-mid); text-decoration: none; }
   
   /* ── MAP STATS ── */
-  .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; width: 260px; max-width: calc(100vw - 440px); }
+  .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; width: 420px; max-width: calc(100vw - 440px); }
   .map-stat-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
   .map-stat-row:last-child { margin-bottom: 0; }
   .map-stat-val { font-size: 18px; font-weight: 600; line-height: 1; }
   .map-stat-lbl { font-size: 11px; color: var(--gray-600); }
   .progress-bar-mini { height: 4px; background: var(--gray-200); border-radius: 2px; margin-top: 6px; overflow: hidden; }
   .progress-bar-mini-fill { height: 100%; background: var(--navy); border-radius: 2px; transition: width .3s; }
-  .map-counts { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 7px; max-height: 190px; overflow-y: auto; }
+  .map-counts { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 7px; max-height: 220px; overflow-y: auto; }
   .map-count-title { font-size: 9px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
-  .map-count-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; font-size: 10px; padding: 3px 0; color: var(--gray-700); }
-  .map-count-row strong { color: var(--navy); font-size: 11px; }
-  .map-count-sub { padding-left: 9px; border-left: 3px solid var(--border); }
+  .map-count-table { width: 100%; border-collapse: collapse; font-size: 9px; table-layout: fixed; }
+  .map-count-table th { background: var(--gray-50); color: var(--gray-600); font-size: 8px; text-transform: uppercase; letter-spacing: .04em; text-align: left; padding: 4px 5px; border: 1px solid var(--border); }
+  .map-count-table td { padding: 4px 5px; border: 1px solid var(--border); vertical-align: top; color: var(--gray-800); }
+  .map-count-table strong { color: var(--navy); font-size: 10px; }
+  .map-count-ward { display: flex; justify-content: space-between; gap: 5px; border-bottom: 1px dotted var(--border); padding: 1px 0; }
+  .map-count-ward:last-child { border-bottom: 0; }
   
   /* ── SIGNAL LEGEND ── */
   .sig-legend { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; bottom: 28px; left: 12px; z-index: 10; }
@@ -2202,26 +2205,46 @@ function renderMapSurveyBreakdown() {
   const src = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
   const surveys = src.filter(p => p.type === 'survey');
   const constituencyNames = ['West Honiara', 'Central Honiara', 'East Honiara'];
-  const wardNames = Object.keys(WARDS);
   const constituencyRows = constituencyNames.map(name => {
-    const count = surveys.filter(p => (p.constituency || WARDS[p.ward]?.constituency) === name).length;
+    const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === name);
+    const wardCounts = wards.map(ward => ({
+      ward,
+      count: surveys.filter(p => p.ward === ward).length,
+      target: WARDS[ward].target || 0,
+    }));
+    const count = wardCounts.reduce((sum, item) => sum + item.count, 0);
+    const targetTotal = wardCounts.reduce((sum, item) => sum + item.target, 0);
+    const activeWardRows = wardCounts
+      .filter(item => item.count > 0)
+      .map(item => `<div class="map-count-ward"><span>${item.ward}</span><strong>${item.count}</strong></div>`)
+      .join('');
+    const carriedRows = wardCounts
+      .filter(item => item.count > 0)
+      .map(item => `<div class="map-count-ward"><span>${item.ward}</span><strong>${item.count}/${item.target}</strong></div>`)
+      .join('');
     const colour = CONSTITUENCY_BOUNDARY_STYLES[name]?.stroke || 'var(--navy)';
-    return `<div class="map-count-row"><span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colour};margin-right:5px"></span>${name}</span><strong>${count}</strong></div>`;
+    return `<tr>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${colour};margin-right:5px"></span><strong>${name}</strong></td>
+      <td>${activeWardRows || '<span style="color:var(--gray-400)">No ward data</span>'}</td>
+      <td><strong>${count}</strong></td>
+      <td>${carriedRows || '<span style="color:var(--gray-400)">0 carried</span>'}</td>
+      <td><strong>${targetTotal}</strong></td>
+    </tr>`;
   }).join('');
-  const wardRows = wardNames
-    .map(name => {
-      const count = surveys.filter(p => p.ward === name).length;
-      if (!count) return '';
-      const targetCount = WARDS[name].target || 0;
-      return `<div class="map-count-row map-count-sub"><span>${name}</span><strong>${count}${targetCount ? `/${targetCount}` : ''}</strong></div>`;
-    })
-    .filter(Boolean)
-    .join('');
   target.innerHTML = `
-    <div class="map-count-title">Survey records by constituency</div>
-    ${constituencyRows}
-    <div class="map-count-title" style="margin-top:7px">Wards with data</div>
-    ${wardRows || '<div style="font-size:10px;color:var(--gray-400)">No ward records for this period.</div>'}
+    <div class="map-count-title">Survey distribution</div>
+    <table class="map-count-table">
+      <thead>
+        <tr>
+          <th style="width:26%">Constituency</th>
+          <th style="width:26%">Ward</th>
+          <th style="width:13%">Survey points</th>
+          <th style="width:23%">Survey carried</th>
+          <th style="width:12%">Target</th>
+        </tr>
+      </thead>
+      <tbody>${constituencyRows}</tbody>
+    </table>
   `;
 }
 
