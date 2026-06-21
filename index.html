@@ -68,7 +68,7 @@
   .map-placeholder code { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5DCAA5; }
   
   /* ── LAYER CONTROLS ── */
-  .layer-ctrl { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; left: 12px; z-index: 10; min-width: 180px; }
+  .layer-ctrl { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; min-width: 180px; }
   .layer-ctrl-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 8px; }
   .layer-toggle { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; }
   .layer-toggle input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--navy); cursor: pointer; }
@@ -83,7 +83,7 @@
   .boundary-source a { color: var(--blue-mid); text-decoration: none; }
   
   /* ── MAP STATS ── */
-  .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; width: 245px; max-width: calc(100vw - 440px); }
+  .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-sm); padding: 10px 12px; width: 100%; }
   .map-stat-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
   .map-total-surveys { justify-content: center; font-size: 14px; font-weight: 700; color: var(--navy); }
   .map-total-surveys .map-stat-val { font-size: 20px; }
@@ -105,11 +105,14 @@
   .map-constituency-total { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 6px 8px 0 17px; padding-top: 5px; border-top: 1px solid var(--gray-300); font-size: 13px; font-weight: 700; color: var(--navy); }
   
   /* ── SIGNAL LEGEND ── */
-  .sig-legend { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; bottom: 28px; left: 12px; z-index: 10; }
+  .sig-legend { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; left: 12px; z-index: 10; }
   .sig-legend-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 7px; }
   .sig-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-size: 11px; color: var(--gray-800); }
   .sig-row:last-child { margin-bottom: 0; }
   .sig-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .sidebar .map-stats { background: transparent; box-shadow: none; border-radius: 0; padding: 0; }
+  .sidebar .layer-ctrl { position: static; z-index: auto; min-width: 0; background: transparent; box-shadow: none; border-radius: 0; padding: 0; }
+  .sidebar .boundary-source { max-width: none; }
   
   /* ── DAY SELECTOR ── */
   .day-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
@@ -590,6 +593,68 @@
         </div>
       </div>
 
+      <!-- SURVEY DISTRIBUTION SUMMARY -->
+      <div class="sidebar-section">
+        <div class="map-stats">
+          <div class="map-stat-row map-total-surveys">
+            <span>Total surveys</span>
+            <span class="map-stat-val" id="ms-total">0</span>
+            <span>/ 150</span>
+          </div>
+          <div class="progress-bar-mini">
+            <div class="progress-bar-mini-fill" id="ms-progress" style="width:0%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--gray-600);margin-top:5px" id="ms-day">No data yet</div>
+          <div style="font-size:11px;color:var(--gray-600);margin-top:3px" id="ms-waypoints">0 waypoints plotted</div>
+          <div class="map-counts" id="ms-breakdown"></div>
+        </div>
+      </div>
+
+      <!-- MAP LAYERS -->
+      <div class="sidebar-section">
+        <div class="layer-ctrl">
+          <div class="layer-ctrl-title">Map layers</div>
+          <label class="layer-toggle">
+            <input type="checkbox" id="layer-surveys" checked onchange="refreshMap()">
+            <svg width="18" height="22" viewBox="-12 -28 24 30" aria-hidden="true"><path d="M0 0C-2-9-10-13-10-22A10 10 0 1 1 10-22C10-13 2-9 0 0Z" fill="#BA7517" stroke="#fff" stroke-width="1.5"/><text x="0" y="-18" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">S</text></svg>
+            <span class="layer-toggle-label">Survey data points</span>
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" id="layer-cells" checked onchange="refreshMap()">
+            <svg width="22" height="24" viewBox="-16 -21 32 34" aria-hidden="true"><g fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0-17L-7 11M0-17L7 11M-5 4H5M-3-3H3M-1-10H1"/><path d="M-7-14C-12-10-12-4-8 0M7-14C12-10 12-4 8 0M-12-17C-19-11-19-2-13 4M12-17C19-11 19-2 13 4"/></g></svg>
+            <span class="layer-toggle-label">Mobile tower points</span>
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" id="layer-sectors" checked onchange="refreshMap()">
+            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12L22 7A11 11 0 0 1 20 18Z" fill="#7C3AED" stroke="#fff"/><circle cx="12" cy="12" r="3" fill="#7C3AED" stroke="#fff"/></svg>
+            <span class="layer-toggle-label">Serving LTE cell performance</span>
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" id="layer-wards" checked onchange="refreshBoundaryLayers()">
+            <span class="boundary-line-icon" style="border-color:#7C3AED;background:linear-gradient(90deg,#3B82F655 0 33%,#A855F755 33% 66%,#F59E0B55 66%)"></span>
+            <span class="layer-toggle-label">Ward boundaries</span>
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" id="layer-constituencies" onchange="refreshBoundaryLayers()">
+            <span class="boundary-line-icon" style="border-color:#172033;background:linear-gradient(90deg,#2563EB 0 33%,#7C3AED 33% 66%,#D97706 66%)"></span>
+            <span class="layer-toggle-label">Constituency boundaries</span>
+          </label>
+          <button class="btn btn-sm" onclick="fitSurveyWaypoints()" style="width:100%;margin-top:8px">Fit survey waypoints</button>
+          <div class="boundary-key">
+            <div class="boundary-key-title">Constituency colours</div>
+            <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#2563EB;background:#3B82F655"></span>West Honiara</div>
+            <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#7C3AED;background:#A855F755"></span>Central Honiara</div>
+            <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#D97706;background:#F59E0B55"></span>East Honiara</div>
+            <div style="font-size:9px;color:var(--gray-600);line-height:1.3">Wards use different shades of their constituency colour.</div>
+          </div>
+          <div class="boundary-source">
+            Boundaries: POPGIS and SINSO/OCHA ROAP via
+            <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener">geoBoundaries</a>.
+            Wards 2014; constituencies 2018. These independently sourced boundaries may not align exactly.
+          </div>
+        </div>
+      </div>
+
       <!-- ADD SURVEY (SIMULATE UPLOAD) -->
       <div class="sidebar-section" id="sidebar-admin-tools">
         <div class="ssec-title">Simulate data upload</div>
@@ -691,64 +756,6 @@
 
     <!-- MAP CONTAINER -->
     <div class="map-area">
-
-      <!-- LAYER CONTROLS -->
-      <div class="layer-ctrl">
-        <div class="layer-ctrl-title">Map layers</div>
-        <label class="layer-toggle">
-          <input type="checkbox" id="layer-surveys" checked onchange="refreshMap()">
-          <svg width="18" height="22" viewBox="-12 -28 24 30" aria-hidden="true"><path d="M0 0C-2-9-10-13-10-22A10 10 0 1 1 10-22C10-13 2-9 0 0Z" fill="#BA7517" stroke="#fff" stroke-width="1.5"/><text x="0" y="-18" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">S</text></svg>
-          <span class="layer-toggle-label">Survey data points</span>
-        </label>
-        <label class="layer-toggle">
-          <input type="checkbox" id="layer-cells" checked onchange="refreshMap()">
-          <svg width="22" height="24" viewBox="-16 -21 32 34" aria-hidden="true"><g fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M0-17L-7 11M0-17L7 11M-5 4H5M-3-3H3M-1-10H1"/><path d="M-7-14C-12-10-12-4-8 0M7-14C12-10 12-4 8 0M-12-17C-19-11-19-2-13 4M12-17C19-11 19-2 13 4"/></g></svg>
-          <span class="layer-toggle-label">Mobile tower points</span>
-        </label>
-        <label class="layer-toggle">
-          <input type="checkbox" id="layer-sectors" checked onchange="refreshMap()">
-          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12L22 7A11 11 0 0 1 20 18Z" fill="#7C3AED" stroke="#fff"/><circle cx="12" cy="12" r="3" fill="#7C3AED" stroke="#fff"/></svg>
-          <span class="layer-toggle-label">Serving LTE cell performance</span>
-        </label>
-        <label class="layer-toggle">
-          <input type="checkbox" id="layer-wards" checked onchange="refreshBoundaryLayers()">
-          <span class="boundary-line-icon" style="border-color:#7C3AED;background:linear-gradient(90deg,#3B82F655 0 33%,#A855F755 33% 66%,#F59E0B55 66%)"></span>
-          <span class="layer-toggle-label">Ward boundaries</span>
-        </label>
-        <label class="layer-toggle">
-          <input type="checkbox" id="layer-constituencies" onchange="refreshBoundaryLayers()">
-          <span class="boundary-line-icon" style="border-color:#172033;background:linear-gradient(90deg,#2563EB 0 33%,#7C3AED 33% 66%,#D97706 66%)"></span>
-          <span class="layer-toggle-label">Constituency boundaries</span>
-        </label>
-        <button class="btn btn-sm" onclick="fitSurveyWaypoints()" style="width:100%;margin-top:8px">Fit survey waypoints</button>
-        <div class="boundary-key">
-          <div class="boundary-key-title">Constituency colours</div>
-          <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#2563EB;background:#3B82F655"></span>West Honiara</div>
-          <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#7C3AED;background:#A855F755"></span>Central Honiara</div>
-          <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#D97706;background:#F59E0B55"></span>East Honiara</div>
-          <div style="font-size:9px;color:var(--gray-600);line-height:1.3">Wards use different shades of their constituency colour.</div>
-        </div>
-        <div class="boundary-source">
-          Boundaries: POPGIS and SINSO/OCHA ROAP via
-          <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener">geoBoundaries</a>.
-          Wards 2014; constituencies 2018. These independently sourced boundaries may not align exactly.
-        </div>
-      </div>
-
-      <!-- MAP STATS OVERLAY -->
-      <div class="map-stats">
-        <div class="map-stat-row map-total-surveys">
-          <span>Total surveys</span>
-          <span class="map-stat-val" id="ms-total">0</span>
-          <span>/ 150</span>
-        </div>
-        <div class="progress-bar-mini">
-          <div class="progress-bar-mini-fill" id="ms-progress" style="width:0%"></div>
-        </div>
-        <div style="font-size:10px;color:var(--gray-600);margin-top:4px" id="ms-day">No data yet</div>
-        <div style="font-size:10px;color:var(--gray-600);margin-top:3px" id="ms-waypoints">0 waypoints plotted</div>
-        <div class="map-counts" id="ms-breakdown"></div>
-      </div>
 
       <!-- SIGNAL LEGEND -->
       <div class="sig-legend" id="sig-legend">
