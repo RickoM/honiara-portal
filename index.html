@@ -1849,6 +1849,25 @@ function gpsStatus(latValue, lngValue) {
     : 'Outside study area';
 }
 
+function gpsStatusDetail(latValue, lngValue) {
+  const latRaw = latValue == null ? '' : String(latValue).trim();
+  const lngRaw = lngValue == null ? '' : String(lngValue).trim();
+  const lat = parseCoordinate(latValue);
+  const lng = parseCoordinate(lngValue);
+  if (!latRaw && !lngRaw) return 'Latitude and longitude are blank.';
+  if (!latRaw) return 'Latitude is blank.';
+  if (!lngRaw) return 'Longitude is blank.';
+  if (!Number.isFinite(lat) && !Number.isFinite(lng)) return 'Latitude and longitude are not valid numbers.';
+  if (!Number.isFinite(lat)) return `Latitude is not a valid number: ${latRaw}`;
+  if (!Number.isFinite(lng)) return `Longitude is not a valid number: ${lngRaw}`;
+  if (lat < -90 || lat > 90) return `Latitude ${latRaw} is outside the valid GPS range (-90 to 90).`;
+  if (lng < -180 || lng > 180) return `Longitude ${lngRaw} is outside the valid GPS range (-180 to 180).`;
+  if (gpsStatus(latValue, lngValue) === 'Outside study area') {
+    return 'Coordinates are valid GPS values but outside the Honiara study-area box.';
+  }
+  return 'Coordinates are valid and inside the Honiara study-area box.';
+}
+
 function parseCoordinate(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
   if (value == null || value === '') return NaN;
@@ -2785,11 +2804,12 @@ function infoWindowHTML(p) {
   const stream = p.stream ?? p.fd_s1_nperf_stream ?? p.fd_s2_nperf_stream;
   const col = has(rsrp) ? rsrpColor(rsrp) : 'var(--gray-600)';
   const gpsState = gpsStatus(p.lat, p.lng);
+  const gpsDetail = gpsStatusDetail(p.lat, p.lng);
   return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:340px;max-width:380px">
     <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} — ${show(p.ward)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} · ${show(p.constituency)} · ${show(p.date)} ${show(p.time)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:4px">GPS waypoint: ${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</div>
-    <div style="margin-bottom:8px">${gpsStatusBadge(gpsState)}</div>
+    <div style="margin-bottom:8px">${gpsStatusBadge(gpsState)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? '#A32D2D' : '#BA7517'};margin-top:4px">${gpsDetail}</div>` : ''}</div>
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
       ${card('RSRP', rsrp, has(rsrp) ? ' dBm' : '', col)}
@@ -3520,6 +3540,7 @@ function renderDataTable() {
     const latStr  = displayCoordinate(p.lat);
     const lngStr  = displayCoordinate(p.lng);
     const gpsState = gpsStatus(p.lat, p.lng);
+    const gpsDetail = gpsStatusDetail(p.lat, p.lng);
     const sharedGpsRecords = duplicateGpsGroups.get(gpsCoordinateKey(p.lat, p.lng)) || [];
     const sharedGpsIds = sharedGpsRecords.map(record => record.respondentId || record.id || record._id).filter(Boolean);
     const sharedGpsBadge = sharedGpsRecords.length > 1
@@ -3544,7 +3565,7 @@ function renderDataTable() {
       <td>${p.op || '\u2014'}</td>
       <td style="${mono};font-size:11px">${latStr}</td>
       <td style="${mono};font-size:11px">${lngStr}</td>
-      <td>${gpsStatusBadge(gpsState)}${sharedGpsBadge}</td>
+      <td>${gpsStatusBadge(gpsState)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? 'var(--red)' : 'var(--amber)'};margin-top:3px;max-width:190px">${gpsDetail}</div>` : ''}${sharedGpsBadge}</td>
       <td style="color:${sigCol};font-weight:500">${rsrpNum != null ? rsrpNum : '\u2014'}</td>
       <td><span class="badge" style="background:#EAF3DE;color:${sigCol}">${rsrpLabel(rsrpNum)}</span></td>
       <td style="color:${dlCol};font-weight:500">${dlNum != null ? dlNum : '\u2014'}</td>
@@ -4105,8 +4126,8 @@ function normalizeSurveyForPoint(s) {
     op: s.operator || s.op || s.a3 || '',
     date: s.date,
     type: s.type || 'survey',
-    lat: Number.isFinite(parseCoordinate(s.lat)) ? s.lat : null,
-    lng: Number.isFinite(parseCoordinate(s.lng)) ? s.lng : null,
+    lat: s.lat ?? null,
+    lng: s.lng ?? null,
     gps_status: gpsStatus(s.lat, s.lng),
     r: s.rsrp != null ? parseFloat(s.rsrp) : null,
     rsrp: s.rsrp != null ? parseFloat(s.rsrp) : null,
