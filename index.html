@@ -1868,6 +1868,20 @@ function gpsStatusDetail(latValue, lngValue) {
   return 'Coordinates are valid and inside the Honiara study-area box.';
 }
 
+function gpsStatusShortReason(detail) {
+  if (!detail) return '';
+  if (detail.includes('Latitude and longitude are blank')) return 'Lat/lng blank';
+  if (detail.includes('Latitude is blank')) return 'Latitude blank';
+  if (detail.includes('Longitude is blank')) return 'Longitude blank';
+  if (detail.includes('Latitude and longitude are not valid numbers')) return 'Lat/lng invalid';
+  if (detail.includes('Latitude is not a valid number')) return 'Latitude invalid';
+  if (detail.includes('Longitude is not a valid number')) return 'Longitude invalid';
+  if (detail.includes('Latitude') && detail.includes('outside the valid GPS range')) return 'Latitude out of range';
+  if (detail.includes('Longitude') && detail.includes('outside the valid GPS range')) return 'Longitude out of range';
+  if (detail.includes('outside the Honiara study-area box')) return 'Outside Honiara box';
+  return detail;
+}
+
 function parseCoordinate(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : NaN;
   if (value == null || value === '') return NaN;
@@ -1885,9 +1899,11 @@ function displayCoordinate(value) {
   return String(value).trim();
 }
 
-function gpsStatusBadge(status) {
+function gpsStatusBadge(status, detail = '') {
   const cls = status === 'Valid' ? 'badge-ok' : status === 'Outside study area' ? 'badge-red' : 'badge-warn';
-  return `<span class="badge ${cls}">${status}</span>`;
+  const reason = gpsStatusShortReason(detail);
+  const label = status === 'Valid' || !reason ? status : `${status}: ${reason}`;
+  return `<span class="badge ${cls}" title="${detail || status}">${label}</span>`;
 }
 
 function surveyMarkerLayout(surveys) {
@@ -2809,7 +2825,7 @@ function infoWindowHTML(p) {
     <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} — ${show(p.ward)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} · ${show(p.constituency)} · ${show(p.date)} ${show(p.time)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:4px">GPS waypoint: ${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</div>
-    <div style="margin-bottom:8px">${gpsStatusBadge(gpsState)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? '#A32D2D' : '#BA7517'};margin-top:4px">${gpsDetail}</div>` : ''}</div>
+    <div style="margin-bottom:8px">${gpsStatusBadge(gpsState, gpsDetail)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? '#A32D2D' : '#BA7517'};margin-top:4px">${gpsDetail}</div>` : ''}</div>
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
       ${card('RSRP', rsrp, has(rsrp) ? ' dBm' : '', col)}
@@ -3541,6 +3557,9 @@ function renderDataTable() {
     const lngStr  = displayCoordinate(p.lng);
     const gpsState = gpsStatus(p.lat, p.lng);
     const gpsDetail = gpsStatusDetail(p.lat, p.lng);
+    const latProblem = gpsDetail.toLowerCase().includes('latitude') || gpsDetail.toLowerCase().includes('lat/lng');
+    const lngProblem = gpsDetail.toLowerCase().includes('longitude') || gpsDetail.toLowerCase().includes('lat/lng');
+    const coordProblemStyle = 'background:#FEE2E2;color:#991B1B;border-radius:4px;padding:2px 4px;display:inline-block';
     const sharedGpsRecords = duplicateGpsGroups.get(gpsCoordinateKey(p.lat, p.lng)) || [];
     const sharedGpsIds = sharedGpsRecords.map(record => record.respondentId || record.id || record._id).filter(Boolean);
     const sharedGpsBadge = sharedGpsRecords.length > 1
@@ -3563,9 +3582,9 @@ function renderDataTable() {
       <td style="font-weight:500">${p.ward || '\u2014'}</td>
       <td style="color:var(--gray-600)">${p.constituency || '\u2014'}</td>
       <td>${p.op || '\u2014'}</td>
-      <td style="${mono};font-size:11px">${latStr}</td>
-      <td style="${mono};font-size:11px">${lngStr}</td>
-      <td>${gpsStatusBadge(gpsState)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? 'var(--red)' : 'var(--amber)'};margin-top:3px;max-width:190px">${gpsDetail}</div>` : ''}${sharedGpsBadge}</td>
+      <td style="${mono};font-size:11px">${gpsState === 'Missing' && latProblem ? `<span title="${gpsDetail}" style="${coordProblemStyle}">${latStr}</span>` : latStr}</td>
+      <td style="${mono};font-size:11px">${gpsState === 'Missing' && lngProblem ? `<span title="${gpsDetail}" style="${coordProblemStyle}">${lngStr}</span>` : lngStr}</td>
+      <td>${gpsStatusBadge(gpsState, gpsDetail)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? 'var(--red)' : 'var(--amber)'};margin-top:3px;max-width:190px">${gpsDetail}</div>` : ''}${sharedGpsBadge}</td>
       <td style="color:${sigCol};font-weight:500">${rsrpNum != null ? rsrpNum : '\u2014'}</td>
       <td><span class="badge" style="background:#EAF3DE;color:${sigCol}">${rsrpLabel(rsrpNum)}</span></td>
       <td style="color:${dlCol};font-weight:500">${dlNum != null ? dlNum : '\u2014'}</td>
