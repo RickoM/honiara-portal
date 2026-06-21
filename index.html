@@ -83,23 +83,26 @@
   .boundary-source a { color: var(--blue-mid); text-decoration: none; }
   
   /* ── MAP STATS ── */
-  .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; width: 420px; max-width: calc(100vw - 440px); }
+  .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; width: 300px; max-width: calc(100vw - 440px); }
   .map-stat-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+  .map-total-surveys { justify-content: center; font-size: 12px; font-weight: 700; color: var(--navy); }
+  .map-total-surveys .map-stat-val { font-size: 18px; }
   .map-stat-row:last-child { margin-bottom: 0; }
   .map-stat-val { font-size: 18px; font-weight: 600; line-height: 1; }
   .map-stat-lbl { font-size: 11px; color: var(--gray-600); }
   .progress-bar-mini { height: 4px; background: var(--gray-200); border-radius: 2px; margin-top: 6px; overflow: hidden; }
   .progress-bar-mini-fill { height: 100%; background: var(--navy); border-radius: 2px; transition: width .3s; }
-  .map-counts { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 7px; max-height: 250px; overflow-y: auto; }
-  .map-count-title { font-size: 9px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
-  .map-constituency-block { border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: #fff; margin-bottom: 6px; }
+  .map-counts { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; max-height: 310px; overflow-y: auto; }
+  .map-count-title { font-size: 9px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; text-align: center; }
+  .map-constituency-block { border-bottom: 1px solid var(--border); padding: 7px 4px 8px; margin-bottom: 6px; }
   .map-constituency-block:last-child { margin-bottom: 0; }
-  .map-constituency-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--gray-50); padding: 5px 7px; font-size: 10px; color: var(--gray-700); }
-  .map-constituency-head strong { color: var(--navy); font-size: 10px; }
-  .map-ward-count { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); padding: 4px 7px; font-size: 10px; color: var(--gray-700); }
+  .map-constituency-head { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--navy); padding-bottom: 4px; margin-bottom: 3px; border-bottom: 1px solid var(--gray-300); }
+  .map-constituency-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+  .map-ward-count { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 2px 16px 2px 22px; font-size: 11px; color: var(--gray-700); }
   .map-ward-count strong { color: var(--navy); font-size: 10px; }
   .map-ward-count.is-zero { color: var(--gray-400); }
   .map-ward-count.is-zero strong { color: var(--gray-400); }
+  .map-constituency-total { display: grid; grid-template-columns: 1fr auto; gap: 12px; margin: 6px 16px 0 22px; padding-top: 5px; border-top: 1px solid var(--gray-300); font-size: 12px; font-weight: 700; color: var(--navy); }
   
   /* ── SIGNAL LEGEND ── */
   .sig-legend { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; bottom: 28px; left: 12px; z-index: 10; }
@@ -734,9 +737,10 @@
 
       <!-- MAP STATS OVERLAY -->
       <div class="map-stats">
-        <div class="map-stat-row">
-          <div class="map-stat-val" id="ms-total">0</div>
-          <div class="map-stat-lbl">/ 150 surveys</div>
+        <div class="map-stat-row map-total-surveys">
+          <span>Total surveys</span>
+          <span class="map-stat-val" id="ms-total">0</span>
+          <span>/ 150</span>
         </div>
         <div class="progress-bar-mini">
           <div class="progress-bar-mini-fill" id="ms-progress" style="width:0%"></div>
@@ -2212,18 +2216,22 @@ function renderMapSurveyBreakdown() {
     const wardCounts = wards.map(ward => ({
       ward,
       count: surveys.filter(p => p.ward === ward).length,
+      target: WARDS[ward].target || 0,
     }));
     const count = wardCounts.reduce((sum, item) => sum + item.count, 0);
+    const targetTotal = wardCounts.reduce((sum, item) => sum + item.target, 0);
     const wardRows = wardCounts
+      .filter(item => item.count > 0)
       .map(item => `<div class="map-ward-count${item.count ? '' : ' is-zero'}"><span>${item.ward}</span><strong>${item.count}</strong></div>`)
       .join('');
     const colour = CONSTITUENCY_BOUNDARY_STYLES[name]?.stroke || 'var(--navy)';
     return `<div class="map-constituency-block">
-      <div class="map-constituency-head" style="border-left:4px solid ${colour}">
-        <strong>${name}</strong>
-        <span>Total <strong>${count}</strong></span>
+      <div class="map-constituency-head">
+        <span class="map-constituency-dot" style="background:${colour}"></span>
+        <span>${name}</span>
       </div>
-      ${wardRows || '<div class="map-ward-count is-zero"><span>No wards configured</span><strong>0</strong></div>'}
+      ${wardRows || '<div class="map-ward-count is-zero"><span>No survey points yet</span><strong>0</strong></div>'}
+      <div class="map-constituency-total"><span>Total</span><strong>${count} / ${targetTotal}</strong></div>
     </div>`;
   }).join('');
   target.innerHTML = `
