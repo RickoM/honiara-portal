@@ -2902,8 +2902,7 @@ function refreshMap() {
     parseCoordinate(p.lat) >= -90 && parseCoordinate(p.lat) <= 90 &&
     parseCoordinate(p.lng) >= -180 && parseCoordinate(p.lng) <= 180;
   const clickableItemsByGps = new Map();
-  let activeSpreadKey = '';
-  let spreadCollapseTimer = null;
+  const spreadGpsKeys = new Set();
   const registerClickableItem = item => {
     const key = mapSelectableKey(item.point);
     if (!key) return;
@@ -2916,14 +2915,11 @@ function refreshMap() {
     if (!clickableItemsByGps.has(key)) clickableItemsByGps.set(key, []);
     clickableItemsByGps.get(key).push(item);
   };
-  const spreadClickableGroup = item => {
-    const key = item.gpsKey || mapSelectableKey(item.point);
-    const group = clickableItemsByGps.get(key) || [];
+  const spreadClickableGroup = (key, group) => {
     if (group.length < 2) return;
-    if (spreadCollapseTimer) clearTimeout(spreadCollapseTimer);
-    activeSpreadKey = key;
-    const centre = new google.maps.LatLng(parseCoordinate(item.point.lat), parseCoordinate(item.point.lng));
-    const radius = group.length === 2 ? 34 : 42;
+    const centrePoint = group[0].point;
+    const centre = new google.maps.LatLng(parseCoordinate(centrePoint.lat), parseCoordinate(centrePoint.lng));
+    const radius = group.length === 2 ? 38 : 48;
     group.forEach((groupItem, index) => {
       const angle = group.length === 2
         ? (index === 0 ? -Math.PI / 2 : Math.PI / 2)
@@ -2933,28 +2929,17 @@ function refreshMap() {
       groupItem.marker.setPosition(offsetLatLngByPixels(centre, dx, dy));
       groupItem.marker.setZIndex(1800 + index);
     });
+    spreadGpsKeys.add(key);
   };
-  const collapseClickableGroup = key => {
-    const group = clickableItemsByGps.get(key) || [];
-    group.forEach(groupItem => {
-      if (groupItem.basePosition) groupItem.marker.setPosition(groupItem.basePosition);
-      if (Number.isFinite(groupItem.baseZIndex)) groupItem.marker.setZIndex(groupItem.baseZIndex);
+  const spreadAllOverlappingMarkers = () => {
+    clickableItemsByGps.forEach((group, key) => {
+      if (group.length > 1) spreadClickableGroup(key, group);
     });
-    if (activeSpreadKey === key) activeSpreadKey = '';
-  };
-  const scheduleCollapseClickableGroup = item => {
-    const key = item.gpsKey || mapSelectableKey(item.point);
-    if (!key) return;
-    if (spreadCollapseTimer) clearTimeout(spreadCollapseTimer);
-    spreadCollapseTimer = setTimeout(() => collapseClickableGroup(key), 900);
-  };
-  const attachOverlapHover = item => {
-    item.marker.addListener('mouseover', () => spreadClickableGroup(item));
-    item.marker.addListener('mouseout', () => scheduleCollapseClickableGroup(item));
   };
   const openClickableItem = item => {
-    const group = clickableItemsByGps.get(mapSelectableKey(item.point)) || [item];
-    if (group.length > 1 && activeSpreadKey !== (item.gpsKey || mapSelectableKey(item.point))) {
+    const key = item.gpsKey || mapSelectableKey(item.point);
+    const group = clickableItemsByGps.get(key) || [item];
+    if (group.length > 1 && !spreadGpsKeys.has(key)) {
       openOverlappingMarkerChooser(group, item.marker, item.marker?.getPosition());
     }
     else item.open();
@@ -3017,7 +3002,6 @@ function refreshMap() {
       };
       const item = { type: 'survey', point: p, marker, open: openWaypointInfo };
       registerClickableItem(item);
-      attachOverlapHover(item);
       marker.addListener('click', () => openClickableItem(item));
       markers.push(marker);
     });
@@ -3053,12 +3037,13 @@ function refreshMap() {
       };
       const item = { type: 'tower', point: p, marker, open: openTowerInfo };
       registerClickableItem(item);
-      attachOverlapHover(item);
       marker.addListener('click', () => openClickableItem(item));
       marker.infoWindow = info;
       markers.push(marker);
     });
   }
+
+  spreadAllOverlappingMarkers();
 
   // Serving LTE cell markers: primary identity is PLMN (MCC + MNC) + ECI.
   if (showSectors && window.google) {
