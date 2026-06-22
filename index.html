@@ -2601,15 +2601,19 @@ function personMarkerIcon(colour) {
   };
 }
 
-function numberedSurveyMarkerIcon(colour, suffix, status = 'Valid') {
+function numberedSurveyMarkerIcon(colour, suffix, status = 'Valid', highlighted = false) {
   const label = String(suffix || '---').replace(/[^0-9-]/g, '').slice(-3) || '---';
   const outside = status === 'Outside study area';
-  const stroke = outside ? '#B42318' : '#fff';
-  const strokeWidth = outside ? 4.5 : 3;
+  const stroke = highlighted ? '#FFD54A' : outside ? '#B42318' : '#fff';
+  const strokeWidth = highlighted ? 7 : outside ? 4.5 : 3;
+  const halo = highlighted
+    ? '<path d="M22 52C16 43 4 33 4 21a18 18 0 1 1 36 0c0 12-12 22-18 31z" fill="none" stroke="#1C3557" stroke-width="10" opacity=".85"/>'
+    : '';
   const warning = outside
     ? '<text x="22" y="14" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="10" font-weight="900">!</text>'
     : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="54" viewBox="0 0 44 54">
+    ${halo}
     <path d="M22 52C16 43 4 33 4 21a18 18 0 1 1 36 0c0 12-12 22-18 31z" fill="${colour}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
     <circle cx="22" cy="21" r="12.5" fill="rgba(0,0,0,.18)" stroke="rgba(255,255,255,.65)" stroke-width="1"/>
     ${warning}
@@ -2839,20 +2843,27 @@ function highlightTowerSurveyMarkers(towerItem, surveyItemsByRespondentId, respo
     const position = surveyItem?.marker?.getPosition?.();
     if (!surveyItem || !position) return;
     const markerZ = surveyItem.marker.getZIndex?.() || 1000;
+    const markerIcon = surveyItem.marker.getIcon?.();
+    if (surveyItem.marker.highlightIcon) surveyItem.marker.setIcon(surveyItem.marker.highlightIcon);
     surveyItem.marker.setZIndex(6200);
     towerSurveyHighlights.push(new google.maps.Circle({
       map: gmap,
       center: position,
-      radius: 18,
+      radius: 28,
       strokeColor: '#FFD54A',
       strokeOpacity: 1,
-      strokeWeight: 4,
+      strokeWeight: 5,
       fillColor: '#FFD54A',
-      fillOpacity: 0.18,
+      fillOpacity: 0.24,
       clickable: false,
       zIndex: 6100,
     }));
-    const restore = { setMap: () => surveyItem.marker.setZIndex(markerZ) };
+    const restore = {
+      setMap: () => {
+        surveyItem.marker.setZIndex(markerZ);
+        surveyItem.marker.setIcon(markerIcon || surveyItem.marker.normalIcon);
+      }
+    };
     towerSurveyHighlights.push(restore);
   });
 }
@@ -3075,16 +3086,21 @@ function refreshMap() {
       const position = layout.position;
       const respondentId = String(p.id || '').trim();
       const respondentSuffix = respondentId.match(/(\d{1,3})$/)?.[1]?.padStart(3, '0') || '---';
+      const markerColour = status === 'Outside study area' ? '#D92D20' : col;
+      const normalIcon = numberedSurveyMarkerIcon(markerColour, respondentSuffix, status);
+      const highlightIcon = numberedSurveyMarkerIcon(markerColour, respondentSuffix, status, true);
       const marker = new google.maps.Marker({
         map: gmap,
         position,
-        icon: numberedSurveyMarkerIcon(status === 'Outside study area' ? '#D92D20' : col, respondentSuffix, status),
+        icon: normalIcon,
         title: layout.count > 1
           ? `${layout.count} survey records share this GPS location — ${p.id || p.ward || 'waypoint'}`
           : `Survey participant — ${p.id || p.ward || 'waypoint'}`,
         optimized: false,
         zIndex: layout.count > 1 && layout.index === 0 ? 1100 : 1000 - layout.index,
       });
+      marker.normalIcon = normalIcon;
+      marker.highlightIcon = highlightIcon;
       const openWaypointInfo = () => {
         closeMapInfoWindows();
         openSurveyPointDetail(p);
