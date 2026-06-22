@@ -2927,17 +2927,36 @@ function renderTowerConnectionOverlays(towerItems, surveyItemsByRespondentId, re
         strokeOpacity: 0,
         strokeWeight: 0,
         clickable: false,
-        zIndex: 700,
+        zIndex: 690,
+        icons: [{
+          icon: {
+            path: 'M 0,-1 0,1',
+            strokeColor: '#ffffff',
+            strokeOpacity: 0.95,
+            strokeWeight: 7,
+            scale: 4.5,
+          },
+          offset: '0',
+          repeat: '16px',
+        }],
+      }));
+      towerConnectionOverlays.push(new google.maps.Polyline({
+        map: gmap,
+        path: [towerPosition, surveyPosition],
+        strokeOpacity: 0,
+        strokeWeight: 0,
+        clickable: false,
+        zIndex: 710,
         icons: [{
           icon: {
             path: 'M 0,-1 0,1',
             strokeColor: colour,
-            strokeOpacity: 0.85,
-            strokeWeight: 2.5,
-            scale: 3.5,
+            strokeOpacity: 1,
+            strokeWeight: 4.5,
+            scale: 4.5,
           },
           offset: '0',
-          repeat: '18px',
+          repeat: '16px',
         }],
       }));
     });
