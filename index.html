@@ -3256,6 +3256,7 @@ function refreshMap() {
         maxWidth: 260,
       });
       info.addListener('closeclick', clearTowerSurveyHighlights);
+      info.addListener('domready', () => hydrateTowerPhoto(p));
       const item = { type: 'tower', point: p, marker, open: null };
       item.open = () => {
         closeSurveyPointDetail();
@@ -3407,6 +3408,7 @@ function cellInfoWindowHTML(p) {
   return `<div style="font-family:'Inter',sans-serif;padding:3px;min-width:230px;max-width:250px">
     <div style="font-weight:600;font-size:13px;margin-bottom:4px">Mobile tower — eNB ${p.enb || 'unknown'}</div>
     <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.ward || 'Ward not recorded'}</div>
+    ${towerPhotoPreviewHTML(p)}
     <div style="background:#f8f9fa;border-radius:6px;padding:6px;font-size:10px;line-height:1.35">
       <div><span style="color:#666">GPS: </span><strong>${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</strong></div>
       <div><span style="color:#666">Type: </span><strong>${p.towerType || 'Not recorded'}</strong></div>
@@ -4291,9 +4293,57 @@ const WAYPOINT_SCREENSHOT_LABELS = {
 };
 
 const waypointScreenshotUrls = new Map();
+const towerPhotoUrls = new Map();
 
 function waypointCarouselId(p) {
   return 'waypoint-shots-' + String(p._id || p.id || 'survey').replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+
+function towerPhotoRef(p) {
+  return String(
+    p?.towerPhoto ||
+    p?.fd_s7_photo_file ||
+    (p?.connectedSurveys || []).find(s => s.fd_s7_photo_file)?.fd_s7_photo_file ||
+    ''
+  ).trim();
+}
+
+function towerPhotoBoxId(p) {
+  return 'tower-photo-' + String(p?.sourceSurveyId || p?._id || p?.enb || p?.id || 'tower').replace(/[^a-zA-Z0-9_-]/g, '-');
+}
+
+function towerPhotoPreviewHTML(p) {
+  return towerPhotoRef(p) ? `<div style="margin:6px 0">
+    <div id="${towerPhotoBoxId(p)}" style="height:92px;border:1px solid #e5e7eb;border-radius:7px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#667085;font-size:10px;overflow:hidden">
+      Loading tower photo...
+    </div>
+  </div>` : '';
+}
+
+async function hydrateTowerPhoto(p) {
+  const ref = towerPhotoRef(p);
+  const container = document.getElementById(towerPhotoBoxId(p));
+  if (!ref || !container) return;
+  try {
+    let url = towerPhotoUrls.get(ref);
+    if (!url) {
+      const res = await fetch(API_URL + '/api/screenshots/' + encodeURIComponent(ref), {
+        headers: { 'Authorization': 'Bearer ' + authToken }
+      });
+      if (!res.ok) throw new Error('Tower photo unavailable');
+      url = URL.createObjectURL(await res.blob());
+      towerPhotoUrls.set(ref, url);
+    }
+    const label = `Tower photo${p.enb ? ' - eNB ' + p.enb : ''}`;
+    container._slides = [{ id: ref, label, sim: 'Tower evidence', url }];
+    container.dataset.slide = '0';
+    container.innerHTML = `<button type="button" onclick="openMapScreenshot('${towerPhotoBoxId(p)}')" title="Open tower photo" style="width:100%;height:100%;border:0;background:#111827;cursor:zoom-in;padding:0;display:grid;grid-template-columns:1fr 78px;overflow:hidden">
+      <img src="${url}" alt="${label}" style="width:100%;height:100%;object-fit:cover;display:block">
+      <span style="display:flex;align-items:center;justify-content:center;background:#fff;color:#344054;font-size:10px;font-weight:700;padding:6px;text-align:center">Tower photo<br>click to zoom</span>
+    </button>`;
+  } catch (err) {
+    container.innerHTML = '<span style="color:#A32D2D">Tower photo could not be loaded.</span>';
+  }
 }
 
 function waypointScreenshotRefs(p) {
@@ -6271,12 +6321,18 @@ function deriveUniqueTowerPoints(surveys) {
         lng,
         enb,
         towerType: s.fd_s7_ttype || '',
+        towerPhoto: s.fd_s7_photo_file || '',
+        towerPhotoTaken: s.fd_s7_photo || '',
         connectedSurveys: surveys.filter(candidate => {
           if (surveyEnb(candidate) !== enb) return false;
           const candidateOperator = surveyOperator(candidate);
           return !operator || !candidateOperator || candidateOperator.toLowerCase() === operator.toLowerCase();
         }),
       });
+    } else {
+      const existing = unique.get(key);
+      if (!existing.towerPhoto && s.fd_s7_photo_file) existing.towerPhoto = s.fd_s7_photo_file;
+      if (!existing.towerPhotoTaken && s.fd_s7_photo) existing.towerPhotoTaken = s.fd_s7_photo;
     }
   });
   return [...unique.values()];
