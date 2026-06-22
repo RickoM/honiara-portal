@@ -3890,6 +3890,8 @@ async function loadSurveyAudit() {
 
 // editingId tracks which MongoDB record we are editing (null = new submission)
 let editingId = null;
+let editingOriginalWard = '';
+let editingOriginalRespondentId = '';
 let openRecordReadOnly = false;
 let surveyReadOnlyMode = false;
 
@@ -4443,6 +4445,8 @@ async function dtEdit(btn) {
 
   // ── Header ──────────────────────────────────
   const existingRespondentId = survey.respondentId || survey.id || '';
+  editingOriginalWard = readOnly ? '' : (survey.ward || '');
+  editingOriginalRespondentId = readOnly ? '' : existingRespondentId;
   s('sf-respondent-id', existingRespondentId);
   s('sf-name', survey.name);
   s('sf-interviewer', survey.interviewer);
@@ -4584,6 +4588,8 @@ async function dtEdit(btn) {
 
 function sfCancelEdit() {
   editingId = null;
+  editingOriginalWard = '';
+  editingOriginalRespondentId = '';
   sfReset(); // clears form and resets buttons
   // Go back to Data Table
   const dataTnav = document.getElementById('tnav-data');
@@ -4972,8 +4978,14 @@ async function generateRespondentId(ward) {
   const el = document.getElementById('sf-respondent-id');
   if (!el) return;
   if (!ward || !WARD_CODES[ward]) { el.value = ''; return; }
-  // Never replace the ID while viewing or editing an existing record.
-  if (editingId || openRecordReadOnly || surveyReadOnlyMode) return;
+  // Read-only views preserve the stored ID. In edit mode, keep the original
+  // ID only while the original ward remains selected; changing ward requires
+  // a new ID using the new ward prefix.
+  if (openRecordReadOnly || surveyReadOnlyMode) return;
+  if (editingId && ward === editingOriginalWard) {
+    el.value = editingOriginalRespondentId || el.value;
+    return;
+  }
   if (reservedRespondentIds.has(ward)) {
     el.value = reservedRespondentIds.get(ward);
     return;
@@ -5370,8 +5382,12 @@ function sfRestoreDraft() {
 }
 
 function sfReset(keepEditingId) {
-  if (!keepEditingId) editingId = null;
-  if (!keepEditingId) reservedRespondentIds.clear();
+  if (!keepEditingId) {
+    editingId = null;
+    editingOriginalWard = '';
+    editingOriginalRespondentId = '';
+    reservedRespondentIds.clear();
+  }
   setSurveyReadOnly(false);
   const banner = document.getElementById('sf-edit-banner');
   if (banner && !keepEditingId) banner.style.display = 'none';
