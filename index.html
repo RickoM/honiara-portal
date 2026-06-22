@@ -2868,7 +2868,7 @@ function openOverlappingMarkerChooser(items, anchorMarker, position) {
   const chooserId = 'marker-chooser-' + Date.now();
   const gpsText = `${displayCoordinate(items[0].point.lat)}, ${displayCoordinate(items[0].point.lng)}`;
   const content = `<div id="${chooserId}" style="font-family:'Inter',sans-serif;padding:4px;min-width:290px;max-width:360px">
-    <div style="font-size:13px;font-weight:700;color:#172033;margin-bottom:3px">Multiple records at this GPS</div>
+    <div style="font-size:13px;font-weight:700;color:#172033;margin-bottom:3px">Select map item</div>
     <div style="font-size:10px;color:#667085;margin-bottom:8px">${gpsText}</div>
     <div style="display:grid;gap:7px">
       ${items.map((item, index) => {
@@ -2882,7 +2882,7 @@ function openOverlappingMarkerChooser(items, anchorMarker, position) {
         </button>`;
       }).join('')}
     </div>
-    <div style="font-size:9px;color:#667085;margin-top:8px;line-height:1.35">Select which record you want to inspect. This appears because more than one map item shares the same GPS coordinate.</div>
+    <div style="font-size:9px;color:#667085;margin-top:8px;line-height:1.35">Select which item you want to inspect. This appears when a survey point and tower point overlap, sit close together, or are linked by the same reported eNB.</div>
   </div>`;
   if (!overlappingMarkerInfoWindow) overlappingMarkerInfoWindow = new google.maps.InfoWindow({ maxWidth: 380 });
   overlappingMarkerInfoWindow.setContent(content);
@@ -2926,6 +2926,9 @@ function refreshMap() {
     parseCoordinate(p.lng) >= -180 && parseCoordinate(p.lng) <= 180;
   const clickableItemsByGps = new Map();
   const clickableItems = [];
+  const surveyItemsByRespondentId = new Map();
+  const towerItemsByConnectedSurveyId = new Map();
+  const respondentKey = record => String(record?.respondentId || record?.id || record?._id || '').trim().toUpperCase();
   const distanceBetweenClickableItems = (a, b) => {
     const aLat = parseCoordinate(a?.point?.lat);
     const aLng = parseCoordinate(a?.point?.lng);
@@ -2949,6 +2952,15 @@ function refreshMap() {
       if (other === item) return;
       if (distanceBetweenClickableItems(item, other) <= 20) group.add(other);
     });
+    if (item.type === 'tower') {
+      (item.point.connectedSurveys || []).forEach(record => {
+        const surveyItem = surveyItemsByRespondentId.get(respondentKey(record));
+        if (surveyItem) group.add(surveyItem);
+      });
+    }
+    if (item.type === 'survey') {
+      (towerItemsByConnectedSurveyId.get(respondentKey(item.point)) || []).forEach(towerItem => group.add(towerItem));
+    }
     return [...group];
   };
   const registerClickableItem = item => {
@@ -2963,6 +2975,18 @@ function refreshMap() {
     if (!clickableItemsByGps.has(key)) clickableItemsByGps.set(key, []);
     clickableItemsByGps.get(key).push(item);
     clickableItems.push(item);
+    if (item.type === 'survey') {
+      const keyId = respondentKey(item.point);
+      if (keyId) surveyItemsByRespondentId.set(keyId, item);
+    }
+    if (item.type === 'tower') {
+      (item.point.connectedSurveys || []).forEach(record => {
+        const keyId = respondentKey(record);
+        if (!keyId) return;
+        if (!towerItemsByConnectedSurveyId.has(keyId)) towerItemsByConnectedSurveyId.set(keyId, []);
+        towerItemsByConnectedSurveyId.get(keyId).push(item);
+      });
+    }
   };
   const openClickableItem = item => {
     const group = nearbyClickableGroup(item);
