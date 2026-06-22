@@ -2621,6 +2621,20 @@ function numberedSurveyMarkerIcon(colour, suffix, status = 'Valid') {
   };
 }
 
+function towerMarkerIcon() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="52" height="60" viewBox="0 0 52 60">
+    <rect x="0" y="0" width="52" height="60" fill="rgba(255,255,255,0.01)"/>
+    <path d="M26 57C19 47 8 37 8 25a18 18 0 1 1 36 0c0 12-11 22-18 32z" fill="#BA7517" stroke="#fff" stroke-width="3"/>
+    <path d="M26 14v23M18 37h16M21 29h10M23 21h6M18 37l8-23 8 23M14 17c-4 4-5 10-1 15M38 17c4 4 5 10 1 15M10 12C3 19 3 31 10 38M42 12c7 7 7 19 0 26" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="26" cy="14" r="3" fill="#fff"/>
+  </svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(52, 60),
+    anchor: new google.maps.Point(26, 58),
+  };
+}
+
 function initializeBoundaryLayers() {
   if (!gmap || !window.google || wardBoundaryLayer || constituencyBoundaryLayer || boundaryHighlightLayer) return;
 
@@ -2946,7 +2960,7 @@ function refreshMap() {
     if (group.length < 2) return;
     const centrePoint = group[0].point;
     const centre = new google.maps.LatLng(parseCoordinate(centrePoint.lat), parseCoordinate(centrePoint.lng));
-    const radius = group.length === 2 ? 44 : 54;
+    const radius = group.length === 2 ? 66 : 76;
     group.forEach((groupItem, index) => {
       const angle = group.length === 2
         ? (index === 0 ? -Math.PI * 0.82 : -Math.PI * 0.18)
@@ -2961,7 +2975,7 @@ function refreshMap() {
     if (markAsSpread) spreadGpsKeys.add(key);
   };
   const spreadAllOverlappingMarkers = () => {
-    const thresholdPx = 58;
+    const thresholdPx = 96;
     const groups = [];
     const visited = new Set();
     clickableItems.forEach((item, startIndex) => {
@@ -3073,17 +3087,10 @@ function refreshMap() {
       const marker = new google.maps.Marker({
         position: { lat: parseCoordinate(p.lat), lng: parseCoordinate(p.lng) },
         map: gmap,
-        icon: {
-          path: 'M0-17L-7 11M0-17L7 11M-5 4H5M-3-3H3M-1-10H1M-7-14C-12-10-12-4-8 0M7-14C12-10 12-4 8 0M-12-17C-19-11-19-2-13 4M12-17C19-11 19-2 13 4',
-          fillOpacity: 0,
-          strokeColor: '#BA7517',
-          strokeWeight: 2.4,
-          strokeOpacity: 1,
-          scale: 1.25,
-          anchor: new google.maps.Point(0, 11),
-        },
+        icon: towerMarkerIcon(),
         title: `Tower eNB ${p.enb || 'unknown'} — ${(p.connectedSurveys || []).length} connected survey record${(p.connectedSurveys || []).length === 1 ? '' : 's'}`,
-        zIndex: 20,
+        optimized: false,
+        zIndex: 1120,
       });
       const info = new google.maps.InfoWindow({
         content: cellInfoWindowHTML(p),
