@@ -2891,6 +2891,33 @@ function highlightTowerSurveyMarkers(towerItem, surveyItemsByRespondentId, respo
   });
 }
 
+function towerInfoWindowPosition(towerItem, surveyItemsByRespondentId, respondentKey) {
+  const towerPosition = towerItem?.marker?.getPosition?.() || {
+    lat: parseCoordinate(towerItem?.point?.lat),
+    lng: parseCoordinate(towerItem?.point?.lng),
+  };
+  if (!towerPosition || !towerItem?.point?.connectedSurveys?.length) return towerPosition;
+  const towerLat = typeof towerPosition.lat === 'function' ? towerPosition.lat() : parseCoordinate(towerPosition.lat);
+  const towerLng = typeof towerPosition.lng === 'function' ? towerPosition.lng() : parseCoordinate(towerPosition.lng);
+  const linkedPositions = towerItem.point.connectedSurveys
+    .map(record => surveyItemsByRespondentId.get(respondentKey(record))?.marker?.getPosition?.())
+    .filter(Boolean);
+  if (!linkedPositions.length || !Number.isFinite(towerLat) || !Number.isFinite(towerLng)) {
+    return offsetLatLngByPixels(towerPosition, -230, -170);
+  }
+  const avg = linkedPositions.reduce((acc, pos) => {
+    acc.lat += typeof pos.lat === 'function' ? pos.lat() : parseCoordinate(pos.lat);
+    acc.lng += typeof pos.lng === 'function' ? pos.lng() : parseCoordinate(pos.lng);
+    return acc;
+  }, { lat: 0, lng: 0 });
+  avg.lat /= linkedPositions.length;
+  avg.lng /= linkedPositions.length;
+
+  const dx = avg.lng >= towerLng ? -260 : 260;
+  const dy = avg.lat >= towerLat ? 210 : -120;
+  return offsetLatLngByPixels(towerPosition, dx, dy);
+}
+
 function offsetLatLngByPixels(position, dx, dy) {
   if (!position || !window.google || !gmap) return position;
   const zoom = gmap.getZoom?.() ?? 14;
@@ -3154,19 +3181,14 @@ function refreshMap() {
         maxWidth: 240,
       });
       info.addListener('closeclick', clearTowerSurveyHighlights);
-      const openTowerInfo = () => {
-        closeSurveyPointDetail();
-        closeMapScreenshot();
-        closeMapInfoWindows();
-        info.open(gmap, marker);
-      };
-      const item = { type: 'tower', point: p, marker, open: openTowerInfo };
+      const item = { type: 'tower', point: p, marker, open: null };
       item.open = () => {
         closeSurveyPointDetail();
         closeMapScreenshot();
         closeMapInfoWindows();
         highlightTowerSurveyMarkers(item, surveyItemsByRespondentId, respondentKey);
-        info.open(gmap, marker);
+        info.setPosition(towerInfoWindowPosition(item, surveyItemsByRespondentId, respondentKey));
+        info.open(gmap);
       };
       registerClickableItem(item);
       marker.addListener('click', () => openClickableItem(item));
