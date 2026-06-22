@@ -1919,6 +1919,7 @@ function displayCoordinate(value) {
 
 function loadWardBoundaryIndex() {
   if (wardBoundaryIndexPromise) return wardBoundaryIndexPromise;
+  wardBoundaryIndexStatus = 'loading';
   wardBoundaryIndexPromise = fetch('data/boundaries/honiara-wards-2014.geojson')
     .then(res => {
       if (!res.ok) throw new Error(`Ward boundary load failed (${res.status})`);
@@ -1926,6 +1927,7 @@ function loadWardBoundaryIndex() {
     })
     .then(geojson => {
       wardBoundaryGeoFeatures = Array.isArray(geojson.features) ? geojson.features : [];
+      wardBoundaryIndexStatus = wardBoundaryGeoFeatures.length ? 'loaded' : 'unavailable';
       if (activeView === 'data') renderDataTable();
       if (activeView === 'map') refresh();
       return wardBoundaryGeoFeatures;
@@ -1933,6 +1935,8 @@ function loadWardBoundaryIndex() {
     .catch(err => {
       console.warn('Could not load ward boundary index for GPS/ward validation:', err);
       wardBoundaryGeoFeatures = [];
+      wardBoundaryIndexStatus = 'unavailable';
+      if (activeView === 'data') renderDataTable();
       return [];
     });
   return wardBoundaryIndexPromise;
@@ -2011,6 +2015,20 @@ function wardGpsValidationBadge(p) {
     <div style="font-size:10px;color:var(--amber);margin-top:3px;max-width:220px">${check.detail}</div>`;
 }
 
+function surveyGpsStatusHTML(p, gpsState, gpsDetail) {
+  const check = wardGpsValidation(p);
+  if (check?.type === 'mismatch') {
+    return `<span class="badge badge-warn" title="${check.detail}">Ward mismatch</span>
+      <div style="font-size:10px;color:var(--amber);margin-top:3px;max-width:220px">Recorded as <strong>${check.expectedWard}</strong>, GPS plots inside <strong>${check.actualWard}</strong>.</div>`;
+  }
+  if (check?.type === 'outside-boundary') {
+    return `<span class="badge badge-warn" title="${check.detail}">Outside ward boundary</span>
+      <div style="font-size:10px;color:var(--amber);margin-top:3px;max-width:220px">${check.detail}</div>`;
+  }
+  const unavailable = wardBoundaryIndexStatus === 'unavailable' && gpsState === 'Valid' && p?.type !== 'cell';
+  return `${gpsStatusBadge(gpsState, gpsDetail)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? 'var(--red)' : 'var(--amber)'};margin-top:3px;max-width:190px">${gpsDetail}</div>` : ''}${unavailable ? '<div style="font-size:10px;color:var(--amber);margin-top:3px;max-width:220px">Ward boundary check unavailable. Confirm data/boundaries folder is deployed.</div>' : ''}`;
+}
+
 function gpsStatusBadge(status, detail = '') {
   const cls = status === 'Valid' ? 'badge-ok' : status === 'Outside study area' ? 'badge-red' : 'badge-warn';
   const reason = gpsStatusShortReason(detail);
@@ -2069,6 +2087,7 @@ let selectedWardBoundary = null;
 let selectedConstituencyBoundary = null;
 let wardBoundaryGeoFeatures = [];
 let wardBoundaryIndexPromise = null;
+let wardBoundaryIndexStatus = 'idle';
 let surveySyncTimer = null;
 let surveySyncInFlight = false;
 let lastSurveyFingerprint = '';
@@ -2972,12 +2991,12 @@ function infoWindowHTML(p) {
   const col = has(rsrp) ? rsrpColor(rsrp) : 'var(--gray-600)';
   const gpsState = gpsStatus(p.lat, p.lng);
   const gpsDetail = gpsStatusDetail(p.lat, p.lng);
-  const wardWarning = wardGpsValidationBadge(p);
+  const gpsStatusHtml = surveyGpsStatusHTML(p, gpsState, gpsDetail);
   return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:340px;max-width:380px">
     <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} — ${show(p.ward)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} · ${show(p.constituency)} · ${show(p.date)} ${show(p.time)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:4px">GPS waypoint: ${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</div>
-    <div style="margin-bottom:8px">${gpsStatusBadge(gpsState, gpsDetail)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? '#A32D2D' : '#BA7517'};margin-top:4px">${gpsDetail}</div>` : ''}${wardWarning}</div>
+    <div style="margin-bottom:8px">${gpsStatusHtml}</div>
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
       ${card('RSRP', rsrp, has(rsrp) ? ' dBm' : '', col)}
@@ -3472,7 +3491,9 @@ function enhancedInfoWindowHTML(p) {
   const signalColour = has(rsrp) ? rsrpColor(rsrp) : '#378ADD';
   const operator = p.fd_s1_op || p.operator || p.op;
   const networkType = p.fd_s1_ncil_type || p.fd_s1_ookla_type || p.fd_s1_nperf_type || 'Network type not recorded';
-  const wardWarning = wardGpsValidationBadge(p);
+  const gpsState = gpsStatus(p.lat, p.lng);
+  const gpsDetail = gpsStatusDetail(p.lat, p.lng);
+  const gpsStatusHtml = surveyGpsStatusHTML(p, gpsState, gpsDetail);
   return `<div style="font-family:'Inter',sans-serif;padding:4px;width:100%;min-width:0;max-width:none;box-sizing:border-box">
     <div style="font-weight:700;font-size:14px;margin-bottom:5px">Survey ${show(p.id)} &mdash; ${show(p.ward)}</div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
@@ -3482,7 +3503,7 @@ function enhancedInfoWindowHTML(p) {
     </div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.constituency)} &middot; ${show(p.date)} ${show(p.time)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:7px">GPS waypoint: ${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</div>
-    ${wardWarning ? `<div style="margin-bottom:8px">${wardWarning}</div>` : ''}
+    <div style="margin-bottom:8px">${gpsStatusHtml}</div>
     ${surveyTowerAssociationHTML(p)}
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px">
@@ -3681,6 +3702,9 @@ function renderDataTable() {
   const duplicateCount = duplicateRespondentIds.size;
   const sharedGpsCount = duplicateGpsGroups.size;
   const possibleDuplicateCount = duplicateRecordGroups.size;
+  const wardMismatchCount = wardBoundaryGeoFeatures.length
+    ? points.filter(p => ['mismatch', 'outside-boundary'].includes(wardGpsValidation(p)?.type)).length
+    : 0;
   document.getElementById('data-count').textContent =
     `${rows.length} of ${points.length} records${duplicateCount ? ` · ${duplicateCount} duplicate respondent ID${duplicateCount === 1 ? '' : 's'} flagged` : ''}`;
   if (sharedGpsCount) {
@@ -3690,6 +3714,14 @@ function renderDataTable() {
   if (possibleDuplicateCount) {
     document.getElementById('data-count').textContent +=
       ` · ${possibleDuplicateCount} possible duplicate group${possibleDuplicateCount === 1 ? '' : 's'}`;
+  }
+
+  if (wardMismatchCount) {
+    document.getElementById('data-count').textContent +=
+      ` Â· ${wardMismatchCount} ward/GPS mismatch${wardMismatchCount === 1 ? '' : 'es'} flagged`;
+  } else if (wardBoundaryIndexStatus === 'unavailable') {
+    document.getElementById('data-count').textContent +=
+      ' Â· ward boundary check unavailable';
   }
 
   const tbody = document.getElementById('dt-body');
@@ -3738,7 +3770,7 @@ function renderDataTable() {
       <td>${p.op || '\u2014'}</td>
       <td style="${mono};font-size:11px">${gpsState === 'Missing' && latProblem ? `<span title="${gpsDetail}" style="${coordProblemStyle}">${latStr}</span>` : latStr}</td>
       <td style="${mono};font-size:11px">${gpsState === 'Missing' && lngProblem ? `<span title="${gpsDetail}" style="${coordProblemStyle}">${lngStr}</span>` : lngStr}</td>
-      <td>${gpsStatusBadge(gpsState, gpsDetail)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? 'var(--red)' : 'var(--amber)'};margin-top:3px;max-width:190px">${gpsDetail}</div>` : ''}${wardGpsValidationBadge(p)}${sharedGpsBadge}</td>
+      <td>${surveyGpsStatusHTML(p, gpsState, gpsDetail)}${sharedGpsBadge}</td>
       <td style="color:${sigCol};font-weight:500">${rsrpNum != null ? rsrpNum : '\u2014'}</td>
       <td><span class="badge" style="background:#EAF3DE;color:${sigCol}">${rsrpLabel(rsrpNum)}</span></td>
       <td style="color:${dlCol};font-weight:500">${dlNum != null ? dlNum : '\u2014'}</td>
