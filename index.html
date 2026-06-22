@@ -2913,8 +2913,8 @@ function towerInfoWindowPosition(towerItem, surveyItemsByRespondentId, responden
   avg.lat /= linkedPositions.length;
   avg.lng /= linkedPositions.length;
 
-  const dx = avg.lng >= towerLng ? -260 : 260;
-  const dy = avg.lat >= towerLat ? 210 : -120;
+  const dx = avg.lng >= towerLng ? -220 : 220;
+  const dy = avg.lat >= towerLat ? 150 : -130;
   return offsetLatLngByPixels(towerPosition, dx, dy);
 }
 
@@ -3178,7 +3178,7 @@ function refreshMap() {
       });
       const info = new google.maps.InfoWindow({
         content: cellInfoWindowHTML(p),
-        maxWidth: 240,
+        maxWidth: 260,
       });
       info.addListener('closeclick', clearTowerSurveyHighlights);
       const item = { type: 'tower', point: p, marker, open: null };
@@ -3324,25 +3324,24 @@ function cellInfoWindowHTML(p) {
     const nums = values(field);
     return nums.length ? (nums.reduce((sum, value) => sum + value, 0) / nums.length).toFixed(1) : '—';
   };
-  return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:320px;max-width:420px">
+  return `<div style="font-family:'Inter',sans-serif;padding:3px;min-width:230px;max-width:250px">
     <div style="font-weight:600;font-size:13px;margin-bottom:4px">Mobile tower — eNB ${p.enb || 'unknown'}</div>
     <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.ward || 'Ward not recorded'}</div>
-    <div style="background:#f8f9fa;border-radius:6px;padding:8px;font-size:11px">
-      <div style="margin-bottom:4px"><span style="color:#666">Tower GPS: </span><strong>${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</strong></div>
-      <div><span style="color:#666">Tower type: </span><strong>${p.towerType || 'Not recorded'}</strong></div>
+    <div style="background:#f8f9fa;border-radius:6px;padding:6px;font-size:10px;line-height:1.35">
+      <div><span style="color:#666">GPS: </span><strong>${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</strong></div>
+      <div><span style="color:#666">Type: </span><strong>${p.towerType || 'Not recorded'}</strong></div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:8px">
-      <div style="background:#eef4ff;border-radius:5px;padding:6px"><div style="font-size:8px;color:#667085">CONNECTED SURVEYS</div><strong>${connected.length}</strong></div>
-      <div style="background:#eef4ff;border-radius:5px;padding:6px"><div style="font-size:8px;color:#667085">AVG RSRP</div><strong>${average('rsrp')} dBm</strong></div>
-      <div style="background:#eef4ff;border-radius:5px;padding:6px"><div style="font-size:8px;color:#667085">AVG DOWNLOAD</div><strong>${average('dl')} Mbps</strong></div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:6px">
+      <div style="background:#eef4ff;border-radius:5px;padding:5px"><div style="font-size:8px;color:#667085">CONNECTED</div><strong>${connected.length}</strong></div>
+      <div style="background:#eef4ff;border-radius:5px;padding:5px"><div style="font-size:8px;color:#667085">AVG RSRP</div><strong>${average('rsrp')} dBm</strong></div>
     </div>
-    <div style="font-size:10px;font-weight:700;color:#344054;margin:9px 0 4px">Survey records connected to this eNB</div>
-    <div style="max-height:180px;overflow:auto;border:1px solid #e5e7eb;border-radius:6px">
-      ${connected.length ? connected.map(s => `<div style="display:grid;grid-template-columns:70px 1fr 62px 62px;gap:5px;padding:6px;border-bottom:1px solid #e5e7eb;font-size:9px">
+    <div style="font-size:10px;font-weight:700;color:#344054;margin:7px 0 4px">Connected survey records</div>
+    <div style="max-height:105px;overflow:auto;border:1px solid #e5e7eb;border-radius:6px">
+      ${connected.length ? connected.map(s => `<div style="display:grid;grid-template-columns:68px 1fr 48px;gap:4px;padding:5px;border-bottom:1px solid #e5e7eb;font-size:9px;line-height:1.25">
         <strong>${s.respondentId || s.id || '—'}</strong><span>ECI ${s.fd_s2a_eci || '—'} / LCID ${s.fd_s2a_lcid || '—'}</span><span>${s.rsrp || s.fd_s2a_rsrp || '—'} dBm</span><span>${s.dl || '—'} Mbps</span>
       </div>`).join('') : '<div style="padding:8px;color:#667085;font-size:10px">No survey records matched to this tower.</div>'}
     </div>
-    <div style="font-size:9px;color:#667085;margin-top:7px">Provisional tower association: matching reported eNB and operator. This does not independently prove the physical serving tower.</div>
+    <div style="font-size:8px;color:#667085;margin-top:6px;line-height:1.3">Provisional association: matching reported eNB and operator.</div>
   </div>`;
 }
 
