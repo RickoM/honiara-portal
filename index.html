@@ -2903,7 +2903,7 @@ function clearTowerConnectionOverlays() {
 }
 
 function towerConnectionColour(index) {
-  const colours = ['#2563EB', '#D97706', '#7C3AED', '#059669', '#DC2626', '#0891B2', '#BE185D', '#65A30D', '#9333EA', '#EA580C'];
+  const colours = ['#00A3FF', '#FFB000', '#D946EF', '#00C853', '#FF1744', '#00E5FF', '#FF2DAA', '#A3E635', '#8B5CF6', '#FF6D00'];
   return colours[index % colours.length];
 }
 
@@ -2932,12 +2932,12 @@ function renderTowerConnectionOverlays(towerItems, surveyItemsByRespondentId, re
           icon: {
             path: 'M 0,-1 0,1',
             strokeColor: '#ffffff',
-            strokeOpacity: 0.95,
-            strokeWeight: 7,
-            scale: 4.5,
+            strokeOpacity: 1,
+            strokeWeight: 10,
+            scale: 5.5,
           },
           offset: '0',
-          repeat: '16px',
+          repeat: '15px',
         }],
       }));
       towerConnectionOverlays.push(new google.maps.Polyline({
@@ -2952,11 +2952,11 @@ function renderTowerConnectionOverlays(towerItems, surveyItemsByRespondentId, re
             path: 'M 0,-1 0,1',
             strokeColor: colour,
             strokeOpacity: 1,
-            strokeWeight: 4.5,
-            scale: 4.5,
+            strokeWeight: 7,
+            scale: 5.5,
           },
           offset: '0',
-          repeat: '16px',
+          repeat: '15px',
         }],
       }));
     });
