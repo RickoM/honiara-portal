@@ -2807,14 +2807,39 @@ function closeMapInfoWindows() {
 }
 
 function offsetLatLngByPixels(position, dx, dy) {
-  const projection = markerProjectionOverlay?.getProjection?.();
-  if (!projection || !position || !window.google) return position;
+  if (!position || !window.google || !gmap) return position;
+  const zoom = gmap.getZoom?.() ?? 14;
+  const scale = 256 * Math.pow(2, zoom);
   const latLng = position instanceof google.maps.LatLng
     ? position
     : new google.maps.LatLng(parseCoordinate(position.lat), parseCoordinate(position.lng));
-  const point = projection.fromLatLngToDivPixel(latLng);
-  if (!point) return latLng;
-  return projection.fromDivPixelToLatLng(new google.maps.Point(point.x + dx, point.y + dy)) || latLng;
+  const lat = latLng.lat();
+  const lng = latLng.lng();
+  const siny = Math.min(Math.max(Math.sin(lat * Math.PI / 180), -0.9999), 0.9999);
+  const x = (lng + 180) / 360 * scale;
+  const y = (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI)) * scale;
+  const shiftedX = x + dx;
+  const shiftedY = y + dy;
+  const shiftedLng = shiftedX / scale * 360 - 180;
+  const n = Math.PI - 2 * Math.PI * shiftedY / scale;
+  const shiftedLat = 180 / Math.PI * Math.atan(Math.sinh(n));
+  return new google.maps.LatLng(shiftedLat, shiftedLng);
+}
+
+function latLngToScreenPoint(position) {
+  if (!position || !gmap) return null;
+  const zoom = gmap.getZoom?.() ?? 14;
+  const scale = 256 * Math.pow(2, zoom);
+  const latLng = position instanceof google.maps.LatLng
+    ? position
+    : new google.maps.LatLng(parseCoordinate(position.lat), parseCoordinate(position.lng));
+  const lat = latLng.lat();
+  const lng = latLng.lng();
+  const siny = Math.min(Math.max(Math.sin(lat * Math.PI / 180), -0.9999), 0.9999);
+  return {
+    x: (lng + 180) / 360 * scale,
+    y: (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI)) * scale,
+  };
 }
 
 function markerChooserLabel(item) {
@@ -2902,6 +2927,7 @@ function refreshMap() {
     parseCoordinate(p.lat) >= -90 && parseCoordinate(p.lat) <= 90 &&
     parseCoordinate(p.lng) >= -180 && parseCoordinate(p.lng) <= 180;
   const clickableItemsByGps = new Map();
+  const clickableItems = [];
   const spreadGpsKeys = new Set();
   const registerClickableItem = item => {
     const key = mapSelectableKey(item.point);
@@ -2914,32 +2940,66 @@ function refreshMap() {
     item.baseZIndex = item.marker?.getZIndex?.();
     if (!clickableItemsByGps.has(key)) clickableItemsByGps.set(key, []);
     clickableItemsByGps.get(key).push(item);
+    clickableItems.push(item);
   };
-  const spreadClickableGroup = (key, group) => {
+  const spreadClickableGroup = (key, group, markAsSpread = true) => {
     if (group.length < 2) return;
     const centrePoint = group[0].point;
     const centre = new google.maps.LatLng(parseCoordinate(centrePoint.lat), parseCoordinate(centrePoint.lng));
-    const radius = group.length === 2 ? 38 : 48;
+    const radius = group.length === 2 ? 44 : 54;
     group.forEach((groupItem, index) => {
       const angle = group.length === 2
-        ? (index === 0 ? -Math.PI / 2 : Math.PI / 2)
+        ? (index === 0 ? -Math.PI * 0.82 : -Math.PI * 0.18)
         : (-Math.PI / 2 + (index * 2 * Math.PI / group.length));
       const dx = Math.cos(angle) * radius;
       const dy = Math.sin(angle) * radius;
       groupItem.marker.setPosition(offsetLatLngByPixels(centre, dx, dy));
       groupItem.marker.setZIndex(1800 + index);
+      groupItem.visualGroup = group;
+      groupItem.isVisuallySeparated = true;
     });
-    spreadGpsKeys.add(key);
+    if (markAsSpread) spreadGpsKeys.add(key);
   };
   const spreadAllOverlappingMarkers = () => {
+    const thresholdPx = 58;
+    const groups = [];
+    const visited = new Set();
+    clickableItems.forEach((item, startIndex) => {
+      if (visited.has(item)) return;
+      const queue = [item];
+      const group = [];
+      visited.add(item);
+      while (queue.length) {
+        const current = queue.shift();
+        group.push(current);
+        const currentPoint = latLngToScreenPoint(current.basePosition);
+        if (!currentPoint) continue;
+        clickableItems.forEach(candidate => {
+          if (visited.has(candidate)) return;
+          const candidatePoint = latLngToScreenPoint(candidate.basePosition);
+          if (!candidatePoint) return;
+          const distance = Math.hypot(currentPoint.x - candidatePoint.x, currentPoint.y - candidatePoint.y);
+          if (distance <= thresholdPx) {
+            visited.add(candidate);
+            queue.push(candidate);
+          }
+        });
+      }
+      groups.push(group);
+    });
+    groups.forEach((group, groupIndex) => {
+      if (group.length > 1) spreadClickableGroup(`visual-${groupIndex}`, group, false);
+    });
     clickableItemsByGps.forEach((group, key) => {
-      if (group.length > 1) spreadClickableGroup(key, group);
+      if (group.length > 1 && !group.some(item => item.isVisuallySeparated)) spreadClickableGroup(key, group);
     });
   };
   const openClickableItem = item => {
     const key = item.gpsKey || mapSelectableKey(item.point);
     const group = clickableItemsByGps.get(key) || [item];
-    if (group.length > 1 && !spreadGpsKeys.has(key)) {
+    if (item.isVisuallySeparated) {
+      item.open();
+    } else if (group.length > 1 && !spreadGpsKeys.has(key)) {
       openOverlappingMarkerChooser(group, item.marker, item.marker?.getPosition());
     }
     else item.open();
