@@ -4313,11 +4313,13 @@ function towerPhotoBoxId(p) {
 }
 
 function towerPhotoPreviewHTML(p) {
-  return towerPhotoRef(p) ? `<div style="margin:6px 0">
-    <div id="${towerPhotoBoxId(p)}" style="height:92px;border:1px solid #e5e7eb;border-radius:7px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#667085;font-size:10px;overflow:hidden">
-      Loading tower photo...
+  const hasPhoto = Boolean(towerPhotoRef(p));
+  return `<div style="margin:6px 0;border:1px solid #e5e7eb;border-radius:7px;overflow:hidden;background:#f8fafc">
+    <div style="padding:4px 6px;background:#fff;border-bottom:1px solid #e5e7eb;color:#344054;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Tower photo</div>
+    <div id="${towerPhotoBoxId(p)}" style="height:${hasPhoto ? '92px' : '48px'};display:flex;align-items:center;justify-content:center;color:#667085;font-size:10px;text-align:center;padding:${hasPhoto ? '0' : '8px'};box-sizing:border-box;overflow:hidden">
+      ${hasPhoto ? 'Loading tower photo...' : 'No tower photo uploaded for this tower.'}
     </div>
-  </div>` : '';
+  </div>`;
 }
 
 async function hydrateTowerPhoto(p) {
