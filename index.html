@@ -1917,6 +1917,100 @@ function displayCoordinate(value) {
   return String(value).trim();
 }
 
+function loadWardBoundaryIndex() {
+  if (wardBoundaryIndexPromise) return wardBoundaryIndexPromise;
+  wardBoundaryIndexPromise = fetch('data/boundaries/honiara-wards-2014.geojson')
+    .then(res => {
+      if (!res.ok) throw new Error(`Ward boundary load failed (${res.status})`);
+      return res.json();
+    })
+    .then(geojson => {
+      wardBoundaryGeoFeatures = Array.isArray(geojson.features) ? geojson.features : [];
+      if (activeView === 'data') renderDataTable();
+      if (activeView === 'map') refresh();
+      return wardBoundaryGeoFeatures;
+    })
+    .catch(err => {
+      console.warn('Could not load ward boundary index for GPS/ward validation:', err);
+      wardBoundaryGeoFeatures = [];
+      return [];
+    });
+  return wardBoundaryIndexPromise;
+}
+
+function pointInRing(lng, lat, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = Number(ring[i][0]), yi = Number(ring[i][1]);
+    const xj = Number(ring[j][0]), yj = Number(ring[j][1]);
+    const intersects = ((yi > lat) !== (yj > lat)) &&
+      (lng < ((xj - xi) * (lat - yi)) / ((yj - yi) || Number.EPSILON) + xi);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function pointInPolygonCoordinates(lng, lat, polygonCoords) {
+  if (!Array.isArray(polygonCoords) || !polygonCoords.length) return false;
+  if (!pointInRing(lng, lat, polygonCoords[0])) return false;
+  for (let i = 1; i < polygonCoords.length; i++) {
+    if (pointInRing(lng, lat, polygonCoords[i])) return false;
+  }
+  return true;
+}
+
+function pointInGeoJsonGeometry(lng, lat, geometry) {
+  if (!geometry) return false;
+  if (geometry.type === 'Polygon') return pointInPolygonCoordinates(lng, lat, geometry.coordinates);
+  if (geometry.type === 'MultiPolygon') {
+    return geometry.coordinates.some(coords => pointInPolygonCoordinates(lng, lat, coords));
+  }
+  return false;
+}
+
+function wardContainingCoordinate(latValue, lngValue) {
+  const lat = parseCoordinate(latValue);
+  const lng = parseCoordinate(lngValue);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || !wardBoundaryGeoFeatures.length) return '';
+  const feature = wardBoundaryGeoFeatures.find(f => pointInGeoJsonGeometry(lng, lat, f.geometry));
+  return feature?.properties?.name || '';
+}
+
+function wardGpsValidation(p) {
+  if (!p || p.type === 'cell') return null;
+  const expectedWard = String(p.ward || '').trim();
+  if (!expectedWard || gpsStatus(p.lat, p.lng) !== 'Valid') return null;
+  if (!wardBoundaryGeoFeatures.length) return null;
+  const actualWard = wardContainingCoordinate(p.lat, p.lng);
+  if (actualWard && actualWard !== expectedWard) {
+    return {
+      type: 'mismatch',
+      expectedWard,
+      actualWard,
+      detail: `Survey ward is ${expectedWard}, but the GPS point falls inside ${actualWard}. Field team should verify ward selection or recorded coordinates.`,
+    };
+  }
+  if (!actualWard) {
+    return {
+      type: 'outside-boundary',
+      expectedWard,
+      actualWard: '',
+      detail: 'Coordinates are inside the broad Honiara study area, but not inside any loaded ward boundary. Field team should verify ward selection or GPS accuracy.',
+    };
+  }
+  return { type: 'match', expectedWard, actualWard, detail: '' };
+}
+
+function wardGpsValidationBadge(p) {
+  const check = wardGpsValidation(p);
+  if (!check || check.type === 'match') return '';
+  const label = check.type === 'mismatch'
+    ? `Ward mismatch: GPS inside ${check.actualWard}`
+    : 'Outside ward boundary';
+  return `<div><span class="badge badge-warn" title="${check.detail}" style="font-family:Inter,sans-serif;margin-top:3px">${label}</span></div>
+    <div style="font-size:10px;color:var(--amber);margin-top:3px;max-width:220px">${check.detail}</div>`;
+}
+
 function gpsStatusBadge(status, detail = '') {
   const cls = status === 'Valid' ? 'badge-ok' : status === 'Outside study area' ? 'badge-red' : 'badge-warn';
   const reason = gpsStatusShortReason(detail);
@@ -1973,6 +2067,8 @@ let boundaryHighlightLayer = null;
 let boundaryInfoWindow = null;
 let selectedWardBoundary = null;
 let selectedConstituencyBoundary = null;
+let wardBoundaryGeoFeatures = [];
+let wardBoundaryIndexPromise = null;
 let surveySyncTimer = null;
 let surveySyncInFlight = false;
 let lastSurveyFingerprint = '';
@@ -2876,11 +2972,12 @@ function infoWindowHTML(p) {
   const col = has(rsrp) ? rsrpColor(rsrp) : 'var(--gray-600)';
   const gpsState = gpsStatus(p.lat, p.lng);
   const gpsDetail = gpsStatusDetail(p.lat, p.lng);
+  const wardWarning = wardGpsValidationBadge(p);
   return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:340px;max-width:380px">
     <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} — ${show(p.ward)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} · ${show(p.constituency)} · ${show(p.date)} ${show(p.time)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:4px">GPS waypoint: ${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</div>
-    <div style="margin-bottom:8px">${gpsStatusBadge(gpsState, gpsDetail)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? '#A32D2D' : '#BA7517'};margin-top:4px">${gpsDetail}</div>` : ''}</div>
+    <div style="margin-bottom:8px">${gpsStatusBadge(gpsState, gpsDetail)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? '#A32D2D' : '#BA7517'};margin-top:4px">${gpsDetail}</div>` : ''}${wardWarning}</div>
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
       ${card('RSRP', rsrp, has(rsrp) ? ' dBm' : '', col)}
@@ -3375,6 +3472,7 @@ function enhancedInfoWindowHTML(p) {
   const signalColour = has(rsrp) ? rsrpColor(rsrp) : '#378ADD';
   const operator = p.fd_s1_op || p.operator || p.op;
   const networkType = p.fd_s1_ncil_type || p.fd_s1_ookla_type || p.fd_s1_nperf_type || 'Network type not recorded';
+  const wardWarning = wardGpsValidationBadge(p);
   return `<div style="font-family:'Inter',sans-serif;padding:4px;width:100%;min-width:0;max-width:none;box-sizing:border-box">
     <div style="font-weight:700;font-size:14px;margin-bottom:5px">Survey ${show(p.id)} &mdash; ${show(p.ward)}</div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">
@@ -3384,6 +3482,7 @@ function enhancedInfoWindowHTML(p) {
     </div>
     <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.constituency)} &middot; ${show(p.date)} ${show(p.time)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:7px">GPS waypoint: ${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</div>
+    ${wardWarning ? `<div style="margin-bottom:8px">${wardWarning}</div>` : ''}
     ${surveyTowerAssociationHTML(p)}
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px">
@@ -3639,7 +3738,7 @@ function renderDataTable() {
       <td>${p.op || '\u2014'}</td>
       <td style="${mono};font-size:11px">${gpsState === 'Missing' && latProblem ? `<span title="${gpsDetail}" style="${coordProblemStyle}">${latStr}</span>` : latStr}</td>
       <td style="${mono};font-size:11px">${gpsState === 'Missing' && lngProblem ? `<span title="${gpsDetail}" style="${coordProblemStyle}">${lngStr}</span>` : lngStr}</td>
-      <td>${gpsStatusBadge(gpsState, gpsDetail)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? 'var(--red)' : 'var(--amber)'};margin-top:3px;max-width:190px">${gpsDetail}</div>` : ''}${sharedGpsBadge}</td>
+      <td>${gpsStatusBadge(gpsState, gpsDetail)}${gpsState !== 'Valid' ? `<div style="font-size:10px;color:${gpsState === 'Missing' ? 'var(--red)' : 'var(--amber)'};margin-top:3px;max-width:190px">${gpsDetail}</div>` : ''}${wardGpsValidationBadge(p)}${sharedGpsBadge}</td>
       <td style="color:${sigCol};font-weight:500">${rsrpNum != null ? rsrpNum : '\u2014'}</td>
       <td><span class="badge" style="background:#EAF3DE;color:${sigCol}">${rsrpLabel(rsrpNum)}</span></td>
       <td style="color:${dlCol};font-weight:500">${dlNum != null ? dlNum : '\u2014'}</td>
@@ -5873,6 +5972,7 @@ async function checkAuth() {
 
 document.getElementById('f-date').value  = new Date().toISOString().split('T')[0];
 initScreenshotInputs();
+loadWardBoundaryIndex();
 document.getElementById('view-map').style.display = 'none';
 document.getElementById('view-survey').classList.add('on');
 // Remove persistent authentication created by older portal versions.
