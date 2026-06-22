@@ -729,6 +729,11 @@
           <span class="layer-toggle-label">Serving LTE cell performance</span>
         </label>
         <label class="layer-toggle">
+          <input type="checkbox" id="layer-tower-connections" onchange="refreshMap()">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18C8 7 15 17 20 6" fill="none" stroke="#F59E0B" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 4"/><circle cx="4" cy="18" r="2.5" fill="#F59E0B"/><circle cx="20" cy="6" r="2.5" fill="#F59E0B"/></svg>
+          <span class="layer-toggle-label">Tower connections</span>
+        </label>
+        <label class="layer-toggle">
           <input type="checkbox" id="layer-wards" checked onchange="refreshBoundaryLayers()">
           <span class="boundary-line-icon" style="border-color:#7C3AED;background:linear-gradient(90deg,#3B82F655 0 33%,#A855F755 33% 66%,#F59E0B55 66%)"></span>
           <span class="layer-toggle-label">Ward boundaries</span>
@@ -2078,6 +2083,7 @@ let markers  = [];
 let surveyOverlays = [];
 let waypointShapes = [];
 let towerSurveyHighlights = [];
+let towerConnectionOverlays = [];
 let selectedSectorKey = '';
 let selectedServingCell = null;
 let heatmap  = null;
@@ -2891,6 +2897,53 @@ function highlightTowerSurveyMarkers(towerItem, surveyItemsByRespondentId, respo
   });
 }
 
+function clearTowerConnectionOverlays() {
+  towerConnectionOverlays.forEach(item => item.setMap && item.setMap(null));
+  towerConnectionOverlays = [];
+}
+
+function towerConnectionColour(index) {
+  const colours = ['#2563EB', '#D97706', '#7C3AED', '#059669', '#DC2626', '#0891B2', '#BE185D', '#65A30D', '#9333EA', '#EA580C'];
+  return colours[index % colours.length];
+}
+
+function renderTowerConnectionOverlays(towerItems, surveyItemsByRespondentId, respondentKey) {
+  clearTowerConnectionOverlays();
+  if (!gmap || !window.google) return;
+  towerItems.forEach((towerItem, index) => {
+    const towerPosition = towerItem.marker?.getPosition?.();
+    if (!towerPosition || !towerItem.point?.connectedSurveys?.length) return;
+    const colour = towerConnectionColour(index);
+    const seen = new Set();
+    towerItem.point.connectedSurveys.forEach(record => {
+      const key = respondentKey(record);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      const surveyPosition = surveyItemsByRespondentId.get(key)?.marker?.getPosition?.();
+      if (!surveyPosition) return;
+      towerConnectionOverlays.push(new google.maps.Polyline({
+        map: gmap,
+        path: [towerPosition, surveyPosition],
+        strokeOpacity: 0,
+        strokeWeight: 0,
+        clickable: false,
+        zIndex: 700,
+        icons: [{
+          icon: {
+            path: 'M 0,-1 0,1',
+            strokeColor: colour,
+            strokeOpacity: 0.85,
+            strokeWeight: 2.5,
+            scale: 3.5,
+          },
+          offset: '0',
+          repeat: '18px',
+        }],
+      }));
+    });
+  });
+}
+
 function towerInfoWindowPosition(towerItem, surveyItemsByRespondentId, respondentKey) {
   const towerPosition = towerItem?.marker?.getPosition?.() || {
     lat: parseCoordinate(towerItem?.point?.lat),
@@ -3004,11 +3057,13 @@ function refreshMap() {
   const showSurveys = document.getElementById('layer-surveys').checked;
   const showCells   = document.getElementById('layer-cells').checked;
   const showSectors = document.getElementById('layer-sectors')?.checked ?? true;
+  const showTowerConnections = document.getElementById('layer-tower-connections')?.checked ?? false;
   const showSignal  = false;
   const colMode     = 'signal';
 
   // Clear existing markers
   clearTowerSurveyHighlights();
+  clearTowerConnectionOverlays();
   markers.forEach(m => m.setMap(null));
   markers = [];
   surveyOverlays.forEach(m => m.setMap(null));
@@ -3025,6 +3080,7 @@ function refreshMap() {
     parseCoordinate(p.lng) >= -180 && parseCoordinate(p.lng) <= 180;
   const clickableItemsByGps = new Map();
   const clickableItems = [];
+  const towerItems = [];
   const surveyItemsByRespondentId = new Map();
   const towerItemsByConnectedSurveyId = new Map();
   const respondentKey = record => String(record?.respondentId || record?.id || record?._id || '').trim().toUpperCase();
@@ -3191,10 +3247,15 @@ function refreshMap() {
         info.open(gmap);
       };
       registerClickableItem(item);
+      towerItems.push(item);
       marker.addListener('click', () => openClickableItem(item));
       marker.infoWindow = info;
       markers.push(marker);
     });
+  }
+
+  if (showTowerConnections && showSurveys && showCells && window.google) {
+    renderTowerConnectionOverlays(towerItems, surveyItemsByRespondentId, respondentKey);
   }
 
   // Serving LTE cell markers: primary identity is PLMN (MCC + MNC) + ECI.
