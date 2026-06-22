@@ -2835,6 +2835,10 @@ function highlightTowerSurveyMarkers(towerItem, surveyItemsByRespondentId, respo
   clearTowerSurveyHighlights();
   if (!gmap || !window.google || !towerItem?.point?.connectedSurveys?.length) return;
   const seen = new Set();
+  const towerPosition = towerItem.marker?.getPosition?.() || {
+    lat: parseCoordinate(towerItem.point.lat),
+    lng: parseCoordinate(towerItem.point.lng),
+  };
   towerItem.point.connectedSurveys.forEach(record => {
     const key = respondentKey(record);
     if (!key || seen.has(key)) return;
@@ -2846,6 +2850,25 @@ function highlightTowerSurveyMarkers(towerItem, surveyItemsByRespondentId, respo
     const markerIcon = surveyItem.marker.getIcon?.();
     if (surveyItem.marker.highlightIcon) surveyItem.marker.setIcon(surveyItem.marker.highlightIcon);
     surveyItem.marker.setZIndex(6200);
+    towerSurveyHighlights.push(new google.maps.Polyline({
+      map: gmap,
+      path: [towerPosition, position],
+      strokeOpacity: 0,
+      strokeWeight: 0,
+      clickable: false,
+      zIndex: 6090,
+      icons: [{
+        icon: {
+          path: 'M 0,-1 0,1',
+          strokeColor: '#FFD54A',
+          strokeOpacity: 1,
+          strokeWeight: 4,
+          scale: 4,
+        },
+        offset: '0',
+        repeat: '16px',
+      }],
+    }));
     towerSurveyHighlights.push(new google.maps.Circle({
       map: gmap,
       center: position,
