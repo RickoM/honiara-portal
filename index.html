@@ -2077,6 +2077,7 @@ let markerProjectionOverlay = null;
 let markers  = [];
 let surveyOverlays = [];
 let waypointShapes = [];
+let towerSurveyHighlights = [];
 let selectedSectorKey = '';
 let selectedServingCell = null;
 let heatmap  = null;
@@ -2818,6 +2819,42 @@ function mapSelectableKey(p) {
 function closeMapInfoWindows() {
   markers.forEach(m => m.infoWindow && m.infoWindow.close());
   if (overlappingMarkerInfoWindow) overlappingMarkerInfoWindow.close();
+  clearTowerSurveyHighlights();
+}
+
+function clearTowerSurveyHighlights() {
+  towerSurveyHighlights.forEach(item => item.setMap && item.setMap(null));
+  towerSurveyHighlights = [];
+}
+
+function highlightTowerSurveyMarkers(towerItem, surveyItemsByRespondentId, respondentKey) {
+  clearTowerSurveyHighlights();
+  if (!gmap || !window.google || !towerItem?.point?.connectedSurveys?.length) return;
+  const seen = new Set();
+  towerItem.point.connectedSurveys.forEach(record => {
+    const key = respondentKey(record);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    const surveyItem = surveyItemsByRespondentId.get(key);
+    const position = surveyItem?.marker?.getPosition?.();
+    if (!surveyItem || !position) return;
+    const markerZ = surveyItem.marker.getZIndex?.() || 1000;
+    surveyItem.marker.setZIndex(6200);
+    towerSurveyHighlights.push(new google.maps.Circle({
+      map: gmap,
+      center: position,
+      radius: 18,
+      strokeColor: '#FFD54A',
+      strokeOpacity: 1,
+      strokeWeight: 4,
+      fillColor: '#FFD54A',
+      fillOpacity: 0.18,
+      clickable: false,
+      zIndex: 6100,
+    }));
+    const restore = { setMap: () => surveyItem.marker.setZIndex(markerZ) };
+    towerSurveyHighlights.push(restore);
+  });
 }
 
 function offsetLatLngByPixels(position, dx, dy) {
@@ -2910,6 +2947,7 @@ function refreshMap() {
   const colMode     = 'signal';
 
   // Clear existing markers
+  clearTowerSurveyHighlights();
   markers.forEach(m => m.setMap(null));
   markers = [];
   surveyOverlays.forEach(m => m.setMap(null));
@@ -3076,6 +3114,7 @@ function refreshMap() {
         content: cellInfoWindowHTML(p),
         maxWidth: 240,
       });
+      info.addListener('closeclick', clearTowerSurveyHighlights);
       const openTowerInfo = () => {
         closeSurveyPointDetail();
         closeMapScreenshot();
@@ -3083,6 +3122,13 @@ function refreshMap() {
         info.open(gmap, marker);
       };
       const item = { type: 'tower', point: p, marker, open: openTowerInfo };
+      item.open = () => {
+        closeSurveyPointDetail();
+        closeMapScreenshot();
+        closeMapInfoWindows();
+        highlightTowerSurveyMarkers(item, surveyItemsByRespondentId, respondentKey);
+        info.open(gmap, marker);
+      };
       registerClickableItem(item);
       marker.addListener('click', () => openClickableItem(item));
       marker.infoWindow = info;
