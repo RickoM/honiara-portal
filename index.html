@@ -2623,7 +2623,7 @@ function numberedSurveyMarkerIcon(colour, suffix, status = 'Valid') {
 
 function towerMarkerIcon() {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="52" height="60" viewBox="0 0 52 60">
-    <rect x="0" y="0" width="52" height="60" fill="rgba(255,255,255,0.01)"/>
+    <rect x="0" y="0" width="52" height="60" fill="#ffffff" opacity="0.01"/>
     <path d="M26 57C19 47 8 37 8 25a18 18 0 1 1 36 0c0 12-11 22-18 32z" fill="#BA7517" stroke="#fff" stroke-width="3"/>
     <path d="M26 14v23M18 37h16M21 29h10M23 21h6M18 37l8-23 8 23M14 17c-4 4-5 10-1 15M38 17c4 4 5 10 1 15M10 12C3 19 3 31 10 38M42 12c7 7 7 19 0 26" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
     <circle cx="26" cy="14" r="3" fill="#fff"/>
@@ -3015,9 +3015,12 @@ function refreshMap() {
         position: { lat: parseCoordinate(p.lat), lng: parseCoordinate(p.lng) },
         map: gmap,
         icon: towerMarkerIcon(),
+        shape: { type: 'rect', coords: [0, 0, 52, 60] },
         title: `Tower eNB ${p.enb || 'unknown'} — ${(p.connectedSurveys || []).length} connected survey record${(p.connectedSurveys || []).length === 1 ? '' : 's'}`,
+        clickable: true,
+        cursor: 'pointer',
         optimized: false,
-        zIndex: 1120,
+        zIndex: 5000,
       });
       const info = new google.maps.InfoWindow({
         content: cellInfoWindowHTML(p),
@@ -3065,7 +3068,7 @@ function refreshMap() {
         label: { text: String(sector.lcid || sector.eci.slice(-2)), color: '#fff', fontSize: '9px', fontWeight: '700' },
         title: `Serving LTE cell ECI ${sector.eci} — ${sector.records.length} survey records`,
         optimized: false,
-        zIndex: selectedSectorKey === sector.key ? 1450 : 1250,
+        zIndex: selectedSectorKey === sector.key ? 900 : 850,
       });
       const info = new google.maps.InfoWindow({ content: sectorSummaryHTML(sector), maxWidth: 520 });
       marker.addListener('click', () => {
