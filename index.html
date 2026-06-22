@@ -2789,6 +2789,77 @@ function openBoundaryInfo(event, expectedLevel) {
   boundaryInfoWindow.open(gmap);
 }
 
+let overlappingMarkerInfoWindow = null;
+
+function mapSelectableKey(p) {
+  return gpsCoordinateKey(p?.lat, p?.lng);
+}
+
+function closeMapInfoWindows() {
+  markers.forEach(m => m.infoWindow && m.infoWindow.close());
+  if (overlappingMarkerInfoWindow) overlappingMarkerInfoWindow.close();
+}
+
+function markerChooserLabel(item) {
+  if (item.type === 'survey') {
+    return {
+      title: `Survey ${item.point.id || item.point.respondentId || 'record'}`,
+      meta: `${item.point.ward || 'Ward not recorded'} · ${item.point.constituency || 'Constituency not recorded'}`,
+      badge: 'Survey data point',
+      color: '#1C3557',
+    };
+  }
+  return {
+    title: `Mobile tower ${item.point.enb ? 'eNB ' + item.point.enb : 'point'}`,
+    meta: `${item.point.op || item.point.operator || 'Operator not recorded'} · ${item.point.towerType || 'Tower type not recorded'}`,
+    badge: 'Tower data point',
+    color: '#BA7517',
+  };
+}
+
+function openOverlappingMarkerChooser(items, anchorMarker, position) {
+  if (!items || items.length < 2) {
+    items?.[0]?.open();
+    return;
+  }
+  closeMapInfoWindows();
+  closeSurveyPointDetail();
+  closeMapScreenshot();
+  const chooserId = 'marker-chooser-' + Date.now();
+  const gpsText = `${displayCoordinate(items[0].point.lat)}, ${displayCoordinate(items[0].point.lng)}`;
+  const content = `<div id="${chooserId}" style="font-family:'Inter',sans-serif;padding:4px;min-width:290px;max-width:360px">
+    <div style="font-size:13px;font-weight:700;color:#172033;margin-bottom:3px">Multiple records at this GPS</div>
+    <div style="font-size:10px;color:#667085;margin-bottom:8px">${gpsText}</div>
+    <div style="display:grid;gap:7px">
+      ${items.map((item, index) => {
+        const label = markerChooserLabel(item);
+        return `<button type="button" data-marker-choice="${index}" style="text-align:left;border:1px solid #e5e7eb;background:#fff;border-left:4px solid ${label.color};border-radius:7px;padding:8px 10px;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+            <strong style="font-size:12px;color:#172033">${label.title}</strong>
+            <span style="font-size:9px;font-weight:700;color:${label.color};background:#f8fafc;border-radius:999px;padding:2px 7px;white-space:nowrap">${label.badge}</span>
+          </div>
+          <div style="font-size:10px;color:#667085;margin-top:3px">${label.meta}</div>
+        </button>`;
+      }).join('')}
+    </div>
+    <div style="font-size:9px;color:#667085;margin-top:8px;line-height:1.35">Select which record you want to inspect. This appears because more than one map item shares the same GPS coordinate.</div>
+  </div>`;
+  if (!overlappingMarkerInfoWindow) overlappingMarkerInfoWindow = new google.maps.InfoWindow({ maxWidth: 380 });
+  overlappingMarkerInfoWindow.setContent(content);
+  overlappingMarkerInfoWindow.setPosition(position || anchorMarker?.getPosition());
+  overlappingMarkerInfoWindow.open(gmap, anchorMarker || null);
+  google.maps.event.addListenerOnce(overlappingMarkerInfoWindow, 'domready', () => {
+    const root = document.getElementById(chooserId);
+    if (!root) return;
+    root.querySelectorAll('[data-marker-choice]').forEach(button => {
+      button.addEventListener('click', () => {
+        const item = items[Number(button.dataset.markerChoice)];
+        if (item) item.open();
+      });
+    });
+  });
+}
+
 function refreshMap() {
   if (!gmap) return;
   refreshBoundaryLayers();
@@ -2813,6 +2884,18 @@ function refreshMap() {
     Number.isFinite(parseCoordinate(p.lat)) && Number.isFinite(parseCoordinate(p.lng)) &&
     parseCoordinate(p.lat) >= -90 && parseCoordinate(p.lat) <= 90 &&
     parseCoordinate(p.lng) >= -180 && parseCoordinate(p.lng) <= 180;
+  const clickableItemsByGps = new Map();
+  const registerClickableItem = item => {
+    const key = mapSelectableKey(item.point);
+    if (!key) return;
+    if (!clickableItemsByGps.has(key)) clickableItemsByGps.set(key, []);
+    clickableItemsByGps.get(key).push(item);
+  };
+  const openClickableItem = item => {
+    const group = clickableItemsByGps.get(mapSelectableKey(item.point)) || [item];
+    if (group.length > 1) openOverlappingMarkerChooser(group, item.marker, item.marker?.getPosition());
+    else item.open();
+  };
   const plottedSurveys = src.filter(p => p.type === 'survey' && hasMapCoordinates(p));
   const markerLayout = surveyMarkerLayout(plottedSurveys);
   const waypointCount = document.getElementById('ms-waypoints');
@@ -2866,10 +2949,12 @@ function refreshMap() {
         zIndex: layout.count > 1 && layout.index === 0 ? 1100 : 1000 - layout.index,
       });
       const openWaypointInfo = () => {
-        markers.forEach(m => m.infoWindow && m.infoWindow.close());
+        closeMapInfoWindows();
         openSurveyPointDetail(p);
       };
-      marker.addListener('click', openWaypointInfo);
+      const item = { type: 'survey', point: p, marker, open: openWaypointInfo };
+      registerClickableItem(item);
+      marker.addListener('click', () => openClickableItem(item));
       markers.push(marker);
     });
   }
@@ -2896,7 +2981,15 @@ function refreshMap() {
         content: cellInfoWindowHTML(p),
         maxWidth: 240,
       });
-      marker.addListener('click', () => { markers.forEach(m => m.infoWindow && m.infoWindow.close()); info.open(gmap, marker); });
+      const openTowerInfo = () => {
+        closeSurveyPointDetail();
+        closeMapScreenshot();
+        closeMapInfoWindows();
+        info.open(gmap, marker);
+      };
+      const item = { type: 'tower', point: p, marker, open: openTowerInfo };
+      registerClickableItem(item);
+      marker.addListener('click', () => openClickableItem(item));
       marker.infoWindow = info;
       markers.push(marker);
     });
