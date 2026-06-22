@@ -2073,6 +2073,7 @@ const reservedRespondentIds = new Map();
 let selDay   = 'all';
 let apiKey   = 'AIzaSyDTQZWZb7YxaIl2sBAk7P50SqTorOe6zl8';
 let gmap     = null;
+let markerProjectionOverlay = null;
 let markers  = [];
 let surveyOverlays = [];
 let waypointShapes = [];
@@ -2571,6 +2572,11 @@ window.initMap = function() {
   });
   gmap.addListener('zoom_changed', collapseSurveyPointDetail);
   gmap.addListener('dragstart', collapseSurveyPointDetail);
+  markerProjectionOverlay = new google.maps.OverlayView();
+  markerProjectionOverlay.onAdd = function() {};
+  markerProjectionOverlay.draw = function() {};
+  markerProjectionOverlay.onRemove = function() {};
+  markerProjectionOverlay.setMap(gmap);
   const apiBadgeEl = document.getElementById('api-badge');
   if (apiBadgeEl) { apiBadgeEl.textContent = '✓ Map loaded'; apiBadgeEl.classList.remove('missing'); }
   initializeBoundaryLayers();
@@ -2800,6 +2806,17 @@ function closeMapInfoWindows() {
   if (overlappingMarkerInfoWindow) overlappingMarkerInfoWindow.close();
 }
 
+function offsetLatLngByPixels(position, dx, dy) {
+  const projection = markerProjectionOverlay?.getProjection?.();
+  if (!projection || !position || !window.google) return position;
+  const latLng = position instanceof google.maps.LatLng
+    ? position
+    : new google.maps.LatLng(parseCoordinate(position.lat), parseCoordinate(position.lng));
+  const point = projection.fromLatLngToDivPixel(latLng);
+  if (!point) return latLng;
+  return projection.fromDivPixelToLatLng(new google.maps.Point(point.x + dx, point.y + dy)) || latLng;
+}
+
 function markerChooserLabel(item) {
   if (item.type === 'survey') {
     return {
@@ -2885,15 +2902,61 @@ function refreshMap() {
     parseCoordinate(p.lat) >= -90 && parseCoordinate(p.lat) <= 90 &&
     parseCoordinate(p.lng) >= -180 && parseCoordinate(p.lng) <= 180;
   const clickableItemsByGps = new Map();
+  let activeSpreadKey = '';
+  let spreadCollapseTimer = null;
   const registerClickableItem = item => {
     const key = mapSelectableKey(item.point);
     if (!key) return;
+    item.gpsKey = key;
+    item.basePosition = item.marker?.getPosition?.() || {
+      lat: parseCoordinate(item.point.lat),
+      lng: parseCoordinate(item.point.lng),
+    };
+    item.baseZIndex = item.marker?.getZIndex?.();
     if (!clickableItemsByGps.has(key)) clickableItemsByGps.set(key, []);
     clickableItemsByGps.get(key).push(item);
   };
+  const spreadClickableGroup = item => {
+    const key = item.gpsKey || mapSelectableKey(item.point);
+    const group = clickableItemsByGps.get(key) || [];
+    if (group.length < 2) return;
+    if (spreadCollapseTimer) clearTimeout(spreadCollapseTimer);
+    activeSpreadKey = key;
+    const centre = new google.maps.LatLng(parseCoordinate(item.point.lat), parseCoordinate(item.point.lng));
+    const radius = group.length === 2 ? 34 : 42;
+    group.forEach((groupItem, index) => {
+      const angle = group.length === 2
+        ? (index === 0 ? -Math.PI / 2 : Math.PI / 2)
+        : (-Math.PI / 2 + (index * 2 * Math.PI / group.length));
+      const dx = Math.cos(angle) * radius;
+      const dy = Math.sin(angle) * radius;
+      groupItem.marker.setPosition(offsetLatLngByPixels(centre, dx, dy));
+      groupItem.marker.setZIndex(1800 + index);
+    });
+  };
+  const collapseClickableGroup = key => {
+    const group = clickableItemsByGps.get(key) || [];
+    group.forEach(groupItem => {
+      if (groupItem.basePosition) groupItem.marker.setPosition(groupItem.basePosition);
+      if (Number.isFinite(groupItem.baseZIndex)) groupItem.marker.setZIndex(groupItem.baseZIndex);
+    });
+    if (activeSpreadKey === key) activeSpreadKey = '';
+  };
+  const scheduleCollapseClickableGroup = item => {
+    const key = item.gpsKey || mapSelectableKey(item.point);
+    if (!key) return;
+    if (spreadCollapseTimer) clearTimeout(spreadCollapseTimer);
+    spreadCollapseTimer = setTimeout(() => collapseClickableGroup(key), 900);
+  };
+  const attachOverlapHover = item => {
+    item.marker.addListener('mouseover', () => spreadClickableGroup(item));
+    item.marker.addListener('mouseout', () => scheduleCollapseClickableGroup(item));
+  };
   const openClickableItem = item => {
     const group = clickableItemsByGps.get(mapSelectableKey(item.point)) || [item];
-    if (group.length > 1) openOverlappingMarkerChooser(group, item.marker, item.marker?.getPosition());
+    if (group.length > 1 && activeSpreadKey !== (item.gpsKey || mapSelectableKey(item.point))) {
+      openOverlappingMarkerChooser(group, item.marker, item.marker?.getPosition());
+    }
     else item.open();
   };
   const plottedSurveys = src.filter(p => p.type === 'survey' && hasMapCoordinates(p));
@@ -2954,6 +3017,7 @@ function refreshMap() {
       };
       const item = { type: 'survey', point: p, marker, open: openWaypointInfo };
       registerClickableItem(item);
+      attachOverlapHover(item);
       marker.addListener('click', () => openClickableItem(item));
       markers.push(marker);
     });
@@ -2989,6 +3053,7 @@ function refreshMap() {
       };
       const item = { type: 'tower', point: p, marker, open: openTowerInfo };
       registerClickableItem(item);
+      attachOverlapHover(item);
       marker.addListener('click', () => openClickableItem(item));
       marker.infoWindow = info;
       markers.push(marker);
