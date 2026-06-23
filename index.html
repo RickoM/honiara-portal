@@ -4314,9 +4314,9 @@ function towerPhotoBoxId(p) {
 
 function towerPhotoPreviewHTML(p) {
   const hasPhoto = Boolean(towerPhotoRef(p));
-  return `<div style="margin:6px 0;border:1px solid #e5e7eb;border-radius:7px;overflow:hidden;background:#f8fafc">
+  return `<div style="margin:7px 0;border:1px solid #d0d5dd;border-radius:8px;overflow:hidden;background:#f8fafc">
     <div style="padding:4px 6px;background:#fff;border-bottom:1px solid #e5e7eb;color:#344054;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Tower photo</div>
-    <div id="${towerPhotoBoxId(p)}" style="height:${hasPhoto ? '92px' : '48px'};display:flex;align-items:center;justify-content:center;color:#667085;font-size:10px;text-align:center;padding:${hasPhoto ? '0' : '8px'};box-sizing:border-box;overflow:hidden">
+    <div id="${towerPhotoBoxId(p)}" style="height:${hasPhoto ? '118px' : '52px'};display:flex;align-items:center;justify-content:center;color:#667085;font-size:10px;text-align:center;padding:${hasPhoto ? '0' : '8px'};box-sizing:border-box;overflow:hidden">
       ${hasPhoto ? 'Loading tower photo...' : 'No tower photo uploaded for this tower.'}
     </div>
   </div>`;
@@ -4339,9 +4339,11 @@ async function hydrateTowerPhoto(p) {
     const label = `Tower photo${p.enb ? ' - eNB ' + p.enb : ''}`;
     container._slides = [{ id: ref, label, sim: 'Tower evidence', url }];
     container.dataset.slide = '0';
-    container.innerHTML = `<button type="button" onclick="openMapScreenshot('${towerPhotoBoxId(p)}')" title="Open tower photo" style="width:100%;height:100%;border:0;background:#111827;cursor:zoom-in;padding:0;display:grid;grid-template-columns:1fr 78px;overflow:hidden">
-      <img src="${url}" alt="${label}" style="width:100%;height:100%;object-fit:cover;display:block">
-      <span style="display:flex;align-items:center;justify-content:center;background:#fff;color:#344054;font-size:10px;font-weight:700;padding:6px;text-align:center">Tower photo<br>click to zoom</span>
+    container.innerHTML = `<button type="button" onclick="openMapScreenshot('${towerPhotoBoxId(p)}')" title="Open tower photo" style="width:100%;height:100%;border:0;background:#0f172a;cursor:zoom-in;padding:0;display:flex;flex-direction:column;align-items:stretch;justify-content:center;overflow:hidden">
+      <span style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#0f172a;padding:4px">
+        <img src="${url}" alt="${label}" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;margin:auto">
+      </span>
+      <span style="display:block;background:#fff;color:#344054;font-size:10px;font-weight:700;padding:4px 6px;text-align:center;border-top:1px solid #e5e7eb">Click to enlarge tower photo</span>
     </button>`;
   } catch (err) {
     container.innerHTML = '<span style="color:#A32D2D">Tower photo could not be loaded.</span>';
