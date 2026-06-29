@@ -793,6 +793,7 @@
   <div class="view-panel" id="view-dashboard">
     <div style="max-width:1100px;margin:0 auto">
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="dash-metrics"></div>
+      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-spectrum-config"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
         <div class="data-card" style="padding:16px" id="dash-zone-bars"></div>
         <div class="data-card" style="padding:16px" id="dash-flags"></div>
@@ -3977,8 +3978,138 @@ function renderDashboard() {
     '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">Coverage flags</div>' +
     (flags.map(f => `<div class="flag-item ${f.cls}"><span>${f.msg}</span></div>`).join('') || '<p style="color:var(--gray-400);font-size:12px">Add surveys to see flags</p>');
 
+  renderSpectrumConfiguration(surv);
   renderNetworkIdentityAggregation(surv);
   renderWardBars();
+}
+
+function renderSpectrumConfiguration(surveys) {
+  const target = document.getElementById('dash-spectrum-config');
+  if (!target) return;
+
+  const clean = value => String(value ?? '').trim();
+  const escape = value => clean(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+  const normaliseBand = value => clean(value)
+    .replace(/^LTE\s*/i, '')
+    .replace(/^Band\s*/i, '')
+    .replace(/^B(?=\d)/i, '')
+    .trim();
+  const networkName = (mcc, mnc) => {
+    const key = `${mcc}-${String(mnc).replace(/^0+/, '') || '0'}`;
+    if (key === '540-1') return 'Our Telekom';
+    if (key === '540-2') return 'BMobile';
+    return 'Not identified in portal mapping';
+  };
+  const bandDescription = band => {
+    if (band === '3') return 'LTE Band 3 · FDD · 1800 MHz range';
+    if (band === '41') return 'LTE Band 41 · TDD · 2500 MHz range';
+    return 'Recorded LTE band';
+  };
+
+  const bandGroups = new Map();
+  const plmnGroups = new Map();
+  let recordsWithBand = 0;
+  let recordsWithPlmn = 0;
+
+  surveys.forEach(record => {
+    let recordHasBand = false;
+    let recordHasPlmn = false;
+    [
+      { sim: 'SIM 1', band: record.fd_s2a_band, mcc: record.fd_s2a_mcc, mnc: record.fd_s2a_mnc },
+      { sim: 'SIM 2', band: record.fd_s2b_band, mcc: record.fd_s2b_mcc, mnc: record.fd_s2b_mnc },
+    ].forEach(observation => {
+      const band = normaliseBand(observation.band);
+      const mcc = clean(observation.mcc);
+      const mnc = clean(observation.mnc);
+
+      if (band) {
+        recordHasBand = true;
+        if (!bandGroups.has(band)) bandGroups.set(band, { band, sim1: 0, sim2: 0, total: 0 });
+        const group = bandGroups.get(band);
+        if (observation.sim === 'SIM 1') group.sim1 += 1;
+        else group.sim2 += 1;
+        group.total += 1;
+      }
+
+      if (mcc && mnc) {
+        recordHasPlmn = true;
+        const key = `${mcc}|${mnc}`;
+        if (!plmnGroups.has(key)) plmnGroups.set(key, { mcc, mnc, sim1: 0, sim2: 0, total: 0 });
+        const group = plmnGroups.get(key);
+        if (observation.sim === 'SIM 1') group.sim1 += 1;
+        else group.sim2 += 1;
+        group.total += 1;
+      }
+    });
+    if (recordHasBand) recordsWithBand += 1;
+    if (recordHasPlmn) recordsWithPlmn += 1;
+  });
+
+  const bands = [...bandGroups.values()].sort((a, b) => {
+    const aNum = Number(a.band), bNum = Number(b.band);
+    return Number.isFinite(aNum) && Number.isFinite(bNum) ? aNum - bNum : a.band.localeCompare(b.band);
+  });
+  const plmns = [...plmnGroups.values()].sort((a, b) =>
+    a.mcc.localeCompare(b.mcc) || a.mnc.localeCompare(b.mnc)
+  );
+  const missingBand = surveys.length - recordsWithBand;
+  const missingPlmn = surveys.length - recordsWithPlmn;
+  const emptyRow = (columns, message) => `<tr><td colspan="${columns}" style="padding:16px;text-align:center;color:var(--gray-400)">${message}</td></tr>`;
+
+  target.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--navy)">Radio Spectrum &amp; Network Configuration</div>
+        <div style="font-size:10px;color:var(--gray-600);margin-top:3px">Values recorded from the SIM 1 and SIM 2 raw network readings in Step 2. These observations describe the sampled serving networks; they are not evidence of the operator's complete licensed spectrum holdings.</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge badge-blue">${bands.length} band${bands.length === 1 ? '' : 's'} recorded</span>
+        <span class="badge badge-blue">${plmns.length} PLMN configuration${plmns.length === 1 ? '' : 's'}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
+      <section style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <div style="padding:10px 12px;background:#F8FAFC;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--navy)">Recorded LTE spectrum bands</div>
+          <div style="font-size:9px;color:var(--gray-600);margin-top:2px">${recordsWithBand}/${surveys.length} survey records include at least one band${missingBand ? ` · ${missingBand} missing` : ''}</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;min-width:470px;font-size:10px">
+            <thead><tr><th>Band</th><th>Meaning</th><th>SIM 1</th><th>SIM 2</th><th>Total observations</th></tr></thead>
+            <tbody>${bands.length ? bands.map(group => `<tr>
+              <td style="font-family:'JetBrains Mono',monospace;font-weight:700">Band ${escape(group.band)}</td>
+              <td>${bandDescription(group.band)}</td>
+              <td>${group.sim1}</td><td>${group.sim2}</td><td><strong>${group.total}</strong></td>
+            </tr>`).join('') : emptyRow(5, 'No spectrum band values have been recorded.')}</tbody>
+          </table>
+        </div>
+      </section>
+      <section style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <div style="padding:10px 12px;background:#F8FAFC;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--navy)">Recorded MCC/MNC configurations</div>
+          <div style="font-size:9px;color:var(--gray-600);margin-top:2px">${recordsWithPlmn}/${surveys.length} survey records include at least one complete MCC/MNC pair${missingPlmn ? ` · ${missingPlmn} missing or incomplete` : ''}</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;min-width:500px;font-size:10px">
+            <thead><tr><th>PLMN</th><th>MCC</th><th>MNC</th><th>Network</th><th>SIM 1</th><th>SIM 2</th><th>Total</th></tr></thead>
+            <tbody>${plmns.length ? plmns.map(group => {
+              const displayMnc = /^\d+$/.test(group.mnc) ? group.mnc.padStart(2, '0') : group.mnc;
+              return `<tr>
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:700">${escape(group.mcc)}-${escape(displayMnc)}</td>
+                <td>${escape(group.mcc)}</td><td>${escape(group.mnc)}</td><td>${networkName(group.mcc, group.mnc)}</td>
+                <td>${group.sim1}</td><td>${group.sim2}</td><td><strong>${group.total}</strong></td>
+              </tr>`;
+            }).join('') : emptyRow(7, 'No complete MCC/MNC pairs have been recorded.')}</tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <div style="font-size:9px;color:var(--gray-600);margin-top:8px">Counts in the tables are SIM observations. A dual-SIM survey can contribute two observations, while the completeness figures above count survey records only. PLMN is displayed with a two-digit MNC where numeric (for example, recorded 540-1 is shown as 540-01).</div>`;
 }
 
 function renderNetworkIdentityAggregation(surveys) {
