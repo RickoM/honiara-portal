@@ -4799,14 +4799,31 @@ function screenshotPreviewBox(input) {
 function showScreenshotPreview(input, src, label) {
   const box = screenshotPreviewBox(input);
   box.innerHTML = '';
+  const fieldLabel = input.closest('.sf-fcell')?.querySelector('label')?.textContent?.trim();
+  const screenshotLabel = fieldLabel || label || 'Survey screenshot';
+  box._slides = [{ url: src, label: screenshotLabel }];
+  box.dataset.slide = '0';
   const img = document.createElement('img');
   img.src = src;
-  img.alt = label || 'Survey screenshot';
+  img.alt = screenshotLabel;
+  img.title = 'Click to zoom and inspect';
+  img.tabIndex = 0;
+  img.setAttribute('role', 'button');
+  img.setAttribute('aria-label', 'Zoom and inspect ' + screenshotLabel);
+  img.style.cursor = 'zoom-in';
+  const openPreview = event => {
+    event?.preventDefault();
+    openMapScreenshot(box.id);
+  };
+  img.addEventListener('click', openPreview);
+  img.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') openPreview(event);
+  });
   const link = document.createElement('a');
   link.href = src;
-  link.target = '_blank';
-  link.rel = 'noopener';
-  link.textContent = 'View full screenshot';
+  link.textContent = 'Zoom and inspect screenshot';
+  link.title = 'Open zoom viewer';
+  link.addEventListener('click', openPreview);
   box.append(img, link);
   box.classList.add('show');
 }
