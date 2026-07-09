@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-clear-top-cards-v18">
+<meta name="portal-build" content="2026-07-09-clean-measurement-top-cards-v19">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -35,7 +35,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: var(--gray-100); color: var(--text); font-size: 13px; }
   
-  /* ── LAYOUT ── */
+  /* â”€â”€ LAYOUT â”€â”€ */
   .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
   .topbar { background: var(--navy-dark); padding: 0 20px; display: flex; align-items: center; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
   .topbar-logo { color: #fff; font-size: 14px; font-weight: 600; padding: 14px 0; margin-right: 24px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
@@ -50,7 +50,7 @@
   
   .workspace { display: flex; flex: 1; overflow: hidden; }
   
-  /* ── SIDEBAR ── */
+  /* â”€â”€ SIDEBAR â”€â”€ */
   .sidebar { width: 320px; flex-shrink: 0; background: #fff; border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
   .sidebar-section { padding: 16px; border-bottom: 1px solid var(--border); }
   .sidebar-section:last-child { border-bottom: none; }
@@ -59,7 +59,7 @@
   #view-map .sidebar-section:has(#ward-bars) { display: none !important; }
   .ssec-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 10px; }
   
-  /* ── MAP ── */
+  /* â”€â”€ MAP â”€â”€ */
   .map-area { flex: 1; position: relative; background: #2C3E50; }
   #map { width: 100%; height: 100%; }
   .mobile-map-actions { display: none; }
@@ -69,7 +69,7 @@
   .map-placeholder p { font-size: 13px; color: rgba(255,255,255,0.5); text-align: center; max-width: 360px; line-height: 1.6; }
   .map-placeholder code { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5DCAA5; }
   
-  /* ── LAYER CONTROLS ── */
+  /* â”€â”€ LAYER CONTROLS â”€â”€ */
   .layer-ctrl { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; min-width: 180px; }
   .layer-ctrl-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 8px; }
   .layer-toggle { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; }
@@ -84,7 +84,7 @@
   .boundary-source { border-top: 1px solid var(--border); margin-top: 7px; padding-top: 7px; max-width: 230px; font-size: 9px; line-height: 1.35; color: var(--gray-600); }
   .boundary-source a { color: var(--blue-mid); text-decoration: none; }
   
-  /* ── MAP STATS ── */
+  /* â”€â”€ MAP STATS â”€â”€ */
   .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-sm); padding: 10px 12px; width: 100%; }
   .map-stat-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
   .map-total-surveys { justify-content: center; font-size: 14px; font-weight: 700; color: var(--navy); }
@@ -106,27 +106,27 @@
   .map-ward-count.is-zero strong { color: var(--gray-400); }
   .map-constituency-total { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 6px 8px 0 17px; padding-top: 5px; border-top: 1px solid var(--gray-300); font-size: 13px; font-weight: 700; color: var(--navy); }
   
-  /* ── SIGNAL LEGEND ── */
+  /* â”€â”€ SIGNAL LEGEND â”€â”€ */
   .sig-legend { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; left: 12px; z-index: 10; }
   .sig-legend-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 7px; }
   .sig-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; font-size: 11px; color: var(--gray-800); }
   .sig-row:last-child { margin-bottom: 0; }
   .sig-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   
-  /* ── DAY SELECTOR ── */
+  /* â”€â”€ DAY SELECTOR â”€â”€ */
   .day-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
   .day-pill { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--gray-50); color: var(--gray-600); white-space: nowrap; transition: all .15s; }
   .day-pill.on { background: var(--navy); color: #fff; border-color: var(--navy); }
   .day-pill.has-data { border-color: var(--blue-mid); color: var(--navy); }
   .day-pill:hover:not(.on) { background: var(--gray-100); }
   
-  /* ── METRICS ── */
+  /* â”€â”€ METRICS â”€â”€ */
   .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .metric-card { background: var(--gray-50); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
   .metric-val { font-size: 22px; font-weight: 600; line-height: 1.1; color: var(--text); }
   .metric-lbl { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
   
-  /* ── WARD BARS ── */
+  /* â”€â”€ WARD BARS â”€â”€ */
   .ward-row { display: grid; grid-template-columns: 90px 1fr 38px 70px; gap: 5px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
   .ward-row:last-child { border-bottom: none; }
   .wbar-track { background: var(--gray-200); border-radius: 2px; height: 6px; overflow: hidden; position: relative; }
@@ -134,7 +134,7 @@
   .wbar-tgt { position: absolute; top: 0; bottom: 0; width: 1.5px; background: rgba(0,0,0,0.3); }
   .zone-hdr { background: var(--gray-100); padding: 4px 8px; border-radius: 4px; margin: 6px 0 3px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: var(--navy); }
   
-  /* ── FLAGS / ACTIONS ── */
+  /* â”€â”€ FLAGS / ACTIONS â”€â”€ */
   .flag-item { display: flex; gap: 7px; align-items: flex-start; padding: 7px 8px; border-radius: 6px; margin-bottom: 5px; font-size: 11px; line-height: 1.4; }
   .flag-item:last-child { margin-bottom: 0; }
   .flag-item.red { background: var(--red-light); color: var(--red); }
@@ -143,7 +143,7 @@
   .flag-item.blue { background: var(--blue-light); color: var(--navy); }
   .flag-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
   
-  /* ── DATA TABLE VIEW ── */
+  /* â”€â”€ DATA TABLE VIEW â”€â”€ */
   .view-panel { display: none; flex: 1; overflow-y: auto; padding: 20px; background: var(--gray-100); }
   .view-panel.on { display: flex; flex-direction: column; }
   .data-card { background: #fff; border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
@@ -176,7 +176,7 @@
 #data-table th:last-child { background: var(--gray-50); z-index: 5; }
   tr:hover td { background: var(--gray-50); }
   
-  /* ── BADGE ── */
+  /* â”€â”€ BADGE â”€â”€ */
   .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; white-space: nowrap; }
   .badge-ok { background: var(--green-light); color: var(--green); }
   .badge-warn { background: var(--amber-light); color: var(--amber); }
@@ -184,23 +184,23 @@
   .badge-blue { background: var(--blue-light); color: var(--navy); }
   .badge-gray { background: var(--gray-100); color: var(--gray-600); }
   
-  /* ── BUTTONS ── */
+  /* â”€â”€ BUTTONS â”€â”€ */
   .btn { padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text); transition: all .15s; font-family: 'Inter', sans-serif; }
   .btn:hover { background: var(--gray-50); }
   .btn-primary { background: var(--navy); color: #fff; border-color: var(--navy); }
   .btn-primary:hover { background: var(--navy-light); }
   .btn-sm { padding: 4px 10px; font-size: 11px; }
   
-  /* ── FORM CONTROLS ── */
+  /* â”€â”€ FORM CONTROLS â”€â”€ */
   select, input { font-size: 12px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); font-family: 'Inter', sans-serif; }
   
-  /* ── ADD SURVEY FORM ── */
+  /* â”€â”€ ADD SURVEY FORM â”€â”€ */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .form-field { display: flex; flex-direction: column; gap: 3px; }
   .form-field label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); }
   .form-field input, .form-field select { width: 100%; }
   
-  /* ── DETAIL POPUP ── */
+  /* â”€â”€ DETAIL POPUP â”€â”€ */
   .detail-popup { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 12px; position: absolute; bottom: 28px; right: 12px; z-index: 20; width: 240px; }
   .detail-popup.hidden { display: none; }
   .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
@@ -208,7 +208,7 @@
   .detail-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); font-weight: 600; }
   .detail-val { font-size: 13px; font-weight: 600; margin-top: 1px; color: var(--text); }
   
-  /* ── API KEY MODAL ── */
+  /* â”€â”€ API KEY MODAL â”€â”€ */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; display: flex; align-items: center; justify-content: center; }
   .modal-overlay.hidden { display: none; }
   .modal { background: #fff; border-radius: 12px; padding: 24px; width: 460px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
@@ -221,7 +221,7 @@
   .modal-input-row { display: flex; gap: 8px; }
   .modal-input-row input { flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
   
-  /* ── UPLOAD AREA ── */
+  /* â”€â”€ UPLOAD AREA â”€â”€ */
   .upload-area { border: 2px dashed var(--border); border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: all .15s; }
   .upload-area:hover { border-color: var(--blue-mid); background: var(--blue-light); }
   .upload-area input { display: none; }
@@ -231,34 +231,34 @@
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--gray-200); border-radius: 3px; }
-  /* ── SURVEY FORM VIEW ── */
+  /* â”€â”€ SURVEY FORM VIEW â”€â”€ */
   .view-survey { display: none; flex: 1; overflow-y: auto; background: var(--gray-100); padding: 0 !important; }
   .view-survey.on { display: flex; flex-direction: column; }
   .sf-wrap { width: 100%; margin: 0 auto; padding: 0 24px 80px; box-sizing: border-box; }
 
-  /* ── Standard web widths by device / orientation ── */
+  /* â”€â”€ Standard web widths by device / orientation â”€â”€ */
 
-  /* Desktop (>1200px) — constrain to readable width */
+  /* Desktop (>1200px) â€” constrain to readable width */
   @media (min-width: 1200px) {
     .sf-wrap { max-width: 1140px; }
   }
 
-  /* Laptop / large tablet landscape (1024–1199px) */
+  /* Laptop / large tablet landscape (1024â€“1199px) */
   @media (min-width: 1024px) and (max-width: 1199px) {
     .sf-wrap { max-width: 960px; }
   }
 
-  /* Tablet landscape (768–1023px) */
+  /* Tablet landscape (768â€“1023px) */
   @media (min-width: 768px) and (max-width: 1023px) and (orientation: landscape) {
     .sf-wrap { max-width: 100%; padding: 0 20px 80px; }
   }
 
-  /* Tablet portrait (768–1023px) */
+  /* Tablet portrait (768â€“1023px) */
   @media (min-width: 768px) and (max-width: 1023px) and (orientation: portrait) {
     .sf-wrap { max-width: 100%; padding: 0 16px 80px; }
   }
 
-  /* Mobile landscape (480–767px) */
+  /* Mobile landscape (480â€“767px) */
   @media (min-width: 480px) and (max-width: 767px) and (orientation: landscape) {
     .sf-wrap { max-width: 100%; padding: 0 16px 80px; }
   }
@@ -288,7 +288,7 @@
   .sf-time-opt { padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: 'Inter', sans-serif; }
   .sf-time-opt:hover { background: var(--gray-50); color: var(--navy); }
 
-  /* time field uses custom HH:MM inputs — no native time picker */
+  /* time field uses custom HH:MM inputs â€” no native time picker */
   .sf-sec-hdr { background: var(--navy); color: #fff; font-weight: 600; font-size: 12px; padding: 9px 14px; border-radius: 6px 6px 0 0; letter-spacing: .01em; margin-top: 12px; }
   .sf-sec-hdr.interviewer { background: #3D2B1F; }
   .sf-sec-body { background: #fff; border: 1px solid var(--border); border-top: none; border-radius: 0 0 6px 6px; padding: 12px 14px; }
@@ -319,7 +319,7 @@
   .wrad input[type=radio] { display: none; }
   .wrad label { display: block; width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 3px; cursor: pointer; margin: 0 auto; }
   .wrad input:checked + label { background: var(--navy); border-color: var(--navy); }
-  .wrad input:checked + label::after { content: '✓'; display: block; text-align: center; color: #fff; font-size: 11px; line-height: 18px; }
+  .wrad input:checked + label::after { content: 'âœ“'; display: block; text-align: center; color: #fff; font-size: 11px; line-height: 18px; }
   .sf-fgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   .sf-fcell { border: 1px solid var(--border); border-radius: 6px; padding: 9px; }
   .sf-fcell label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--gray-600); display: block; margin-bottom: 4px; }
@@ -390,7 +390,7 @@
   .screenshot-preview img { width:72px; height:54px; object-fit:cover; border-radius:4px; border:1px solid var(--border); }
   .screenshot-preview a { font-size:11px; font-weight:600; color:var(--blue-mid); }
   .sf-form-body.hide { display: none; }
-  /* ── LOGIN SCREEN ── */
+  /* â”€â”€ LOGIN SCREEN â”€â”€ */
   .login-screen { position: fixed; inset: 0; background: var(--navy-dark); display: flex; align-items: center; justify-content: center; z-index: 200; }
   .login-screen.hidden { display: none; }
   body.auth-checking { background: var(--navy-dark); }
@@ -421,10 +421,10 @@
   .user-role { font-size: 10px; background: rgba(93,202,165,0.2); color: #5DCAA5; padding: 2px 7px; border-radius: 10px; }
   .logout-btn { font-size: 11px; color: rgba(255,255,255,0.4); cursor: pointer; background: none; border: none; padding: 4px 8px; border-radius: 4px; }
   .logout-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
-  /* ── DEMO BANNER ── */
+  /* â”€â”€ DEMO BANNER â”€â”€ */
   .demo-banner { background: #BA7517; color: #fff; text-align: center; font-size: 12px; font-weight: 500; padding: 6px 16px; letter-spacing: .01em; flex-shrink: 0; }
   .demo-banner a { color: #fff; text-decoration: underline; cursor: pointer; }
-  /* ── OPENCELLID LOOKUP ── */
+  /* â”€â”€ OPENCELLID LOOKUP â”€â”€ */
   .tower-lookup { background: var(--gray-50); border: 1px solid var(--border); border-left: 3px solid #BA7517; border-radius: 0 6px 6px 0; padding: 10px 12px; margin-top: 8px; }
   .tower-lookup-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #BA7517; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
   .tower-lookup-row { display: flex; gap: 6px; align-items: flex-end; margin-bottom: 8px; }
@@ -456,18 +456,18 @@
     .step7-primary-grid, .step7-secondary-grid, .step7-footer-grid { grid-template-columns: 1fr; }
     .sf-meta-primary, .sf-meta-responsibility { grid-template-columns: 1fr 1fr; }
   }
-  /* ════════════════════════════════════════════
+  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
      RESPONSIVE LAYOUT
-     Desktop  : > 1024px  — full layout
-     Tablet L : 768-1024px — condensed
-     Tablet P : 480-768px  — single col form
-     Mobile   : < 480px   — full mobile
-  ═══════════════════════════════════════════ */
+     Desktop  : > 1024px  â€” full layout
+     Tablet L : 768-1024px â€” condensed
+     Tablet P : 480-768px  â€” single col form
+     Mobile   : < 480px   â€” full mobile
+  â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-  /* Base — constrain app to viewport */
+  /* Base â€” constrain app to viewport */
   html, body { max-width: 100vw; overflow-x: hidden; }
 
-  /* ── Topbar ── */
+  /* â”€â”€ Topbar â”€â”€ */
   @media (max-width: 1024px) {
     .topbar { padding: 0 12px; }
     .topbar-logo { margin-right: 12px; }
@@ -486,7 +486,7 @@
     .demo-banner { font-size: 11px; padding: 5px 10px; }
   }
 
-  /* ── Live Map mobile mode ─────────────────────────────
+  /* â”€â”€ Live Map mobile mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
      Phone users need the map first. Summary and layer controls become
      drawer panels opened by compact floating buttons. */
   @media (max-width: 768px) {
@@ -614,7 +614,7 @@
     }
   }
 
-  /* ── Survey form container ── */
+  /* â”€â”€ Survey form container â”€â”€ */
   /* Desktop */
   .sf-wrap { max-width: 780px; width: 100%; margin: 0 auto; padding: 0 24px 100px; box-sizing: border-box; }
 
@@ -844,7 +844,7 @@
     }
   }
 
-  /* ── Login box ── */
+  /* â”€â”€ Login box â”€â”€ */
   @media (max-width: 768px) {
     .login-box { width: 88vw; padding: 28px 20px; }
   }
@@ -854,14 +854,14 @@
     .login-btn { font-size: 16px; padding: 13px; }
   }
 
-  /* ── Data table ── */
+  /* â”€â”€ Data table â”€â”€ */
   @media (max-width: 1024px) {
     .view-panel { padding: 12px; }
     #view-data .data-card { overflow: hidden; }
     #view-data .data-table-scroll { -webkit-overflow-scrolling: touch; }
   }
 
-  /* ── Dashboard ── */
+  /* â”€â”€ Dashboard â”€â”€ */
   @media (max-width: 768px) {
     .metric-grid { grid-template-columns: 1fr 1fr !important; gap: 8px; }
   }
@@ -903,7 +903,7 @@
     .dash-card { min-height:0; }
   }
 
-  /* ── Ward table ── */
+  /* â”€â”€ Ward table â”€â”€ */
   @media (max-width: 480px) {
     .sf-ward-table { font-size: 10px; }
     .sf-ward-table td, .sf-ward-table th { padding: 4px 2px; }
@@ -1055,7 +1055,7 @@
       <button class="tnav" id="tnav-map" onclick="switchView('map', this)">Live Map</button>
       <button class="tnav" id="tnav-dashboard" onclick="switchView('dashboard', this)">Dashboard</button>
       <button class="tnav" id="tnav-data" onclick="switchView('data', this)">Data Table</button>
-      <button class="tnav" id="tnav-admin" onclick="switchView('admin', this)" style="display:none">⚙ Admin</button>
+      <button class="tnav" id="tnav-admin" onclick="switchView('admin', this)" style="display:none">âš™ Admin</button>
     </div>
     <div class="topbar-right">
       <div class="user-badge">
@@ -1068,9 +1068,9 @@
     </div>
   </div>
 
-  <!-- DEMO BANNER — hidden in production -->
+  <!-- DEMO BANNER â€” hidden in production -->
   <div class="demo-banner" id="demo-banner" style="display:none">
-    ⚠ DEMO MODE — Data is stored locally only and will not be saved to the database.
+    âš  DEMO MODE â€” Data is stored locally only and will not be saved to the database.
     To go live, set <code style="background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px">DEMO_MODE = false</code> and deploy the backend.
   </div>
 
@@ -1165,7 +1165,7 @@
         <div class="metric-grid" id="day-metrics">
           <div class="metric-card"><div class="metric-val" id="m-today">0</div><div class="metric-lbl">Mapped survey records</div></div>
           <div class="metric-card"><div class="metric-val" id="m-total">0</div><div class="metric-lbl">Survey records</div></div>
-          <div class="metric-card"><div class="metric-val" id="m-avgdl">—</div><div class="metric-lbl">Avg DL (Mbps)</div></div>
+          <div class="metric-card"><div class="metric-val" id="m-avgdl">â€”</div><div class="metric-lbl">Avg DL (Mbps)</div></div>
           <div class="metric-card"><div class="metric-val" id="m-below1">0</div><div class="metric-lbl">Missing GPS</div></div>
           <div id="avg-dl-note" style="grid-column:1/-1;font-size:9px;color:var(--gray-600);line-height:1.4">Average download uses recorded SIM 1 Ookla results.</div>
         </div>
@@ -1191,7 +1191,7 @@
         <div class="ssec-title">Coverage flags &amp; actions</div>
         <div id="flags-panel">
           <div class="flag-item blue">
-            <span class="flag-icon">ℹ</span>
+            <span class="flag-icon">â„¹</span>
             <span>Add survey points to see coverage analysis and daily recommendations.</span>
           </div>
         </div>
@@ -1212,7 +1212,7 @@
         <button type="button" onclick="toggleMobileMapPanel('summary')">Summary</button>
         <button type="button" onclick="toggleMobileMapPanel('layers')">Layers</button>
         <button type="button" class="map-action-primary" onclick="fitMobileMap()">Fit</button>
-        <button type="button" class="map-action-close" onclick="closeMobileMapPanels()" title="Close panels">×</button>
+        <button type="button" class="map-action-close" onclick="closeMobileMapPanels()" title="Close panels">Ã—</button>
       </div>
 
       <!-- LAYER CONTROLS -->
@@ -1321,7 +1321,7 @@
 <div class="view-panel" id="view-admin">
   <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
     <div>
-      <div style="font-weight:600;color:var(--navy);font-size:15px">⚙ Admin Panel</div>
+      <div style="font-weight:600;color:var(--navy);font-size:15px">âš™ Admin Panel</div>
       <div style="font-size:12px;color:var(--gray-600);margin-top:2px">Manage user accounts and access</div>
     </div>
     <button class="btn btn-primary" onclick="showAddUserForm()">+ Add User</button>
@@ -1442,7 +1442,7 @@
     <!-- FORM TITLE -->
     <div style="background:var(--navy);color:#fff;text-align:center;padding:16px 20px;margin-bottom:0">
       <div style="font-size:17px;font-weight:600;margin-bottom:4px">Honiara Mobile Network Survey Portal</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.6);font-style:italic">Field Data Recording Sheet + Survey Form — Richard Martin UCL 25218922</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.6);font-style:italic">Field Data Recording Sheet + Survey Form â€” Richard Martin UCL 25218922</div>
     </div>
 
     <!-- PROGRESS BAR -->
@@ -1488,13 +1488,13 @@
 
     <div id="sf-form-body" class="sf-form-body">
 
-      <!-- ══════════════════════════════════════════════ -->
-      <!-- PART 2: SURVEY FORM (SECTIONS A–E)            -->
-      <!-- ══════════════════════════════════════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+      <!-- PART 2: SURVEY FORM (SECTIONS Aâ€“E)            -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <div style="background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px 8px 0 0;margin-top:16px;display:flex;align-items:center;gap:8px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        <div style="font-size:13px;font-weight:600">PART 1 — Survey Form</div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-left:auto">Sections A–E — complete with respondent</div>
+        <div style="font-size:13px;font-weight:600">PART 1 â€” Survey Form</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-left:auto">Sections Aâ€“E â€” complete with respondent</div>
       </div>
 
       <div class="sf-consent"><strong>Consent:</strong> Participation is voluntary and confidential. Your name is collected only to confirm survey authenticity and will not appear in any published findings. Responses will be used solely for academic research into mobile network performance in Honiara. You may stop at any time.</div>
@@ -1505,7 +1505,7 @@
       </div>
 
       <!-- SECTION A -->
-      <div class="sf-sec-hdr">SECTION A — Respondent Profile</div>
+      <div class="sf-sec-hdr">SECTION A â€” Respondent Profile</div>
       <div class="sf-sec-body">
 
         <div class="sfq">
@@ -1536,9 +1536,9 @@
           <div class="sfq-lbl"><span class="qn">A2</span> How long have you lived at your current address?</div>
           <div class="sf-opts">
             <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-1" value="Less than 1 year" onchange="sfProgress()"><label for="sf-a2-1">Less than 1 year</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-2" value="1–3 years"><label for="sf-a2-2">1–3 years</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-3" value="3–5 years"><label for="sf-a2-3">3–5 years</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-4" value="5–10 years"><label for="sf-a2-4">5–10 years</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-2" value="1â€“3 years"><label for="sf-a2-2">1â€“3 years</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-3" value="3â€“5 years"><label for="sf-a2-3">3â€“5 years</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-4" value="5â€“10 years"><label for="sf-a2-4">5â€“10 years</label></div>
             <div class="sf-opt"><input type="radio" name="sf-a2" id="sf-a2-5" value="10+ years"><label for="sf-a2-5">10+ years</label></div>
           </div>
         </div>
@@ -1582,8 +1582,8 @@
           <div class="sfq-lbl"><span class="qn">A6</span> How many people in your household regularly use mobile data?</div>
           <div class="sf-opts">
             <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-1" value="1"><label for="sf-a6-1">1</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-2" value="2–3"><label for="sf-a6-2">2–3</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-3" value="4–5"><label for="sf-a6-3">4–5</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-2" value="2â€“3"><label for="sf-a6-2">2â€“3</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-3" value="4â€“5"><label for="sf-a6-3">4â€“5</label></div>
             <div class="sf-opt"><input type="radio" name="sf-a6" id="sf-a6-4" value="6 or more"><label for="sf-a6-4">6 or more</label></div>
           </div>
         </div>
@@ -1591,7 +1591,7 @@
       </div>
 
       <!-- SECTION B -->
-      <div class="sf-sec-hdr">SECTION B — Network Coverage</div>
+      <div class="sf-sec-hdr">SECTION B â€” Network Coverage</div>
       <div class="sf-sec-body">
 
         <div class="sfq">
@@ -1622,7 +1622,7 @@
             <div class="sf-opt"><input type="radio" name="sf-b3" id="sf-b3-y" value="Yes" onchange="sfToggle('sf-b3c',true)"><label for="sf-b3-y">Yes</label></div>
             <div class="sf-opt"><input type="radio" name="sf-b3" id="sf-b3-n" value="No" onchange="sfToggle('sf-b3c',false)"><label for="sf-b3-n">No</label></div>
           </div>
-          <div id="sf-b3c" class="sf-cond"><div class="sfq-lbl">If yes — please describe where:</div><textarea class="sf-tinput" rows="2" id="sf-b3-det" placeholder="Describe location(s)..."></textarea></div>
+          <div id="sf-b3c" class="sf-cond"><div class="sfq-lbl">If yes â€” please describe where:</div><textarea class="sf-tinput" rows="2" id="sf-b3-det" placeholder="Describe location(s)..."></textarea></div>
         </div>
 
         <div class="sfq">
@@ -1639,7 +1639,7 @@
       </div>
 
       <!-- SECTION C -->
-      <div class="sf-sec-hdr">SECTION C — Quality of Service</div>
+      <div class="sf-sec-hdr">SECTION C â€” Quality of Service</div>
       <div class="sf-sec-body">
 
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:8px;padding:4px 0;border-bottom:1px solid var(--border)">Voice</div>
@@ -1713,7 +1713,7 @@
         </div>
 
         <div class="sfq">
-          <div class="sfq-lbl"><span class="qn">C7</span> Have you noticed your mobile data getting slower over the past 1–2 years?</div>
+          <div class="sfq-lbl"><span class="qn">C7</span> Have you noticed your mobile data getting slower over the past 1â€“2 years?</div>
           <div class="sf-opts">
             <div class="sf-opt"><input type="radio" name="sf-c7" id="sf-c7-y" value="Yes"><label for="sf-c7-y">Yes</label></div>
             <div class="sf-opt"><input type="radio" name="sf-c7" id="sf-c7-n" value="No"><label for="sf-c7-n">No</label></div>
@@ -1736,16 +1736,16 @@
       </div>
 
       <!-- SECTION D -->
-      <div class="sf-sec-hdr">SECTION D — Affordability</div>
+      <div class="sf-sec-hdr">SECTION D â€” Affordability</div>
       <div class="sf-sec-body">
 
         <div class="sfq">
           <div class="sfq-lbl"><span class="qn">D1</span> How much do you spend per month on mobile services (calls and data)?</div>
           <div class="sf-opts">
             <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-1" value="Under SBD 50" onchange="sfProgress()"><label for="sf-d1-1">Under SBD 50</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-2" value="SBD 50–100"><label for="sf-d1-2">SBD 50–100</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-3" value="SBD 100–200"><label for="sf-d1-3">SBD 100–200</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-4" value="SBD 200–500"><label for="sf-d1-4">SBD 200–500</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-2" value="SBD 50â€“100"><label for="sf-d1-2">SBD 50â€“100</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-3" value="SBD 100â€“200"><label for="sf-d1-3">SBD 100â€“200</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-4" value="SBD 200â€“500"><label for="sf-d1-4">SBD 200â€“500</label></div>
             <div class="sf-opt"><input type="radio" name="sf-d1" id="sf-d1-5" value="Over SBD 500"><label for="sf-d1-5">Over SBD 500</label></div>
           </div>
         </div>
@@ -1774,9 +1774,9 @@
         <div class="sfq">
           <div class="sfq-lbl"><span class="qn">D4</span> Do you have WiFi at home? If yes, how does it compare to your mobile data?</div>
           <div class="sf-opts">
-            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-f" value="Yes — faster than mobile"><label for="sf-d4-f">Yes — faster than mobile</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-s" value="Yes — about the same"><label for="sf-d4-s">Yes — about the same</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-sl" value="Yes — slower than mobile"><label for="sf-d4-sl">Yes — slower than mobile</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-f" value="Yes â€” faster than mobile"><label for="sf-d4-f">Yes â€” faster than mobile</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-s" value="Yes â€” about the same"><label for="sf-d4-s">Yes â€” about the same</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-sl" value="Yes â€” slower than mobile"><label for="sf-d4-sl">Yes â€” slower than mobile</label></div>
             <div class="sf-opt"><input type="radio" name="sf-d4" id="sf-d4-n" value="No WiFi at home"><label for="sf-d4-n">No WiFi at home</label></div>
           </div>
         </div>
@@ -1784,7 +1784,7 @@
       </div>
 
       <!-- SECTION E -->
-      <div class="sf-sec-hdr">SECTION E — Competition and Market</div>
+      <div class="sf-sec-hdr">SECTION E â€” Competition and Market</div>
       <div class="sf-sec-body">
 
         <div class="sfq">
@@ -1793,9 +1793,9 @@
             <div class="sf-opt"><input type="radio" name="sf-e1" id="sf-e1-y" value="Yes" onchange="sfToggle('sf-e1yc',true);sfToggle('sf-e1nc',false);sfProgress()"><label for="sf-e1-y">Yes</label></div>
             <div class="sf-opt"><input type="radio" name="sf-e1" id="sf-e1-n" value="No" onchange="sfToggle('sf-e1yc',false);sfToggle('sf-e1nc',true)"><label for="sf-e1-n">No</label></div>
           </div>
-          <div id="sf-e1yc" class="sf-cond"><div class="sfq-lbl">If yes — what was the main reason for switching?</div><textarea class="sf-tinput" rows="2" id="sf-e1-yr" placeholder="Describe reason for switching..."></textarea></div>
+          <div id="sf-e1yc" class="sf-cond"><div class="sfq-lbl">If yes â€” what was the main reason for switching?</div><textarea class="sf-tinput" rows="2" id="sf-e1-yr" placeholder="Describe reason for switching..."></textarea></div>
           <div id="sf-e1nc" class="sf-cond">
-            <div class="sfq-lbl">If no — what was the main reason?</div>
+            <div class="sfq-lbl">If no â€” what was the main reason?</div>
             <div class="sf-opts" style="margin-top:5px">
               <div class="sf-opt"><input type="radio" name="sf-e1n" id="sf-e1n-1" value="Satisfied with current provider"><label for="sf-e1n-1">Satisfied with current provider</label></div>
               <div class="sf-opt"><input type="radio" name="sf-e1n" id="sf-e1n-2" value="No coverage from other operator in my area"><label for="sf-e1n-2">No coverage from other operator in my area</label></div>
@@ -1819,15 +1819,15 @@
         <div class="sfq">
           <div class="sfq-lbl"><span class="qn">E3</span> Have you heard of or used Starlink satellite Internet in your area?</div>
           <div class="sf-opts">
-            <div class="sf-opt"><input type="radio" name="sf-e3" id="sf-e3-u" value="Yes — I use it"><label for="sf-e3-u">Yes — I use it</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-e3" id="sf-e3-h" value="Yes — I have heard of it"><label for="sf-e3-h">Yes — I have heard of it</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-e3" id="sf-e3-n" value="No — never heard of it"><label for="sf-e3-n">No — never heard of it</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e3" id="sf-e3-u" value="Yes â€” I use it"><label for="sf-e3-u">Yes â€” I use it</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e3" id="sf-e3-h" value="Yes â€” I have heard of it"><label for="sf-e3-h">Yes â€” I have heard of it</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e3" id="sf-e3-n" value="No â€” never heard of it"><label for="sf-e3-n">No â€” never heard of it</label></div>
           </div>
         </div>
 
         <div class="sfq">
           <div class="sfq-lbl"><span class="qn">E4</span> What single improvement would most benefit mobile services in your area?</div>
-          <textarea class="sf-tinput" rows="3" id="sf-e4" placeholder="Open response — write exactly what respondent says..."></textarea>
+          <textarea class="sf-tinput" rows="3" id="sf-e4" placeholder="Open response â€” write exactly what respondent says..."></textarea>
         </div>
 
       </div>
@@ -1839,21 +1839,21 @@
       </div>
 
       <!-- PART 1: FIELD DATA RECORDING SHEET            -->
-      <!-- ══════════════════════════════════════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <div style="background:var(--amber);color:#fff;padding:10px 16px;border-radius:8px 8px 0 0;margin-bottom:0;display:flex;align-items:center;gap:8px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-        <div style="font-size:13px;font-weight:600">PART 2 — Field Data Recording Sheet</div>
+        <div style="font-size:13px;font-weight:600">PART 2 â€” Field Data Recording Sheet</div>
         <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-left:auto">Complete after interview</div>
       </div>
 
       <!-- STEP 1: DEVICE + SIM -->
-      <div class="sf-sec-hdr interviewer">Step 1 — DEVICE+SIM Tab (Network Cell Info Lite)</div>
+      <div class="sf-sec-hdr interviewer">Step 1 â€” DEVICE+SIM Tab (Network Cell Info Lite)</div>
       <div class="sf-sec-body">
         <div class="sf-fgrid">
           <div class="sf-fcell">
             <label>Operator name</label>
             <select id="fd-s1-op" style="width:100%;margin-top:2px" onchange="s1OpChange()">
-              <option value="">— select —</option>
+              <option value="">â€” select â€”</option>
               <option value="Our Telekom">Our Telekom</option>
               <option value="BMobile">BMobile</option>
               <option value="Other">Other (specify)</option>
@@ -1863,14 +1863,14 @@
           <div class="sf-fcell">
             <label>SIM state</label>
             <select id="fd-s1-simstate" style="width:100%;margin-top:2px">
-              <option value="">— select —</option>
+              <option value="">â€” select â€”</option>
               <option value="Ready">Ready</option>
             </select>
           </div>
           <div class="sf-fcell">
             <label>Service state</label>
             <select id="fd-s1-svcstate" style="width:100%;margin-top:2px">
-              <option value="">— select —</option>
+              <option value="">â€” select â€”</option>
               <option value="In-Service">In-Service</option>
               <option value="N/A">N/A</option>
             </select>
@@ -1880,9 +1880,9 @@
           <div class="sf-fcell">
             <label>Roaming</label>
             <select id="fd-s1-roaming" style="width:100%;margin-top:2px">
-              <option value="">— select —</option>
+              <option value="">â€” select â€”</option>
               <option value="No">No</option>
-              <option value="Yes — Roaming">Yes (Roaming flagged)</option>
+              <option value="Yes â€” Roaming">Yes (Roaming flagged)</option>
             </select>
           </div>
           <div></div><div></div>
@@ -1890,7 +1890,7 @@
       </div>
 
       <!-- STEP 2A: RAW TAB SIM1 -->
-      <div class="sf-sec-hdr interviewer">Step 2A — RAW Tab — SIM 1 (WiFi OFF — SIM1: Serving block only)</div>
+      <div class="sf-sec-hdr interviewer">Step 2A â€” RAW Tab â€” SIM 1 (WiFi OFF â€” SIM1: Serving block only)</div>
       <div class="sf-sec-body">
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin-bottom:8px">Network identification</div>
         <div class="sf-fgrid">
@@ -1905,7 +1905,7 @@
           <div class="sf-fcell"><label>RSRQ (dB)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rsrq',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rsrq',1)">+</button><input type="number" id="fd-s2a-rsrq" placeholder="e.g. -15" style="flex:1;min-width:0"></div></div>
           <div class="sf-fcell"><label>RSSNR / SINR (dB)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rssnr',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s2a-rssnr',1)">+</button><input type="number" id="fd-s2a-rssnr" placeholder="e.g. 5 or -3" style="flex:1;min-width:0"></div></div>
         </div>
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Tower identity — most important for mapping</div>
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin:8px 0">Tower identity â€” most important for mapping</div>
         <div class="sf-fgrid">
           <div class="sf-fcell"><label>TAC</label><input type="text" id="fd-s2a-tac" placeholder="e.g. 6188"></div>
           <div class="sf-fcell"><label>ECI</label><input type="text" id="fd-s2a-eci" placeholder="e.g. 3032806"></div>
@@ -1915,7 +1915,7 @@
           <div class="sf-fcell"><label>LCID</label><input type="text" id="fd-s2a-lcid" placeholder="e.g. 230"></div>
           <div class="sf-fcell"><label>PCI</label><input type="text" id="fd-s2a-pci" placeholder="e.g. 419"></div>
           <div class="sf-fcell">
-            <label>Screenshot — RAW screen SIM 1</label>
+            <label>Screenshot â€” RAW screen SIM 1</label>
             <input type="file" id="fd-s2a-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
           </div>
         </div>
@@ -1923,13 +1923,13 @@
 
       <!-- STEP 2B: RAW TAB SIM2 (conditional) -->
       <div class="sf-sec-hdr interviewer" style="cursor:pointer;user-select:none" onclick="toggleSim2()">
-        Step 2B — RAW Tab — SIM 2
-        <span id="sim2-toggle-label" style="font-size:11px;font-weight:400;margin-left:8px;opacity:0.7">(tap to expand — only if respondent uses Both operators)</span>
+        Step 2B â€” RAW Tab â€” SIM 2
+        <span id="sim2-toggle-label" style="font-size:11px;font-weight:400;margin-left:8px;opacity:0.7">(tap to expand â€” only if respondent uses Both operators)</span>
       </div>
       <div id="sim2-block" style="display:none">
         <div class="sf-sec-body">
           <div style="background:var(--amber-light);border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--amber);margin-bottom:10px">
-            <strong>Before recording:</strong> Settings → Network &amp; internet → SIM cards → set Preferred SIM for data to SIM 2. Confirm operator name changed in NCIL.
+            <strong>Before recording:</strong> Settings â†’ Network &amp; internet â†’ SIM cards â†’ set Preferred SIM for data to SIM 2. Confirm operator name changed in NCIL.
           </div>
           <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin-bottom:8px">Network identification</div>
           <div class="sf-fgrid">
@@ -1957,7 +1957,7 @@
             <div class="sf-fcell"><label>LCID</label><input type="text" id="fd-s2b-lcid" placeholder="e.g. 231"></div>
             <div class="sf-fcell"><label>PCI</label><input type="text" id="fd-s2b-pci" placeholder="e.g. 420"></div>
             <div class="sf-fcell">
-              <label>Screenshot — RAW screen SIM 2</label>
+              <label>Screenshot â€” RAW screen SIM 2</label>
               <input type="file" id="fd-s2b-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
             </div>
           </div>
@@ -1965,10 +1965,10 @@
       </div>
 
       <!-- STEPS 3-5: SPEED TESTS SIM1 -->
-      <div class="sf-sec-hdr interviewer">Steps 3–5 — Speed Tests SIM 1 (WiFi OFF — confirm Type: Mobile)</div>
+      <div class="sf-sec-hdr interviewer">Steps 3â€“5 â€” Speed Tests SIM 1 (WiFi OFF â€” confirm Type: Mobile)</div>
       <div class="sf-sec-body speed-test-body">
         <div style="background:var(--red-light);border:1px solid var(--red);border-radius:6px;padding:7px 12px;font-size:11px;color:var(--red);margin-bottom:10px">
-          <strong>WiFi must be OFF.</strong> If result shows Type: WiFi the reading is invalid — turn WiFi off and repeat.
+          <strong>WiFi must be OFF.</strong> If result shows Type: WiFi the reading is invalid â€” turn WiFi off and repeat.
         </div>
         <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);margin-bottom:6px">SIM 1</div>
         <!-- Speed grid -->
@@ -1978,7 +1978,7 @@
           <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">Ookla<br>(Step 4)</div>
           <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">nPerf<br>(Step 5)</div>
         </div>
-        <!-- Connection type / Operator — NCIL and Ookla only -->
+        <!-- Connection type / Operator â€” NCIL and Ookla only -->
         <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
           <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Type</div>
           <div class="sf-fcell" style="padding:4px 8px">
@@ -1989,7 +1989,7 @@
           </div>
           <div></div>
         </div>
-        <!-- Download — nPerf: DL + Avg -->
+        <!-- Download â€” nPerf: DL + Avg -->
         <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
           <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Download</div>
           <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-ncil-dl" placeholder="DL" style="flex:1;min-width:0"><select id="fd-s1-ncil-dl-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
@@ -2000,7 +2000,7 @@
             <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-nperf-dl-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s1-nperf-dl-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
           </div>
         </div>
-        <!-- Upload — nPerf: UL + Avg -->
+        <!-- Upload â€” nPerf: UL + Avg -->
         <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
           <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Upload</div>
           <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-ncil-ul" style="flex:1;min-width:0"><select id="fd-s1-ncil-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
@@ -2010,7 +2010,7 @@
             <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s1-nperf-ul-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s1-nperf-ul-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
           </div>
         </div>
-        <!-- Ping/Latency — nPerf: Lat + Avg -->
+        <!-- Ping/Latency â€” nPerf: Lat + Avg -->
         <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
           <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Ping / Latency (ms)</div>
           <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-ncil-ping" style="width:100%"></div>
@@ -2027,9 +2027,9 @@
           <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-ookla-jitter" style="width:100%"></div>
           <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-nperf-jitter" style="width:100%"></div>
         </div>
-        <!-- Browsing/Streaming — nPerf only, outside main grid -->
+        <!-- Browsing/Streaming â€” nPerf only, outside main grid -->
         <div style="display:grid;grid-template-columns:200px 1fr 1fr;gap:8px;margin-bottom:4px">
-          <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">nPerf — Browsing / Stream %</div>
+          <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">nPerf â€” Browsing / Stream %</div>
           <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-nperf-browse" placeholder="Browse %" style="width:100%"></div>
           <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s1-nperf-stream" placeholder="Stream %" style="width:100%"></div>
         </div>
@@ -2044,20 +2044,20 @@
           <div class="sf-fcell">
             <label>Anomaly flag SIM 1</label>
             <select id="fd-s1-anomaly" style="width:100%;margin-top:2px">
-              <option value="">— select —</option>
+              <option value="">â€” select â€”</option>
               <option value="consistent">All three consistent</option>
               <option value="different">One result different</option>
             </select>
           </div>
           <div class="sf-fcell">
             <label>Anomaly note (describe which app differed and by how much)</label>
-            <textarea id="fd-s1-anomaly-note" rows="2" style="width:100%;margin-top:4px;font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:6px;padding:6px 8px;resize:vertical" placeholder="e.g. nPerf download was 2.1 Mbps vs NCIL 5.4 and Ookla 4.8 — possible server congestion"></textarea>
+            <textarea id="fd-s1-anomaly-note" rows="2" style="width:100%;margin-top:4px;font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:6px;padding:6px 8px;resize:vertical" placeholder="e.g. nPerf download was 2.1 Mbps vs NCIL 5.4 and Ookla 4.8 â€” possible server congestion"></textarea>
           </div>
         </div>
       </div>
 
       <!-- STEPS 3-5: SPEED TESTS SIM2 (conditional) -->
-      <div id="sim2-speed-hdr" class="sf-sec-hdr interviewer" style="display:none">Steps 3–5 — Speed Tests SIM 2</div>
+      <div id="sim2-speed-hdr" class="sf-sec-hdr interviewer" style="display:none">Steps 3â€“5 â€” Speed Tests SIM 2</div>
       <div id="sim2-speed-block" style="display:none">
         <div class="sf-sec-body speed-test-body">
           <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
@@ -2066,7 +2066,7 @@
             <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">Ookla</div>
             <div style="font-size:10px;font-weight:600;color:var(--gray-600);text-transform:uppercase;letter-spacing:.04em;text-align:center">nPerf</div>
           </div>
-          <!-- Connection type / Operator — NCIL and Ookla only -->
+          <!-- Connection type / Operator â€” NCIL and Ookla only -->
           <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
             <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Type</div>
             <div class="sf-fcell" style="padding:4px 8px">
@@ -2077,7 +2077,7 @@
             </div>
             <div></div>
           </div>
-          <!-- Download — nPerf: DL + Avg + Max -->
+          <!-- Download â€” nPerf: DL + Avg + Max -->
           <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
             <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Download</div>
             <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-ncil-dl" style="flex:1;min-width:0"><select id="fd-s2-ncil-dl-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
@@ -2088,7 +2088,7 @@
               <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-nperf-dl-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s2-nperf-dl-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
             </div>
           </div>
-          <!-- Upload — nPerf: UL + Avg + Max -->
+          <!-- Upload â€” nPerf: UL + Avg + Max -->
           <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
             <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Upload</div>
             <div class="sf-fcell" style="padding:6px 8px;display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-ncil-ul" style="flex:1;min-width:0"><select id="fd-s2-ncil-ul-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
@@ -2098,7 +2098,7 @@
               <div style="display:flex;gap:4px"><input type="number" step="0.01" id="fd-s2-nperf-ul-avg" placeholder="Avg" style="flex:1;min-width:0"><select id="fd-s2-nperf-ul-avg-unit" style="font-size:11px;padding:2px"><option value="Mbps">Mb/s</option><option value="Kbps">Kb/s</option></select></div>
             </div>
           </div>
-          <!-- Ping/Latency — nPerf: Lat + Avg -->
+          <!-- Ping/Latency â€” nPerf: Lat + Avg -->
           <div style="display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:4px;margin-bottom:4px">
             <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">Ping / Latency (ms)</div>
             <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-ncil-ping" style="width:100%"></div>
@@ -2115,9 +2115,9 @@
             <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-ookla-jitter" style="width:100%"></div>
             <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-nperf-jitter" style="width:100%"></div>
           </div>
-          <!-- Browsing/Streaming — nPerf only, outside main grid -->
+          <!-- Browsing/Streaming â€” nPerf only, outside main grid -->
           <div style="display:grid;grid-template-columns:200px 1fr 1fr;gap:8px;margin-bottom:4px">
-            <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">nPerf — Browsing / Stream %</div>
+            <div style="font-size:11px;font-weight:600;padding:6px 0;display:flex;align-items:center">nPerf â€” Browsing / Stream %</div>
             <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-nperf-browse" placeholder="Browse %" style="width:100%"></div>
             <div class="sf-fcell" style="padding:6px 8px"><input type="number" id="fd-s2-nperf-stream" placeholder="Stream %" style="width:100%"></div>
           </div>
@@ -2132,7 +2132,7 @@
             <div class="sf-fcell">
               <label>Anomaly flag SIM 2</label>
               <select id="fd-s2-anomaly" style="width:100%;margin-top:2px">
-                <option value="">— select —</option>
+                <option value="">â€” select â€”</option>
                 <option value="consistent">All three consistent</option>
                 <option value="different">One result different</option>
               </select>
@@ -2146,10 +2146,10 @@
       </div>
 
       <!-- STEP 6: GPS LOCATION -->
-      <div class="sf-sec-hdr interviewer">Step 6 — GPS Location (survey point — record before moving on)</div>
+      <div class="sf-sec-hdr interviewer">Step 6 â€” GPS Location (survey point â€” record before moving on)</div>
       <div class="sf-sec-body">
         <div style="background:var(--gray-50);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--gray-600);margin-bottom:10px;line-height:1.6">
-          <strong>Primary:</strong> Google Maps → tap blue dot → record the complete coordinates shown. &nbsp;<strong>Fallback:</strong> NCIL → MAP tab → record LAT/LON exactly as displayed. &nbsp;Do not round the values. Latitude negative e.g. −9.4318123. Longitude positive e.g. 160.0523456.
+          <strong>Primary:</strong> Google Maps â†’ tap blue dot â†’ record the complete coordinates shown. &nbsp;<strong>Fallback:</strong> NCIL â†’ MAP tab â†’ record LAT/LON exactly as displayed. &nbsp;Do not round the values. Latitude negative e.g. âˆ’9.4318123. Longitude positive e.g. 160.0523456.
         </div>
         <div class="sf-fgrid">
           <div class="sf-fcell"><label>Survey-point Latitude</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('sf-lat',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('sf-lat',1)">+</button><input type="number" step="any" id="sf-lat" placeholder="e.g. -9.4318123" style="flex:1;min-width:0"></div></div>
@@ -2162,7 +2162,7 @@
       </div>
 
       <!-- STEP 7: TOWER GPS WAYPOINT -->
-      <div class="sf-sec-hdr interviewer" id="tower-step7-hdr">Step 7 — Tower GPS Waypoint</div>
+      <div class="sf-sec-hdr interviewer" id="tower-step7-hdr">Step 7 â€” Tower GPS Waypoint</div>
       <div class="sf-sec-body" id="tower-step7-body">
         <div style="background:var(--amber-light);border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--amber);margin-bottom:12px;line-height:1.6">
           <strong>When to complete Step 7:</strong> Only if you can walk to within 10 metres of the tower base safely and without trespassing. If the tower is behind a fence, on private land, or on a slope you cannot safely reach, select Accessible: No and explain the reason.
@@ -2178,7 +2178,7 @@
             <div class="sf-fcell">
               <label>Operator</label>
               <select id="fd-s7-top" style="width:100%;margin-top:2px" onchange="s7OpChange()">
-                <option value="">— select —</option>
+                <option value="">â€” select â€”</option>
                 <option value="Our Telekom">Our Telekom</option>
                 <option value="BMobile">BMobile</option>
                 <option value="Other">Other (specify)</option>
@@ -2188,7 +2188,7 @@
             <div class="sf-fcell">
               <label>Tower type</label>
               <select id="fd-s7-ttype" style="width:100%;margin-top:2px">
-                <option value="">— select —</option>
+                <option value="">â€” select â€”</option>
                 <option value="Monopole">Monopole</option>
                 <option value="Lattice / Self-supporting">Lattice / Self-supporting</option>
                 <option value="Guyed mast">Guyed mast</option>
@@ -2203,9 +2203,9 @@
             <div class="step7-group">
               <div class="sf-fcell"><label>eNB confirmed</label>
                 <select id="fd-s7-enb-conf" style="width:100%;margin-top:2px">
-                  <option value="">— select —</option>
-                  <option value="yes">Yes — matches Step 2A / 2B</option>
-                  <option value="no">No — new eNB (record below)</option>
+                  <option value="">â€” select â€”</option>
+                  <option value="yes">Yes â€” matches Step 2A / 2B</option>
+                  <option value="no">No â€” new eNB (record below)</option>
                 </select>
               </div>
               <div class="sf-fcell"><label>New eNB (if different)</label><input type="text" id="fd-s7-newenb" placeholder="Record the new eNB"></div>
@@ -2214,7 +2214,7 @@
             <div class="step7-group">
               <div class="sf-fcell"><label>Photo taken?</label>
                 <select id="fd-s7-photo" style="width:100%;margin-top:2px">
-                  <option value="">— select —</option>
+                  <option value="">â€” select â€”</option>
                   <option value="yes">Yes</option>
                   <option value="no">No</option>
                 </select>
@@ -2229,9 +2229,9 @@
               <div class="sf-fcell">
                 <label>Accessible?</label>
                 <select id="fd-s7-access" style="width:100%;margin-top:2px" onchange="checkTowerAccess()">
-                  <option value="">— select —</option>
-                  <option value="yes">Yes — tower accessible</option>
-                  <option value="no">No — cannot safely access</option>
+                  <option value="">â€” select â€”</option>
+                  <option value="yes">Yes â€” tower accessible</option>
+                  <option value="no">No â€” cannot safely access</option>
                 </select>
               </div>
               <div class="sf-fcell"><label>If No, give reason</label><input type="text" id="fd-s7-noaccess-reason" placeholder="e.g. fenced compound, private land, steep slope..." style="opacity:0.4"></div>
@@ -2243,7 +2243,7 @@
               <div class="sf-fcell">
                 <label>GPS method used</label>
                 <select id="fd-s7-gps-method" style="width:100%;margin-top:2px">
-                  <option value="">— select —</option>
+                  <option value="">â€” select â€”</option>
                   <option value="Google Maps blue dot">Google Maps blue dot</option>
                   <option value="NCIL Map tab">NCIL Map tab</option>
                   <option value="Other">Other</option>
@@ -2263,7 +2263,7 @@
         <div class="tower-lookup">
           <div class="tower-lookup-title">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6 6l.94-1.01a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            Cell Tower Lookup — OpenCelliD
+            Cell Tower Lookup â€” OpenCelliD
           </div>
           <p style="font-size:11px;color:var(--gray-600);margin-bottom:8px;line-height:1.5">
             Enter MCC, MNC, and eNB from NCIL RAW tab to look up tower GPS coordinates from OpenCelliD. Requires a free API key from <strong>opencellid.org</strong>.
@@ -2277,7 +2277,7 @@
             <div class="sf-fcell"><label style="font-size:10px;color:var(--gray-600);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px">eNB ID</label><input type="text" id="ocid-enb" placeholder="e.g. 13042" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:'JetBrains Mono',monospace"></div>
             <button class="lookup-btn" id="lookup-btn" onclick="lookupTower()">Look up tower</button>
           </div>
-          <div class="lookup-loading" id="lookup-loading">Querying OpenCelliD database…</div>
+          <div class="lookup-loading" id="lookup-loading">Querying OpenCelliD databaseâ€¦</div>
           <div class="lookup-error" id="lookup-error"></div>
           <div class="tower-result" id="tower-result">
             <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:5px">
@@ -2285,12 +2285,12 @@
               Tower found in OpenCelliD database
             </div>
             <div class="tower-result-grid">
-              <div class="tower-result-cell"><label>Tower Latitude</label><span id="tr-lat">—</span></div>
-              <div class="tower-result-cell"><label>Tower Longitude</label><span id="tr-lon">—</span></div>
-              <div class="tower-result-cell"><label>Radio type</label><span id="tr-radio">—</span></div>
-              <div class="tower-result-cell"><label>Cell ID (CID)</label><span id="tr-cid">—</span></div>
-              <div class="tower-result-cell"><label>Range estimate</label><span id="tr-range">—</span></div>
-              <div class="tower-result-cell"><label>Samples in DB</label><span id="tr-samples">—</span></div>
+              <div class="tower-result-cell"><label>Tower Latitude</label><span id="tr-lat">â€”</span></div>
+              <div class="tower-result-cell"><label>Tower Longitude</label><span id="tr-lon">â€”</span></div>
+              <div class="tower-result-cell"><label>Radio type</label><span id="tr-radio">â€”</span></div>
+              <div class="tower-result-cell"><label>Cell ID (CID)</label><span id="tr-cid">â€”</span></div>
+              <div class="tower-result-cell"><label>Range estimate</label><span id="tr-range">â€”</span></div>
+              <div class="tower-result-cell"><label>Samples in DB</label><span id="tr-samples">â€”</span></div>
             </div>
             <div class="tower-result-actions">
               <button class="btn btn-primary" style="font-size:11px;padding:5px 12px" onclick="addTowerToMap()">Add tower to map</button>
@@ -2300,7 +2300,7 @@
         </div>
       </div>
 
-      <!-- ══════════════════════════════════════════════ -->
+      <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
       <!-- SUBMIT BAR -->
       <div class="sf-submit-bar">
         <span style="font-size:11px;color:var(--gray-600)" id="sf-hint">Complete required fields to submit</span>
@@ -2341,20 +2341,20 @@
 
 
 <script>
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  DATA MODEL
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-// ── API CONFIGURATION ────────────────────────────────────────────
+// â”€â”€ API CONFIGURATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Change this to your Render.com URL after deployment
 const API_URL = 'https://honiara-survey-api.onrender.com';
 
-// ── DEMO MODE ─────────────────────────────────────────────────────
+// â”€â”€ DEMO MODE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Set to true to bypass login and API calls for local preview.
 // Set to false before deploying to production.
 const DEMO_MODE = false;
 
-// ── AUTH STATE ───────────────────────────────────────────────────
+// â”€â”€ AUTH STATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Authentication is retained in the current tab by default. If "Remember this
 // device" is selected, the verified token/user are also kept in localStorage.
 let authToken = sessionStorage.getItem('honiara_token') || localStorage.getItem('honiara_token') || null;
@@ -2443,7 +2443,7 @@ function parseCoordinate(value) {
   if (value == null || value === '') return NaN;
   const normalized = String(value)
     .trim()
-    .replace(/[−–—]/g, '-')
+    .replace(/[âˆ’â€“â€”]/g, '-')
     .replace(/[\u2212\u2013\u2014]/g, '-')
     .replace(/(\d),(\d)/g, '$1.$2');
   const match = normalized.match(/[+-]?\d+(?:\.\d+)?/);
@@ -2451,7 +2451,7 @@ function parseCoordinate(value) {
 }
 
 function displayCoordinate(value) {
-  if (value === '' || value == null) return '—';
+  if (value === '' || value == null) return 'â€”';
   return String(value).trim();
 }
 
@@ -2639,9 +2639,9 @@ let inactivityTimer = null;
 const INACTIVITY_LOGOUT_MS = 15 * 60 * 1000;
 let activeView = 'survey';
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  HELPERS
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function rsrpColor(r) {
   const v = +r;
@@ -2654,7 +2654,7 @@ function rsrpColor(r) {
 }
 function rsrpLabel(r) {
   const v = +r;
-  if (isNaN(v)) return '—';
+  if (isNaN(v)) return 'â€”';
   if (v >= -80)  return 'Excellent';
   if (v >= -90)  return 'Good';
   if (v >= -100) return 'Fair';
@@ -2692,9 +2692,9 @@ function isMobileMapViewport() {
   return window.matchMedia?.('(max-width: 900px)').matches || window.innerWidth <= 900;
 }
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  ADD DATA
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function addPoint() {
   const ward = document.getElementById('f-ward').value;
@@ -2788,9 +2788,9 @@ function handleCSV(input) {
   input.value = '';
 }
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  VIEW SWITCHING
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function isExactAdmin() {
   return String(currentUser?.role || '').trim().toLowerCase() === 'admin' &&
@@ -2896,9 +2896,9 @@ function applyMobileMapPerformanceDefaults() {
   });
 }
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  REFRESH
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function refresh() {
   renderDayStrip();
@@ -2985,7 +2985,7 @@ function updateSidebarMetrics() {
   const mapped = surveys.filter(p => gpsStatus(p.lat, p.lng) !== 'Missing');
   const missingGps = surveys.length - mapped.length;
   const dlVals = surveys.map(p => +p.dl).filter(v => !isNaN(v) && v > 0);
-  const avgDl  = dlVals.length ? (dlVals.reduce((a, b) => a + b) / dlVals.length).toFixed(2) : '—';
+  const avgDl  = dlVals.length ? (dlVals.reduce((a, b) => a + b) / dlVals.length).toFixed(2) : 'â€”';
 
   document.getElementById('m-today').textContent = mapped.length;
   document.getElementById('m-total').textContent = surveys.length;
@@ -3037,7 +3037,7 @@ function renderRfPerformanceSummary(surveys) {
   const withValue = field => values.filter(item => item[field] != null);
   const average = field => {
     const rows = withValue(field);
-    return rows.length ? (rows.reduce((sum, item) => sum + item[field], 0) / rows.length).toFixed(1) : '—';
+    return rows.length ? (rows.reduce((sum, item) => sum + item[field], 0) / rows.length).toFixed(1) : 'â€”';
   };
   const count = (field, test) => withValue(field).filter(item => test(item[field])).length;
   const pct = (value, total) => total ? Math.round(value / total * 100) : 0;
@@ -3064,20 +3064,20 @@ function renderRfPerformanceSummary(surveys) {
     `RSRQ ${rsrqRows.length}/${surveys.length}`,
     `SINR ${sinrRows.length}/${surveys.length}`,
     `DL ${dlRows.length}/${surveys.length}`,
-  ].join(' · ');
+  ].join(' Â· ');
 
   if (!surveys.length) {
     target.innerHTML = '<div style="font-size:10px;color:var(--gray-400);padding:8px;border:1px dashed var(--border);border-radius:6px">No survey readings available for the selected period.</div>';
     return;
   }
   target.innerHTML =
-    card('Coverage · RSRP', `${average('rsrp')} dBm`,
+    card('Coverage Â· RSRP', `${average('rsrp')} dBm`,
       `${goodCoverage} good/excellent (${pct(goodCoverage, rsrpRows.length)}%); ${poorCoverage} poor/very poor. RSRP shows how strongly the serving cell is heard.`,
       goodCoverage >= poorCoverage ? '#3B7A18' : '#A32D2D') +
-    card('Signal quality · RSRQ', `${average('rsrq')} dB`,
+    card('Signal quality Â· RSRQ', `${average('rsrq')} dB`,
       `${degradedQuality} degraded below -15 dB (${pct(degradedQuality, rsrqRows.length)}%). Low RSRQ can indicate congestion or interference.`,
       degradedQuality ? '#BA7517' : '#3B7A18') +
-    card('Signal cleanliness · SINR', `${average('sinr')} dB`,
+    card('Signal cleanliness Â· SINR', `${average('sinr')} dB`,
       `${goodSinr} good/excellent at 10 dB or above; ${noisySignal} noisy at 0 dB or below. SINR best predicts usable performance.`,
       noisySignal ? '#A32D2D' : '#3B7A18') +
     card('Experienced performance', `${average('dl')} Mbps`,
@@ -3128,21 +3128,21 @@ function renderFlags() {
   const surveys = (day ? points.filter(p => p.date <= day) : points).filter(p => p.type === 'survey');
   const total   = surveys.length;
 
-  over.forEach(w    => flags.push({cls:'red',   icon:'⚠', msg:`<strong>${w}</strong> over-surveyed (${wardCount(w,day)}/${WARDS[w].target}) — redirect team tomorrow`}));
-  empty.forEach(w   => flags.push({cls:'blue',  icon:'○', msg:`<strong>${w}</strong> not yet surveyed (target: ${WARDS[w].target})`}));
-  behind.forEach(w  => flags.push({cls:'amber', icon:'↓', msg:`<strong>${w}</strong> behind — ${wardCount(w,day)}/${WARDS[w].target} done`}));
+  over.forEach(w    => flags.push({cls:'red',   icon:'âš ', msg:`<strong>${w}</strong> over-surveyed (${wardCount(w,day)}/${WARDS[w].target}) â€” redirect team tomorrow`}));
+  empty.forEach(w   => flags.push({cls:'blue',  icon:'â—‹', msg:`<strong>${w}</strong> not yet surveyed (target: ${WARDS[w].target})`}));
+  behind.forEach(w  => flags.push({cls:'amber', icon:'â†“', msg:`<strong>${w}</strong> behind â€” ${wardCount(w,day)}/${WARDS[w].target} done`}));
 
-  if (!flags.length && total > 5) flags.push({cls:'green', icon:'✓', msg:'All wards progressing within target range'});
-  if (!flags.length && total === 0) flags.push({cls:'blue', icon:'ℹ', msg:'Add survey points to see coverage analysis'});
+  if (!flags.length && total > 5) flags.push({cls:'green', icon:'âœ“', msg:'All wards progressing within target range'});
+  if (!flags.length && total === 0) flags.push({cls:'blue', icon:'â„¹', msg:'Add survey points to see coverage analysis'});
 
   document.getElementById('flags-panel').innerHTML = flags.map(f =>
     `<div class="flag-item ${f.cls}"><span class="flag-icon">${f.icon}</span><span>${f.msg}</span></div>`
   ).join('');
 }
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  GOOGLE MAPS INTEGRATION
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function loadGoogleMaps(key) {
   const existing = document.getElementById('gmaps-script');
@@ -3181,7 +3181,7 @@ window.initMap = function() {
   markerProjectionOverlay.onRemove = function() {};
   markerProjectionOverlay.setMap(gmap);
   const apiBadgeEl = document.getElementById('api-badge');
-  if (apiBadgeEl) { apiBadgeEl.textContent = '✓ Map loaded'; apiBadgeEl.classList.remove('missing'); }
+  if (apiBadgeEl) { apiBadgeEl.textContent = 'âœ“ Map loaded'; apiBadgeEl.classList.remove('missing'); }
   initializeBoundaryLayers();
   // Only refresh map visuals if Live Map tab is currently active
   if (activeView === 'map') {
@@ -3611,14 +3611,14 @@ function markerChooserLabel(item) {
   if (item.type === 'survey') {
     return {
       title: `Survey ${item.point.id || item.point.respondentId || 'record'}`,
-      meta: `${item.point.ward || 'Ward not recorded'} · ${item.point.constituency || 'Constituency not recorded'}`,
+      meta: `${item.point.ward || 'Ward not recorded'} Â· ${item.point.constituency || 'Constituency not recorded'}`,
       badge: 'Survey data point',
       color: '#1C3557',
     };
   }
   return {
     title: `Mobile tower ${item.point.enb ? 'eNB ' + item.point.enb : 'point'}`,
-    meta: `${item.point.op || item.point.operator || 'Operator not recorded'} · ${item.point.towerType || 'Tower type not recorded'}`,
+    meta: `${item.point.op || item.point.operator || 'Operator not recorded'} Â· ${item.point.towerType || 'Tower type not recorded'}`,
     badge: 'Tower data point',
     color: '#BA7517',
   };
@@ -3816,8 +3816,8 @@ function refreshMap() {
         position,
         icon: normalIcon,
         title: layout.count > 1
-          ? `${layout.count} survey records share this GPS location — ${p.id || p.ward || 'waypoint'}`
-          : `Survey participant — ${p.id || p.ward || 'waypoint'}`,
+          ? `${layout.count} survey records share this GPS location â€” ${p.id || p.ward || 'waypoint'}`
+          : `Survey participant â€” ${p.id || p.ward || 'waypoint'}`,
         optimized: isMobileMapViewport() ? true : false,
         zIndex: layout.count > 1 && layout.index === 0 ? 1100 : 1000 - layout.index,
       });
@@ -3842,7 +3842,7 @@ function refreshMap() {
         map: gmap,
         icon: towerMarkerIcon(),
         shape: { type: 'rect', coords: [0, 0, 52, 60] },
-        title: `Tower eNB ${p.enb || 'unknown'} — ${(p.connectedSurveys || []).length} connected survey record${(p.connectedSurveys || []).length === 1 ? '' : 's'}`,
+        title: `Tower eNB ${p.enb || 'unknown'} â€” ${(p.connectedSurveys || []).length} connected survey record${(p.connectedSurveys || []).length === 1 ? '' : 's'}`,
         clickable: true,
         cursor: 'pointer',
         optimized: isMobileMapViewport() ? true : false,
@@ -3901,7 +3901,7 @@ function refreshMap() {
           scale: selectedSectorKey === sector.key ? 16 : 13,
         },
         label: { text: String(sector.lcid || sector.eci.slice(-2)), color: '#fff', fontSize: '9px', fontWeight: '700' },
-        title: `Serving LTE cell ECI ${sector.eci} — ${sector.records.length} survey records`,
+        title: `Serving LTE cell ECI ${sector.eci} â€” ${sector.records.length} survey records`,
         optimized: isMobileMapViewport() ? true : false,
         zIndex: selectedSectorKey === sector.key ? 900 : 850,
       });
@@ -3948,7 +3948,7 @@ function fitSurveyWaypoints(showEmptyAlert = true, studyAreaOnly = false) {
 
 function infoWindowHTML(p) {
   const has = value => value !== '' && value != null;
-  const show = (value, suffix = '') => has(value) ? `${value}${suffix}` : '—';
+  const show = (value, suffix = '') => has(value) ? `${value}${suffix}` : 'â€”';
   const card = (label, value, suffix = '', colour = 'var(--text)') =>
     `<div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:5px;padding:6px">
       <div style="color:#667085;font-size:9px;text-transform:uppercase;letter-spacing:.04em">${label}</div>
@@ -3966,8 +3966,8 @@ function infoWindowHTML(p) {
   const gpsDetail = gpsStatusDetail(p.lat, p.lng);
   const gpsStatusHtml = surveyGpsStatusHTML(p, gpsState, gpsDetail);
   return `<div style="font-family:'Inter',sans-serif;padding:4px;min-width:340px;max-width:380px">
-    <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} — ${show(p.ward)}</div>
-    <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} · ${show(p.constituency)} · ${show(p.date)} ${show(p.time)}</div>
+    <div style="font-weight:700;font-size:13px;margin-bottom:3px">Survey ${show(p.id)} â€” ${show(p.ward)}</div>
+    <div style="font-size:10px;color:#667085;margin-bottom:3px">${show(p.op)} Â· ${show(p.constituency)} Â· ${show(p.date)} ${show(p.time)}</div>
     <div style="font-size:10px;color:#667085;margin-bottom:4px">GPS waypoint: ${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</div>
     <div style="margin-bottom:8px">${gpsStatusHtml}</div>
     <div style="font-size:10px;font-weight:700;color:#344054;margin-bottom:4px">Main network readings</div>
@@ -4000,11 +4000,11 @@ function cellInfoWindowHTML(p) {
   const values = field => connected.map(s => parseFloat(s[field])).filter(Number.isFinite);
   const average = field => {
     const nums = values(field);
-    return nums.length ? (nums.reduce((sum, value) => sum + value, 0) / nums.length).toFixed(1) : '—';
+    return nums.length ? (nums.reduce((sum, value) => sum + value, 0) / nums.length).toFixed(1) : 'â€”';
   };
   return `<div style="font-family:'Inter',sans-serif;padding:3px;min-width:230px;max-width:250px">
-    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Mobile tower — eNB ${p.enb || 'unknown'}</div>
-    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} · ${p.ward || 'Ward not recorded'}</div>
+    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Mobile tower â€” eNB ${p.enb || 'unknown'}</div>
+    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} Â· ${p.ward || 'Ward not recorded'}</div>
     ${towerPhotoPreviewHTML(p)}
     <div style="background:#f8f9fa;border-radius:6px;padding:6px;font-size:10px;line-height:1.35">
       <div><span style="color:#666">GPS: </span><strong>${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</strong></div>
@@ -4017,7 +4017,7 @@ function cellInfoWindowHTML(p) {
     <div style="font-size:10px;font-weight:700;color:#344054;margin:7px 0 4px">Connected survey records</div>
     <div style="max-height:105px;overflow:auto;border:1px solid #e5e7eb;border-radius:6px">
       ${connected.length ? connected.map(s => `<div style="display:grid;grid-template-columns:68px 1fr 48px;gap:4px;padding:5px;border-bottom:1px solid #e5e7eb;font-size:9px;line-height:1.25">
-        <strong>${s.respondentId || s.id || '—'}</strong><span>ECI ${s.fd_s2a_eci || '—'} / LCID ${s.fd_s2a_lcid || '—'}</span><span>${s.rsrp || s.fd_s2a_rsrp || '—'} dBm</span><span>${s.dl || '—'} Mbps</span>
+        <strong>${s.respondentId || s.id || 'â€”'}</strong><span>ECI ${s.fd_s2a_eci || 'â€”'} / LCID ${s.fd_s2a_lcid || 'â€”'}</span><span>${s.rsrp || s.fd_s2a_rsrp || 'â€”'} dBm</span><span>${s.dl || 'â€”'} Mbps</span>
       </div>`).join('') : '<div style="padding:8px;color:#667085;font-size:10px">No survey records matched to this tower.</div>'}
     </div>
     <div style="font-size:8px;color:#667085;margin-top:6px;line-height:1.3">Provisional association: matching reported eNB and operator.</div>
@@ -4044,7 +4044,7 @@ function surveyTowerAssociationHTML(p) {
   const tower = association.tower;
   return `<div style="margin-top:8px;padding:8px;border:1px solid ${tower ? '#86b7a8' : '#e7b35b'};background:${tower ? '#eef8f4' : '#fff8e8'};border-radius:6px">
     <div style="font-size:9px;color:#667085;text-transform:uppercase;font-weight:700">Serving tower association</div>
-    <div style="font-size:11px;font-weight:700;color:#1A1A2E;margin-top:3px">eNB ${association.enb} · ECI ${p.fd_s2a_eci || '—'} · LCID ${p.fd_s2a_lcid || '—'}</div>
+    <div style="font-size:11px;font-weight:700;color:#1A1A2E;margin-top:3px">eNB ${association.enb} Â· ECI ${p.fd_s2a_eci || 'â€”'} Â· LCID ${p.fd_s2a_lcid || 'â€”'}</div>
     <div style="font-size:9px;color:#667085;margin-top:3px">${tower
       ? `Mapped tower GPS: ${displayCoordinate(tower.lat)}, ${displayCoordinate(tower.lng)}`
       : 'eNB identified, but this tower location has not yet been mapped in Step 7.'}</div>
@@ -4109,7 +4109,7 @@ function sectorStatistics(sector) {
 
 function sectorSummaryHTML(sector, compact = false, expanded = false) {
   const stats = sectorStatistics(sector);
-  const show = (value, suffix = '') => value == null ? '—' : `${value.toFixed(1)}${suffix}`;
+  const show = (value, suffix = '') => value == null ? 'â€”' : `${value.toFixed(1)}${suffix}`;
   const ids = sector.records.map(record => record.id || record.respondentId).join(', ');
   const plmn = sector.mcc && sector.mnc ? `${sector.mcc}-${sector.mnc}` : 'not recorded';
   const value = (record, fields) => {
@@ -4117,7 +4117,7 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
       const result = record[field];
       if (result !== '' && result != null) return result;
     }
-    return '—';
+    return 'â€”';
   };
   const coverageClass = stats.rsrp.average == null ? 'not assessable' :
     stats.rsrp.average >= -80 ? 'excellent' : stats.rsrp.average >= -90 ? 'good' :
@@ -4176,13 +4176,13 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
   if (expanded) {
     const identityRows = [
       ['PLMN', plmn, 'Public Land Mobile Network: MCC + MNC.', 'Provides the operator-network context required to interpret ECI.'],
-      ['MCC', sector.mcc || '—', 'Mobile Country Code.', 'Identifies the country allocation of the mobile network.'],
-      ['MNC', sector.mnc || '—', 'Mobile Network Code.', 'Identifies the mobile network within the MCC allocation.'],
-      ['ECI', sector.eci || '—', 'E-UTRAN Cell Identifier.', 'PLMN + ECI is the primary identity used to group these LTE observations.'],
-      ['eNB', sector.enb || '—', 'Reported evolved NodeB identifier.', 'Supports base-station association; it does not independently prove the physical tower.'],
-      ['LCID', sector.lcid || '—', 'Reported local cell identifier.', 'Supports interpretation of ECI; it does not prove antenna direction.'],
-      ['PCI', sector.pci || '—', 'Physical Cell Identity used by LTE radio procedures.', 'Useful as a cross-check, but reused and not globally unique.'],
-      ['TAC', sector.tac || '—', 'Tracking Area Code used for mobility management.', 'Identifies an area containing multiple cells, not an individual cell.'],
+      ['MCC', sector.mcc || 'â€”', 'Mobile Country Code.', 'Identifies the country allocation of the mobile network.'],
+      ['MNC', sector.mnc || 'â€”', 'Mobile Network Code.', 'Identifies the mobile network within the MCC allocation.'],
+      ['ECI', sector.eci || 'â€”', 'E-UTRAN Cell Identifier.', 'PLMN + ECI is the primary identity used to group these LTE observations.'],
+      ['eNB', sector.enb || 'â€”', 'Reported evolved NodeB identifier.', 'Supports base-station association; it does not independently prove the physical tower.'],
+      ['LCID', sector.lcid || 'â€”', 'Reported local cell identifier.', 'Supports interpretation of ECI; it does not prove antenna direction.'],
+      ['PCI', sector.pci || 'â€”', 'Physical Cell Identity used by LTE radio procedures.', 'Useful as a cross-check, but reused and not globally unique.'],
+      ['TAC', sector.tac || 'â€”', 'Tracking Area Code used for mobility management.', 'Identifies an area containing multiple cells, not an individual cell.'],
     ];
     const metricRows = [
       ['Average RSRP', show(stats.rsrp.average, ' dBm'), 'Mean received reference-signal power.', `${coverageOutcome} Median ${show(stats.rsrp.median, ' dBm')}; range ${show(stats.rsrp.min)} to ${show(stats.rsrp.max)} dBm; n=${stats.rsrp.count}.`],
@@ -4198,7 +4198,7 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
     const head = labels => `<thead><tr style="background:#eef2f6;text-align:left">${labels.map(label => `<th style="padding:7px;border-bottom:1px solid #cfd8e3;white-space:normal;overflow-wrap:anywhere">${label}</th>`).join('')}</tr></thead>`;
     return `<div style="font-family:'Inter',sans-serif;color:#1A1A2E;width:100%;box-sizing:border-box">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;width:100%;padding-bottom:10px;border-bottom:2px solid #203F67">
-        <div><div style="font-size:16px;font-weight:700">${sector.operator}</div><div style="font-size:11px;color:#667085;margin-top:2px">Serving LTE cell analysis · ECI ${sector.eci}</div></div>
+        <div><div style="font-size:16px;font-weight:700">${sector.operator}</div><div style="font-size:11px;color:#667085;margin-top:2px">Serving LTE cell analysis Â· ECI ${sector.eci}</div></div>
         <div style="font-size:9px;color:#344054;text-align:right"><strong>${sector.records.length}</strong> contributing survey point${sector.records.length === 1 ? '' : 's'}<br>Grouping basis: ${sector.identificationBasis}</div>
       </div>
 
@@ -4223,8 +4223,8 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
           <table style="border-collapse:collapse;width:max-content;min-width:100%;font-size:8px">
             ${head(['Survey ID','Ward','PLMN','ECI','eNB','LCID','PCI','TAC','Band','RSRP','RSRQ','SINR','DL','UL','Ping','GPS'])}
             <tbody>${sector.records.map(record => `<tr>
-              <td style="padding:6px;border-bottom:1px solid #edf0f4;font-weight:700">${record.id || record.respondentId || '—'}</td>
-              <td style="padding:6px;border-bottom:1px solid #edf0f4">${record.ward || '—'}</td>
+              <td style="padding:6px;border-bottom:1px solid #edf0f4;font-weight:700">${record.id || record.respondentId || 'â€”'}</td>
+              <td style="padding:6px;border-bottom:1px solid #edf0f4">${record.ward || 'â€”'}</td>
               <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_mcc'])}-${value(record, ['fd_s2a_mnc'])}</td>
               <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_eci'])}</td>
               <td style="padding:6px;border-bottom:1px solid #edf0f4">${value(record, ['fd_s2a_enb'])}</td>
@@ -4279,13 +4279,13 @@ function sectorSummaryHTML(sector, compact = false, expanded = false) {
     </div>`;
   }
   return `<div style="font-family:'Inter',sans-serif;${compact ? '' : 'min-width:380px;max-width:480px;'}">
-    <div style="font-size:${compact ? '12px' : '14px'};font-weight:700;color:#1A1A2E">${sector.operator} · ECI ${sector.eci}</div>
-    <div style="font-size:9px;color:#667085;margin:3px 0 3px">PLMN ${plmn} · reported eNB ${sector.enb || '—'} · LCID ${sector.lcid || '—'} · PCI ${sector.pci || '—'} · TAC ${sector.tac || '—'}</div>
-    <div style="font-size:8px;color:#667085;margin:0 0 8px">Identification basis: ${sector.identificationBasis} · ${sector.records.length} survey point${sector.records.length === 1 ? '' : 's'}</div>
+    <div style="font-size:${compact ? '12px' : '14px'};font-weight:700;color:#1A1A2E">${sector.operator} Â· ECI ${sector.eci}</div>
+    <div style="font-size:9px;color:#667085;margin:3px 0 3px">PLMN ${plmn} Â· reported eNB ${sector.enb || 'â€”'} Â· LCID ${sector.lcid || 'â€”'} Â· PCI ${sector.pci || 'â€”'} Â· TAC ${sector.tac || 'â€”'}</div>
+    <div style="font-size:8px;color:#667085;margin:0 0 8px">Identification basis: ${sector.identificationBasis} Â· ${sector.records.length} survey point${sector.records.length === 1 ? '' : 's'}</div>
     <div style="display:grid;grid-template-columns:repeat(${compact ? 2 : 4},1fr);gap:5px">
       ${[['Avg RSRP', show(stats.rsrp.average, ' dBm')], ['Avg RSRQ', show(stats.rsrq.average, ' dB')], ['Avg SINR', show(stats.sinr.average, ' dB')], ['Median DL', show(stats.dl.median, ' Mbps')], ['Avg DL', show(stats.dl.average, ' Mbps')], ['Avg UL', show(stats.ul.average, ' Mbps')], ['Avg ping', show(stats.ping.average, ' ms')], ['Avg jitter', show(stats.jitter.average, ' ms')]].map(([label, value]) => `<div style="padding:5px;background:#f7f9fc;border:1px solid #e5e7eb;border-radius:5px"><div style="font-size:8px;color:#667085;text-transform:uppercase">${label}</div><strong style="font-size:10px">${value}</strong></div>`).join('')}
     </div>
-    <div style="font-size:9px;color:#667085;margin-top:7px">Warnings: ${stats.degradedRsrq} degraded RSRQ · ${stats.noisySinr} noisy SINR · ${stats.slowDl} below 1 Mbps</div>
+    <div style="font-size:9px;color:#667085;margin-top:7px">Warnings: ${stats.degradedRsrq} degraded RSRQ Â· ${stats.noisySinr} noisy SINR Â· ${stats.slowDl} below 1 Mbps</div>
     <div style="font-size:9px;color:#667085;margin-top:5px;line-height:1.35">Survey records: ${ids}</div>
     <div style="font-size:8px;color:#667085;margin-top:5px;line-height:1.35">This is observed sample performance for one serving LTE cell, not a measurement of cell capacity or proof of a physical antenna sector. Association assumes the serving-cell reading remained valid during the linked performance tests. The marker is placed at the centroid of its survey points, not at the physical tower.</div>
   </div>`;
@@ -4338,7 +4338,7 @@ function openSurveyPointDetail(p) {
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <button type="button" data-survey-detail-toggle onclick="toggleSurveyPointDetail()" title="Collapse survey details" style="height:34px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#10243d;cursor:pointer;font-size:11px;font-weight:700;padding:0 10px">Collapse</button>
-          <button type="button" onclick="closeSurveyPointDetail()" title="Close survey point" style="flex:none;width:38px;height:34px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#10243d;cursor:pointer;font-size:20px;font-weight:700">×</button>
+          <button type="button" onclick="closeSurveyPointDetail()" title="Close survey point" style="flex:none;width:38px;height:34px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#10243d;cursor:pointer;font-size:20px;font-weight:700">Ã—</button>
         </div>
       </div>
       <div data-survey-detail-content style="flex:1;min-height:0;overflow:auto;padding:16px;box-sizing:border-box;scrollbar-gutter:stable;overscroll-behavior:contain">
@@ -4362,16 +4362,16 @@ function openServingCellDetail() {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#10243d;color:#fff">
         <div>
           <div style="font-size:15px;font-weight:700">Serving LTE cell analysis</div>
-          <div style="font-size:10px;color:#cbd5e1;margin-top:2px">Drag with the left mouse button to pan · Mouse wheel scrolls · A− and A+ change text size</div>
+          <div style="font-size:10px;color:#cbd5e1;margin-top:2px">Drag with the left mouse button to pan Â· Mouse wheel scrolls Â· Aâˆ’ and A+ change text size</div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <button type="button" data-cell-text="out" title="Decrease text size" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-weight:700">A−</button>
+          <button type="button" data-cell-text="out" title="Decrease text size" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-weight:700">Aâˆ’</button>
           <button type="button" data-cell-text="reset" title="Reset text size" style="height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:10px;padding:0 8px">100%</button>
           <button type="button" data-cell-text="in" title="Increase text size" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-weight:700">A+</button>
-          <button type="button" onclick="document.getElementById('serving-cell-detail-overlay')?.remove()" title="Close" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:18px">×</button>
+          <button type="button" onclick="document.getElementById('serving-cell-detail-overlay')?.remove()" title="Close" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:18px">Ã—</button>
         </div>
       </div>
-      <div data-cell-detail-content tabindex="0" title="Drag to pan or scroll to view the report. Use A− and A+ to change text size." style="flex:1;font-size:16px;padding:24px;overflow:scroll;overflow-x:auto;overflow-y:scroll;line-height:1.5;min-height:0;scrollbar-gutter:stable both-edges;overscroll-behavior:contain;outline:none;cursor:grab;user-select:none">
+      <div data-cell-detail-content tabindex="0" title="Drag to pan or scroll to view the report. Use Aâˆ’ and A+ to change text size." style="flex:1;font-size:16px;padding:24px;overflow:scroll;overflow-x:auto;overflow-y:scroll;line-height:1.5;min-height:0;scrollbar-gutter:stable both-edges;overscroll-behavior:contain;outline:none;cursor:grab;user-select:none">
         ${sectorSummaryHTML(selectedServingCell, false, true)}
       </div>
     </div>`;
@@ -4514,9 +4514,9 @@ function updateLegend(mode) {
   }
 }
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  DASHBOARD VIEW
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function setDashboardConstituency(constituency) {
   selectedDashboardConstituency = constituency;
@@ -4524,7 +4524,7 @@ function setDashboardConstituency(constituency) {
 }
 
 function dashNumber(value, digits = 1) {
-  return Number.isFinite(value) ? value.toFixed(digits) : '—';
+  return Number.isFinite(value) ? value.toFixed(digits) : 'â€”';
 }
 
 function dashAverage(records, fields) {
@@ -4604,7 +4604,7 @@ function renderExperienceCorrelation(records) {
     const agreement = data.total ? dashPct(data.agreePoor + data.agreeGood, data.total) : 0;
     return `<div class="dash-card" style="min-height:0">
       <div class="dash-card-label">${title}</div>
-      <div class="dash-card-value" style="font-size:24px;color:${totalMismatch ? 'var(--amber)' : 'var(--green)'}">${data.total ? agreement + '%' : '—'}</div>
+      <div class="dash-card-value" style="font-size:24px;color:${totalMismatch ? 'var(--amber)' : 'var(--green)'}">${data.total ? agreement + '%' : 'â€”'}</div>
       <div class="dash-card-note">${data.total ? 'agreement between reported experience and readings' : 'not enough paired survey/readings yet'}</div>
       <div style="display:grid;gap:5px;margin-top:10px;font-size:11px">
         <div style="display:flex;justify-content:space-between"><span>${leftLabel}</span><strong>${data.agreePoor}</strong></div>
@@ -4624,7 +4624,7 @@ function renderExperienceCorrelation(records) {
       const reading = row.kind === 'Signal'
         ? `RSRP ${dashNumber(row.rsrp,0)} dBm`
         : `DL ${dashNumber(row.dl,1)} Mbps`;
-      return `<div class="dash-insight warn"><strong>${id}</strong> · ${ward} · ${row.kind}: ${type} (${reading}).</div>`;
+      return `<div class="dash-insight warn"><strong>${id}</strong> Â· ${ward} Â· ${row.kind}: ${type} (${reading}).</div>`;
     }).join('');
   target.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px">
       <div>
@@ -4967,7 +4967,7 @@ function questionnaireText(records, fields, interpretation = '') {
 
 function classifyRsrp(value) {
   if (!Number.isFinite(value)) return { label: 'No reading', color: 'var(--gray-400)', note: 'RSRP is Reference Signal Received Power, the LTE signal-strength indicator, measured in dBm.' };
-  if (value >= -80) return { label: 'Excellent', color: 'var(--green)', note: '≥ -80 dBm: strong LTE signal strength.' };
+  if (value >= -80) return { label: 'Excellent', color: 'var(--green)', note: 'â‰¥ -80 dBm: strong LTE signal strength.' };
   if (value >= -90) return { label: 'Good', color: 'var(--green)', note: '-80 to -90 dBm: good LTE signal strength.' };
   if (value >= -100) return { label: 'Fair', color: 'var(--amber)', note: '-90 to -100 dBm: fair/usable, but may vary indoors.' };
   if (value >= -110) return { label: 'Poor', color: 'var(--red)', note: '-100 to -110 dBm: poor signal strength.' };
@@ -5174,7 +5174,7 @@ function renderQuestionnaireResultsTable(records) {
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div class="dash-card-label">${title}</div><span class="badge ${badge}">${level}</span></div>
       <div class="dash-card-value" style="font-size:26px;color:${color}">${rate}%</div>
       <div class="dash-card-note">${count}/${total} record${count === 1 ? '' : 's'} show ${note}.</div>
-      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">${Number.isFinite(avg) ? `Average score ${dashNumber(avg,1)}/5 · ` : ''}${source}</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">${Number.isFinite(avg) ? `Average score ${dashNumber(avg,1)}/5 Â· ` : ''}${source}</div>
       <div class="dash-mini-bar" style="margin-top:8px"><div class="dash-mini-fill" style="width:${rate}%;background:${color}"></div></div>
     </div>`;
   }).join('');
@@ -5382,8 +5382,8 @@ function renderDashboard() {
   document.getElementById('dash-metrics').innerHTML = [
     {v: `${surv.length}/${selectedTarget}`, l: 'Survey progress', note: `${progressPct}% of constituency target`, c: progressPct >= 80 ? 'var(--green)' : progressPct < 40 ? 'var(--amber)' : 'var(--navy)'},
     {v: mapped.length, l: 'Mapped data points', note: `${gpsPct}% have valid GPS; ${missingGps} need GPS check`, c: missingGps ? 'var(--amber)' : 'var(--green)'},
-    {v: Number.isFinite(avgRsrp) ? `${avgRsrp.toFixed(0)} dBm` : '—', l: 'Average RSRP', note: poorSignal ? `${poorSignal} poor/very poor signal reading(s)` : 'Signal readings broadly acceptable', c: Number.isFinite(avgRsrp) && avgRsrp < -100 ? 'var(--red)' : 'var(--green)'},
-    {v: Number.isFinite(avgDl) ? `${avgDl.toFixed(1)}` : '—', l: 'Avg download Mbps', note: slowDl ? `${slowDl} reading(s) below 1 Mbps` : 'No sub‑1 Mbps download reading flagged', c: Number.isFinite(avgDl) && avgDl < 1 ? 'var(--red)' : 'var(--green)'},
+    {v: Number.isFinite(avgRsrp) ? `${avgRsrp.toFixed(0)} dBm` : 'â€”', l: 'Average RSRP', note: poorSignal ? `${poorSignal} poor/very poor signal reading(s)` : 'Signal readings broadly acceptable', c: Number.isFinite(avgRsrp) && avgRsrp < -100 ? 'var(--red)' : 'var(--green)'},
+    {v: Number.isFinite(avgDl) ? `${avgDl.toFixed(1)}` : 'â€”', l: 'Avg download Mbps', note: slowDl ? `${slowDl} reading(s) below 1 Mbps` : 'No subâ€‘1 Mbps download reading flagged', c: Number.isFinite(avgDl) && avgDl < 1 ? 'var(--red)' : 'var(--green)'},
   ].map(m => `<div class="dash-card">
     <div class="dash-card-value" style="color:${m.c}">${m.v}</div>
     <div class="dash-card-label">${m.l}</div>
@@ -5409,63 +5409,70 @@ function renderDashboard() {
     </div>`,
     `<div class="dash-card">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="dash-card-label">Average RSRP</div><span class="badge ${avgRsrp < -100 ? 'badge-red' : avgRsrp < -90 ? 'badge-warn' : 'badge-ok'}">${rsrpClass.label}</span></div>
-      <div class="dash-card-value" style="color:${rsrpClass.color}">${Number.isFinite(avgRsrp) ? avgRsrp.toFixed(0) + ' dBm' : '—'}</div>
+      <div class="dash-card-value" style="color:${rsrpClass.color}">${Number.isFinite(avgRsrp) ? avgRsrp.toFixed(0) + ' dBm' : 'â€”'}</div>
       <div class="dash-card-note"><strong>RSRP</strong> = Reference Signal Received Power. It measures LTE signal strength.</div>
-      <div style="font-size:10px;color:var(--gray-600);margin-top:8px;line-height:1.35">${rsrpClass.note}<br>Scale: ≥-80 Excellent · -80 to -90 Good · -90 to -100 Fair · -100 to -110 Poor · below -110 Very Poor.</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px;line-height:1.35">${rsrpClass.note}<br>Scale: â‰¥-80 Excellent Â· -80 to -90 Good Â· -90 to -100 Fair Â· -100 to -110 Poor Â· below -110 Very Poor.</div>
     </div>`,
     `<div class="dash-card">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="dash-card-label">Average RSRQ</div><span class="badge ${avgRsrq < -15 ? 'badge-red' : avgRsrq < -12 ? 'badge-warn' : 'badge-ok'}">${rsrqClass.label}</span></div>
-      <div class="dash-card-value" style="color:${rsrqClass.color}">${Number.isFinite(avgRsrq) ? avgRsrq.toFixed(1) + ' dB' : '—'}</div>
+      <div class="dash-card-value" style="color:${rsrqClass.color}">${Number.isFinite(avgRsrq) ? avgRsrq.toFixed(1) + ' dB' : 'â€”'}</div>
       <div class="dash-card-note"><strong>RSRQ</strong> = Reference Signal Received Quality. It is a quality indicator, measured in dB.</div>
       <div style="font-size:10px;color:var(--gray-600);margin-top:8px;line-height:1.35">${rsrqClass.note}<br>Rule: below -15 dB = degraded quality.</div>
     </div>`,
     `<div class="dash-card">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="dash-card-label">Average RSSNR / SINR</div><span class="badge ${avgSinr <= 0 ? 'badge-red' : avgSinr < 5 ? 'badge-warn' : 'badge-ok'}">${rssnrClass.label}</span></div>
-      <div class="dash-card-value" style="color:${rssnrClass.color}">${Number.isFinite(avgSinr) ? avgSinr.toFixed(1) + ' dB' : '—'}</div>
+      <div class="dash-card-value" style="color:${rssnrClass.color}">${Number.isFinite(avgSinr) ? avgSinr.toFixed(1) + ' dB' : 'â€”'}</div>
       <div class="dash-card-note"><strong>RSSNR</strong> = Reference Signal Signal-to-Noise Ratio. It shows how clean or noisy the radio signal is.</div>
       <div style="font-size:10px;color:var(--gray-600);margin-top:8px;line-height:1.35">${rssnrClass.note}<br>Rule: low / 0 dB = noisy signal environment.</div>
     </div>`,
   ].join('');
-
   const constituencyRadio = wardRadioTechnicalSummary(surv);
-  const validGpsPct = dashPct(gpsStats.validGps, gpsStats.total);
-  const operatorCount = countValues(
-    surv.map(record => record.fd_s2a_mcc && record.fd_s2a_mnc
-      ? plmnOperatorName(record.fd_s2a_mcc, record.fd_s2a_mnc)
-      : '')
-  ).length;
-  const bandCount = countValues(
+  const clearPlmnCounts = countValues(
+    surv.map(record => {
+      const mcc = String(record.fd_s2a_mcc || '').trim();
+      const mnc = String(record.fd_s2a_mnc || '').trim();
+      return mcc && mnc ? `${mcc}-${mnc.padStart(2, '0')} ${plmnOperatorName(mcc, mnc)}` : '';
+    })
+  );
+  const clearBandCounts = countValues(
     surv.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)])
       .filter(Boolean)
       .map(band => `B${band}`)
-  ).length;
+  );
+  const clearWardNetworkBreakdown = selectedWards.map(ward => {
+    const tech = wardRadioTechnicalSummary(surv.filter(p => p.ward === ward));
+    return `<div style="display:flex;justify-content:space-between;gap:8px"><span>${dashEscape(ward)}</span><strong>${tech.servingTowerCount || 0}T / ${tech.servingCellCount || 0}C / ${tech.bandText}</strong></div>`;
+  }).join('');
   document.getElementById('dash-metrics').innerHTML = [
     `<div class="dash-card">
       <div class="dash-card-value" style="color:var(--navy)">${gpsStats.total}</div>
       <div class="dash-card-label">Surveys completed</div>
       <div class="dash-card-note">${selectedDashboardConstituency}: ${gpsStats.total} of ${selectedTarget} target surveys completed (${progressPct}%).</div>
-      <div style="font-size:11px;color:var(--gray-600);margin-top:8px">This is the constituency progress view. Technical quality is interpreted by ward below.</div>
     </div>`,
     `<div class="dash-card">
-      <div class="dash-card-value" style="color:${gpsStats.outsideBoundary || gpsStats.wardMismatch || gpsStats.missingOrInvalid ? 'var(--amber)' : 'var(--green)'}">${validGpsPct}%</div>
+      <div class="dash-card-value" style="color:${gpsStats.outsideBoundary || gpsStats.wardMismatch || gpsStats.missingOrInvalid ? 'var(--amber)' : 'var(--green)'}">${gpsStats.validGps}/${gpsStats.total}</div>
       <div class="dash-card-label">GPS usable for mapping</div>
-      <div class="dash-card-note">${gpsStats.validGps}/${gpsStats.total} records have valid GPS. ${gpsStats.insideBoundary} are inside ward boundaries.</div>
-      <div style="font-size:11px;color:${gpsStats.outsideBoundary || gpsStats.wardMismatch ? 'var(--red)' : 'var(--gray-600)'};margin-top:8px">${gpsStats.outsideBoundary} outside boundary · ${gpsStats.wardMismatch} ward mismatch · ${gpsStats.missingOrInvalid} missing/invalid.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:11px">
+        <div><strong style="color:var(--green)">${gpsStats.insideBoundary}</strong><br><span style="color:var(--gray-600)">inside boundary</span></div>
+        <div><strong style="color:${gpsStats.outsideBoundary ? 'var(--red)' : 'var(--green)'}">${gpsStats.outsideBoundary}</strong><br><span style="color:var(--gray-600)">outside boundary</span></div>
+        <div><strong style="color:${gpsStats.wardMismatch ? 'var(--amber)' : 'var(--green)'}">${gpsStats.wardMismatch}</strong><br><span style="color:var(--gray-600)">ward mismatch</span></div>
+        <div><strong style="color:${gpsStats.missingOrInvalid ? 'var(--amber)' : 'var(--green)'}">${gpsStats.missingOrInvalid}</strong><br><span style="color:var(--gray-600)">missing/invalid</span></div>
+      </div>
     </div>`,
     `<div class="dash-card">
-      <div class="dash-card-value" style="color:var(--navy)">${operatorCount || '—'}</div>
-      <div class="dash-card-label">Operators detected by MCC/MNC</div>
-      <div class="dash-card-note">${constituencyRadio.plmnText}</div>
-      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">540-01 = Our Telekom. 540-02 = BMobile. Ward-level operator mix is shown below.</div>
+      <div class="dash-card-value" style="color:var(--navy)">${clearPlmnCounts.length || '—'}</div>
+      <div class="dash-card-label">PLMN / operators detected</div>
+      <div style="display:grid;gap:4px;margin-top:8px;font-size:11px">
+        ${clearPlmnCounts.length ? clearPlmnCounts.map(([label, count]) => `<div style="display:flex;justify-content:space-between;gap:8px"><span>${dashEscape(label)}</span><strong>${count}</strong></div>`).join('') : '<div style="color:var(--gray-600)">No MCC/MNC readings</div>'}
+      </div>
     </div>`,
     `<div class="dash-card">
-      <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '—'} towers · ${constituencyRadio.servingCellCount || 0} cells</div>
-      <div class="dash-card-label">Network readings detected</div>
-      <div class="dash-card-note">${bandCount || '—'} LTE band type${bandCount === 1 ? '' : 's'} seen: ${constituencyRadio.bandText}</div>
-      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">Approximate serving eNB/tower groups and serving cells from field readings.</div>
+      <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '—'}T / ${constituencyRadio.servingCellCount || 0}C</div>
+      <div class="dash-card-label">Towers, cells and bands detected</div>
+      <div class="dash-card-note">${clearBandCounts.length || '—'} LTE band type${clearBandCounts.length === 1 ? '' : 's'}: ${topCountText(clearBandCounts)}</div>
+      <div style="display:grid;gap:3px;margin-top:8px;font-size:10px;color:var(--gray-700)">${clearWardNetworkBreakdown}</div>
     </div>`,
   ].join('');
-
   const wardRows = selectedWards.map(ward => {
     const records = surv.filter(p => p.ward === ward);
     const target = WARDS[ward].target;
@@ -5478,10 +5485,10 @@ function renderDashboard() {
     const tech = wardRadioTechnicalSummary(records);
     return `<tr>
       <td><strong>${ward}</strong><div class="dash-mini-bar" style="margin-top:5px"><div class="dash-mini-fill" style="width:${Math.min(100,pct)}%;background:${status[2]}"></div></div><span class="badge ${status[1]}" style="margin-top:5px">${status[0]} ${count}/${target}</span></td>
-      <td>${tech.gps.insideBoundary}/${count || 0}<div style="font-size:9px;color:${tech.gps.outsideBoundary ? 'var(--red)' : 'var(--gray-600)'}">${tech.gps.outsideBoundary} outside · ${tech.gps.wardMismatch} mismatch</div></td>
+      <td>${tech.gps.insideBoundary}/${count || 0}<div style="font-size:9px;color:${tech.gps.outsideBoundary ? 'var(--red)' : 'var(--gray-600)'}">${tech.gps.outsideBoundary} outside Â· ${tech.gps.wardMismatch} mismatch</div></td>
       <td>${tech.plmnText}</td>
       <td>${tech.bandText}</td>
-      <td><strong>${tech.servingTowerCount || '—'}</strong> eNB/tower<div style="font-size:9px;color:var(--gray-600)">${tech.servingCellCount || 0} serving cell${tech.servingCellCount === 1 ? '' : 's'}</div></td>
+      <td><strong>${tech.servingTowerCount || 'â€”'}</strong> eNB/tower<div style="font-size:9px;color:var(--gray-600)">${tech.servingCellCount || 0} serving cell${tech.servingCellCount === 1 ? '' : 's'}</div></td>
       <td><span style="color:${tech.rsrpClass.color};font-weight:700">${dashNumber(tech.avgRsrp,0)} dBm</span><div style="font-size:9px">${tech.rsrpClass.label}</div></td>
       <td><span style="color:${tech.rsrqClass.color};font-weight:700">${dashNumber(tech.avgRsrq,1)} dB</span><div style="font-size:9px">${tech.rsrqClass.label}</div></td>
       <td><span style="color:${tech.rssnrClass.color};font-weight:700">${dashNumber(tech.avgRssnr,1)} dB</span><div style="font-size:9px">${tech.rssnrClass.label}</div></td>
@@ -5490,7 +5497,7 @@ function renderDashboard() {
     </tr>`;
   }).join('');
   document.getElementById('dash-zone-bars').innerHTML = `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">${selectedDashboardConstituency} ward-level radio, operator and serving-cell summary</div>
-    <div style="font-size:10px;color:var(--gray-600);line-height:1.4;margin-bottom:10px">Ward-level analysis is more accurate than constituency averages because radio conditions vary by local terrain, buildings, serving cell, band and operator PLMN. Operator identity is inferred from MCC/MNC where recorded: 540-01 = Our Telekom, 540-02 = BMobile.<br>Ward radio thresholds: RSRP ≥-80 Excellent · -80 to -90 Good · -90 to -100 Fair · -100 to -110 Poor · below -110 Very Poor. RSRQ below -15 dB = degraded quality. RSSNR/SINR low or 0 dB = noisy signal environment.</div>
+    <div style="font-size:10px;color:var(--gray-600);line-height:1.4;margin-bottom:10px">Ward-level analysis is more accurate than constituency averages because radio conditions vary by local terrain, buildings, serving cell, band and operator PLMN. Operator identity is inferred from MCC/MNC where recorded: 540-01 = Our Telekom, 540-02 = BMobile.<br>Ward radio thresholds: RSRP â‰¥-80 Excellent Â· -80 to -90 Good Â· -90 to -100 Fair Â· -100 to -110 Poor Â· below -110 Very Poor. RSRQ below -15 dB = degraded quality. RSSNR/SINR low or 0 dB = noisy signal environment.</div>
     <div style="overflow:auto">
       <table class="dash-ward-table" style="min-width:1280px">
         <thead><tr><th>Ward</th><th>GPS boundary</th><th>MCC/MNC operator</th><th>Band</th><th>Serving towers/cells</th><th>RSRP</th><th>RSRQ</th><th>RSSNR</th><th>Speed</th><th>Interpretation</th></tr></thead>
@@ -5505,13 +5512,13 @@ function renderDashboard() {
     insights.push({cls: progressPct >= 80 ? 'good' : 'warn', text:`${selectedDashboardConstituency} is at ${progressPct}% of target (${surv.length}/${selectedTarget}).`});
     insights.push({cls: missingGps ? 'warn' : 'good', text: missingGps ? `${missingGps} record(s) need GPS correction or verification.` : 'All selected records have valid survey GPS.'});
     insights.push({cls: poorSignal ? 'bad' : 'good', text: poorSignal ? `${poorSignal} point(s) show poor/very poor signal below -100 dBm.` : 'No poor-signal cluster is dominating the selected records.'});
-    insights.push({cls: slowDl ? 'bad' : 'good', text: slowDl ? `${slowDl} speed reading(s) are below 1 Mbps and should be checked against screenshots.` : 'Download readings do not show a sub‑1 Mbps problem in this selected area.'});
-    insights.push({cls:'warn', text:`Operators represented: ${operators.join(', ') || 'not recorded'} · tower points linked/mapped: ${towers.length}.`});
+    insights.push({cls: slowDl ? 'bad' : 'good', text: slowDl ? `${slowDl} speed reading(s) are below 1 Mbps and should be checked against screenshots.` : 'Download readings do not show a subâ€‘1 Mbps problem in this selected area.'});
+    insights.push({cls:'warn', text:`Operators represented: ${operators.join(', ') || 'not recorded'} Â· tower points linked/mapped: ${towers.length}.`});
   }
   document.getElementById('dash-flags').innerHTML = `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">Instant interpretation</div>
     <div class="dash-insight-list">${insights.map(item => `<div class="dash-insight ${item.cls}">${item.text}</div>`).join('')}</div>
     <div style="margin-top:12px;font-size:11px;color:var(--gray-600);line-height:1.45">
-      Quality snapshot: Avg RSRQ ${dashNumber(avgRsrq,1)} dB · Avg SINR ${dashNumber(avgSinr,1)} dB. Use this with RSRP and download speed to tell whether the issue is weak coverage, interference/congestion, or throughput.
+      Quality snapshot: Avg RSRQ ${dashNumber(avgRsrq,1)} dB Â· Avg SINR ${dashNumber(avgSinr,1)} dB. Use this with RSRP and download speed to tell whether the issue is weak coverage, interference/congestion, or throughput.
   </div>`;
 
   renderExperienceCorrelation(surv);
@@ -5545,8 +5552,8 @@ function renderSpectrumConfiguration(surveys) {
     return 'Not identified in portal mapping';
   };
   const bandDescription = band => {
-    if (band === '3') return 'LTE Band 3 · FDD · 1800 MHz range';
-    if (band === '41') return 'LTE Band 41 · TDD · 2500 MHz range';
+    if (band === '3') return 'LTE Band 3 Â· FDD Â· 1800 MHz range';
+    if (band === '41') return 'LTE Band 41 Â· TDD Â· 2500 MHz range';
     return 'Recorded LTE band';
   };
 
@@ -5615,7 +5622,7 @@ function renderSpectrumConfiguration(surveys) {
       <section style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
         <div style="padding:10px 12px;background:#F8FAFC;border-bottom:1px solid var(--border)">
           <div style="font-size:12px;font-weight:700;color:var(--navy)">Recorded LTE spectrum bands</div>
-          <div style="font-size:9px;color:var(--gray-600);margin-top:2px">${recordsWithBand}/${surveys.length} survey records include at least one band${missingBand ? ` · ${missingBand} missing` : ''}</div>
+          <div style="font-size:9px;color:var(--gray-600);margin-top:2px">${recordsWithBand}/${surveys.length} survey records include at least one band${missingBand ? ` Â· ${missingBand} missing` : ''}</div>
         </div>
         <div style="overflow-x:auto">
           <table style="width:100%;min-width:470px;font-size:10px">
@@ -5631,7 +5638,7 @@ function renderSpectrumConfiguration(surveys) {
       <section style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
         <div style="padding:10px 12px;background:#F8FAFC;border-bottom:1px solid var(--border)">
           <div style="font-size:12px;font-weight:700;color:var(--navy)">Recorded MCC/MNC configurations</div>
-          <div style="font-size:9px;color:var(--gray-600);margin-top:2px">${recordsWithPlmn}/${surveys.length} survey records include at least one complete MCC/MNC pair${missingPlmn ? ` · ${missingPlmn} missing or incomplete` : ''}</div>
+          <div style="font-size:9px;color:var(--gray-600);margin-top:2px">${recordsWithPlmn}/${surveys.length} survey records include at least one complete MCC/MNC pair${missingPlmn ? ` Â· ${missingPlmn} missing or incomplete` : ''}</div>
         </div>
         <div style="overflow-x:auto">
           <table style="width:100%;min-width:500px;font-size:10px">
@@ -5688,7 +5695,7 @@ function renderNetworkIdentityAggregation(surveys) {
   }).filter(Number.isFinite);
   const avg = (records, fields, digits = 1) => {
     const values = numericValues(records, fields);
-    return values.length ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(digits) : '—';
+    return values.length ? (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(digits) : 'â€”';
   };
   const mappedTower = (operator, enb) => towerPoints.find(t =>
     clean(t.enb) === enb && (!clean(t.op) || clean(t.op).toLowerCase() === operator.toLowerCase())
@@ -5700,7 +5707,7 @@ function renderNetworkIdentityAggregation(surveys) {
       <div style="font-size:13px;font-weight:700;color:var(--navy)">Serving LTE Cell Performance Aggregation</div>
       <div style="font-size:10px;color:var(--gray-600);margin-top:3px">Primary serving-cell identity: PLMN (MCC + MNC) + ECI. Operator + ECI is used only when MCC/MNC is missing. Reported eNB/LCID, PCI and TAC are supporting cross-checks and do not alone prove a physical antenna sector.</div>
     </div>
-    <div style="font-size:10px;color:var(--gray-600);text-align:right">${towerRows.length} identified serving cell${towerRows.length === 1 ? '' : 's'} · ${surveys.filter(p => clean(p.fd_s2a_eci)).length}/${surveys.length} surveys with ECI</div>
+    <div style="font-size:10px;color:var(--gray-600);text-align:right">${towerRows.length} identified serving cell${towerRows.length === 1 ? '' : 's'} Â· ${surveys.filter(p => clean(p.fd_s2a_eci)).length}/${surveys.length} surveys with ECI</div>
   </div>
   <div style="overflow:auto;max-height:520px;border:1px solid var(--border);border-radius:7px">
     <table style="min-width:1160px;width:100%;font-size:10px">
@@ -5712,11 +5719,11 @@ function renderNetworkIdentityAggregation(surveys) {
         const towerPoint = mappedTower(tower.operator, tower.enb);
         const cells = [...tower.cells.values()].sort((a, b) => b.records.length - a.records.length);
         return cells.map((cell, index) => `<tr>
-          <td>${index === 0 ? `<strong>${tower.operator}</strong><div style="font-family:'JetBrains Mono',monospace;color:var(--navy)">PLMN ${tower.mcc && tower.mnc ? `${tower.mcc}-${tower.mnc}` : 'not recorded'} · eNB ${tower.enb || '—'}</div><div style="font-size:9px;color:var(--gray-600)">${tower.records.length} serving-cell observation${tower.records.length === 1 ? '' : 's'}</div>` : ''}</td>
-          <td style="font-family:'JetBrains Mono',monospace">${cell.tac || '—'}</td>
-          <td style="font-family:'JetBrains Mono',monospace">${cell.eci || '—'}</td>
-          <td style="font-family:'JetBrains Mono',monospace">${cell.lcid || '—'}</td>
-          <td style="font-family:'JetBrains Mono',monospace">${cell.pci || '—'}</td>
+          <td>${index === 0 ? `<strong>${tower.operator}</strong><div style="font-family:'JetBrains Mono',monospace;color:var(--navy)">PLMN ${tower.mcc && tower.mnc ? `${tower.mcc}-${tower.mnc}` : 'not recorded'} Â· eNB ${tower.enb || 'â€”'}</div><div style="font-size:9px;color:var(--gray-600)">${tower.records.length} serving-cell observation${tower.records.length === 1 ? '' : 's'}</div>` : ''}</td>
+          <td style="font-family:'JetBrains Mono',monospace">${cell.tac || 'â€”'}</td>
+          <td style="font-family:'JetBrains Mono',monospace">${cell.eci || 'â€”'}</td>
+          <td style="font-family:'JetBrains Mono',monospace">${cell.lcid || 'â€”'}</td>
+          <td style="font-family:'JetBrains Mono',monospace">${cell.pci || 'â€”'}</td>
           <td><strong>${cell.records.length}</strong><div style="font-size:9px;color:var(--gray-600)">${cell.records.map(p => p.id || p.respondentId).join(', ')}</div></td>
           <td>${avg(cell.records, ['rsrp', 'fd_s2a_rsrp'])} dBm</td>
           <td>${avg(cell.records, ['fd_s2a_rsrq'])} dB</td>
@@ -5731,9 +5738,9 @@ function renderNetworkIdentityAggregation(surveys) {
   <div style="font-size:9px;color:var(--gray-600);margin-top:8px">These summaries describe observed performance among sampled locations and times, not cell capacity. Valid attribution assumes the serving-cell identity was captured immediately before or during each performance test and no handover occurred. PCI and TAC are not unique cell identifiers.</div>`;
 }
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  DATA TABLE
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 function renderDataTable() {
   applyRolePermissions();
@@ -5752,27 +5759,27 @@ function renderDataTable() {
     ? points.filter(p => ['mismatch', 'outside-boundary'].includes(wardGpsValidation(p)?.type)).length
     : 0;
   document.getElementById('data-count').textContent =
-    `${rows.length} of ${points.length} records${duplicateCount ? ` · ${duplicateCount} duplicate respondent ID${duplicateCount === 1 ? '' : 's'} flagged` : ''}`;
+    `${rows.length} of ${points.length} records${duplicateCount ? ` Â· ${duplicateCount} duplicate respondent ID${duplicateCount === 1 ? '' : 's'} flagged` : ''}`;
   if (sharedGpsCount) {
     document.getElementById('data-count').textContent +=
-      ` · ${sharedGpsCount} shared GPS location${sharedGpsCount === 1 ? '' : 's'}`;
+      ` Â· ${sharedGpsCount} shared GPS location${sharedGpsCount === 1 ? '' : 's'}`;
   }
   if (possibleDuplicateCount) {
     document.getElementById('data-count').textContent +=
-      ` · ${possibleDuplicateCount} possible duplicate group${possibleDuplicateCount === 1 ? '' : 's'}`;
+      ` Â· ${possibleDuplicateCount} possible duplicate group${possibleDuplicateCount === 1 ? '' : 's'}`;
   }
 
   if (wardMismatchCount) {
     document.getElementById('data-count').textContent +=
-      ` Â· ${wardMismatchCount} ward/GPS mismatch${wardMismatchCount === 1 ? '' : 'es'} flagged`;
+      ` Ã‚Â· ${wardMismatchCount} ward/GPS mismatch${wardMismatchCount === 1 ? '' : 'es'} flagged`;
   } else if (wardBoundaryIndexStatus === 'unavailable') {
     document.getElementById('data-count').textContent +=
-      ' Â· ward boundary check unavailable';
+      ' Ã‚Â· ward boundary check unavailable';
   }
 
   const tbody = document.getElementById('dt-body');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="23" style="text-align:center;color:var(--gray-400);padding:2rem">No data — add survey points or upload a CSV file</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="23" style="text-align:center;color:var(--gray-400);padding:2rem">No data â€” add survey points or upload a CSV file</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(p => {
@@ -5839,14 +5846,14 @@ function renderDataTable() {
   }).join('');
 }
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  EDIT & DELETE SURVEY RECORDS
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function dtDelete(btn, displayId) {
   const mongoId = btn.getAttribute('data-mid');
   displayId = btn.getAttribute('data-did') || mongoId;
-  if (!mongoId || mongoId === 'undefined') { alert('Cannot delete — record has no database ID.'); return; }
+  if (!mongoId || mongoId === 'undefined') { alert('Cannot delete â€” record has no database ID.'); return; }
   const reason = prompt('Reason for deleting survey ' + displayId + ':\n\nExamples: duplicate record, invalid GPS, incomplete survey, or test record.');
   if (reason == null) return;
   if (reason.trim().length < 5) { alert('Please enter a clear deletion reason of at least 5 characters.'); return; }
@@ -5874,14 +5881,14 @@ async function loadDeletedSurveys() {
       return;
     }
     tbody.innerHTML = data.deleted.map(d => `<tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${d.respondentId || '—'}</td>
-      <td>${d.ward || '—'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${d.respondentId || 'â€”'}</td>
+      <td>${d.ward || 'â€”'}</td>
       <td><span class="badge ${d.restoredAt ? 'badge-ok' : 'badge-red'}">${d.restoredAt ? 'Restored' : 'Deleted'}</span></td>
-      <td style="font-size:11px;max-width:260px">${d.deletionReason || 'Legacy deletion — reason not recorded'}</td>
-      <td style="color:var(--gray-600);font-size:11px">${d.deletedBy || '—'} @ ${d.deletedAt ? new Date(d.deletedAt).toLocaleString() : '—'}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${d.replacementRespondentId || '—'}</td>
+      <td style="font-size:11px;max-width:260px">${d.deletionReason || 'Legacy deletion â€” reason not recorded'}</td>
+      <td style="color:var(--gray-600);font-size:11px">${d.deletedBy || 'â€”'} @ ${d.deletedAt ? new Date(d.deletedAt).toLocaleString() : 'â€”'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${d.replacementRespondentId || 'â€”'}</td>
       <td style="white-space:nowrap">
-        ${d.restoredAt ? `<span style="font-size:10px;color:var(--gray-600)">Restored by ${d.restoredBy || '—'}</span>` : `<button onclick="dtRestore('${d._id}')" style="border:none;background:var(--green);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Restore</button>`}
+        ${d.restoredAt ? `<span style="font-size:10px;color:var(--gray-600)">Restored by ${d.restoredBy || 'â€”'}</span>` : `<button onclick="dtRestore('${d._id}')" style="border:none;background:var(--green);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer">Restore</button>`}
         <button onclick="dtLinkReplacement('${d._id}','${d.replacementRespondentId || ''}')" style="border:1px solid var(--border);background:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-left:4px">Link replacement</button>
       </td>
     </tr>`).join('');
@@ -5923,11 +5930,11 @@ async function loadSurveyAudit() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to load audit log');
     tbody.innerHTML = data.audit?.length ? data.audit.map(a => `<tr>
-      <td style="font-size:11px">${a.performedAt ? new Date(a.performedAt).toLocaleString() : '—'}</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${a.respondentId || '—'}</td>
+      <td style="font-size:11px">${a.performedAt ? new Date(a.performedAt).toLocaleString() : 'â€”'}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${a.respondentId || 'â€”'}</td>
       <td><span class="badge ${a.action === 'restored' ? 'badge-ok' : a.action === 'deleted' ? 'badge-red' : 'badge-warn'}">${String(a.action || '').replace('_', ' ')}</span></td>
-      <td>${a.performedBy || '—'}</td>
-      <td style="font-size:11px">${a.reason || (a.replacementRespondentId ? 'Replacement: ' + a.replacementRespondentId : '—')}</td>
+      <td>${a.performedBy || 'â€”'}</td>
+      <td style="font-size:11px">${a.reason || (a.replacementRespondentId ? 'Replacement: ' + a.replacementRespondentId : 'â€”')}</td>
     </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--gray-400)">No audit actions recorded yet</td></tr>';
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--red)">${err.message}</td></tr>`;
@@ -6239,7 +6246,7 @@ function openMapScreenshot(carouselId) {
   overlay.innerHTML = `<div style="position:relative;width:min(1100px,100%);height:min(820px,calc(100vh - 32px));display:flex;flex-direction:column;gap:8px;min-height:0">
     <button type="button" onclick="closeMapScreenshot()" title="Close" style="position:absolute;right:8px;top:8px;z-index:5;width:38px;height:38px;border:0;border-radius:6px;background:#fff;color:#1A1A2E;font-size:22px;cursor:pointer;font-weight:700">&times;</button>
     <div data-role="zoom-controls" style="position:absolute;left:10px;top:10px;z-index:4;display:flex;align-items:center;gap:5px;background:rgba(17,24,39,.88);padding:5px;border-radius:7px">
-      <button type="button" data-zoom-action="out" title="Zoom out" style="width:30px;height:28px;border:1px solid #667085;border-radius:5px;background:#fff;cursor:pointer;font-size:17px">−</button>
+      <button type="button" data-zoom-action="out" title="Zoom out" style="width:30px;height:28px;border:1px solid #667085;border-radius:5px;background:#fff;cursor:pointer;font-size:17px">âˆ’</button>
       <button type="button" data-zoom-action="reset" title="Reset zoom" style="height:28px;border:1px solid #667085;border-radius:5px;background:#fff;cursor:pointer;font-size:10px;padding:0 8px">100%</button>
       <button type="button" data-zoom-action="in" title="Zoom in" style="width:30px;height:28px;border:1px solid #667085;border-radius:5px;background:#fff;cursor:pointer;font-size:17px">+</button>
     </div>
@@ -6247,7 +6254,7 @@ function openMapScreenshot(carouselId) {
       <img data-role="zoom-image" src="${slide.url}" alt="${slide.label}" draggable="false" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transform-origin:center center;will-change:transform;pointer-events:none">
     </div>
     <div style="color:#fff;text-align:center;font-size:12px;font-weight:600">${slide.sim ? slide.sim + ' - ' : ''}${slide.label}</div>
-    <div style="color:#cbd5e1;text-align:center;font-size:10px">Mouse wheel to zoom · Drag image to move · Double-click to reset</div>
+    <div style="color:#cbd5e1;text-align:center;font-size:10px">Mouse wheel to zoom Â· Drag image to move Â· Double-click to reset</div>
   </div>`;
   overlay.addEventListener('click', event => { if (event.target === overlay) closeMapScreenshot(); });
   overlay.tabIndex = -1;
@@ -6471,7 +6478,7 @@ async function dtEdit(btn) {
   openRecordReadOnly = false;
   const mongoId = btn.getAttribute('data-mid');
   console.log('dtEdit called with:', mongoId);
-  if (!mongoId || mongoId === 'undefined') { alert('Cannot edit — record has no database ID.'); return; }
+  if (!mongoId || mongoId === 'undefined') { alert('Cannot edit â€” record has no database ID.'); return; }
   const cachedSurvey = points.find(p => p._id === mongoId);
   const ownsRecord = cachedSurvey &&
     String(cachedSurvey.submittedBy || '').toLowerCase() === String(currentUser?.username || '').toLowerCase();
@@ -6522,7 +6529,7 @@ async function dtEdit(btn) {
     if (!val) return;
     document.querySelectorAll('#view-survey input[name="' + name + '"]').forEach(r => { if (r.value === val) r.checked = true; });
   };
-  // Helper: check checkboxes — handles semicolon-joined strings from DB
+  // Helper: check checkboxes â€” handles semicolon-joined strings from DB
   const setCheck = (name, vals) => {
     if (!vals) return;
     const arr = Array.isArray(vals) ? vals : String(vals).split(';').map(v => v.trim());
@@ -6558,7 +6565,7 @@ async function dtEdit(btn) {
     }
   };
 
-  // ── Header ──────────────────────────────────
+  // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const existingRespondentId = survey.respondentId || survey.id || '';
   editingOriginalWard = readOnly ? '' : (survey.ward || '');
   editingOriginalRespondentId = readOnly ? '' : existingRespondentId;
@@ -6572,7 +6579,7 @@ async function dtEdit(btn) {
   s('sf-uploaded-by', survey.uploadedBy || survey.submittedBy);
   s('sf-date', survey.date);
 
-  // Time — convert 24hr stored value back to 12hr selects
+  // Time â€” convert 24hr stored value back to 12hr selects
   console.log('survey.time from DB:', survey.time);
   if (survey.time) {
     const parts = survey.time.split(':');
@@ -6590,7 +6597,7 @@ async function dtEdit(btn) {
     sfTimeSync();
   }
 
-  // ── Section A ───────────────────────────────
+  // â”€â”€ Section A â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // A1 Ward
   if (survey.ward) {
     document.querySelectorAll('#view-survey input[name="sf-a1"]').forEach(r => {
@@ -6603,41 +6610,41 @@ async function dtEdit(btn) {
   setRadio('sf-a5', survey.a5);  // Plan type
   setRadio('sf-a6', survey.a6);  // Devices
 
-  // ── Section B ───────────────────────────────
+  // â”€â”€ Section B â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   setRadio('sf-b1', survey.b1);  // Signal quality rating
   setRadio('sf-b2', survey.b2);  // Call drops
   setRadio('sf-b3', survey.b3);  // Dead zones
   s('sf-b3-det', survey.b3_detail);
   setCheck('sf-b4', survey.b4);  // When problems occur (checkboxes)
 
-  // ── Section C ───────────────────────────────
+  // â”€â”€ Section C â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   setRadio('sf-c1', survey.c1);
   setRadio('sf-c2', survey.c2);
   setRadio('sf-c3', survey.c3);
-  setCheck('sf-c4', survey.c4);  // checkboxes — time of day
+  setCheck('sf-c4', survey.c4);  // checkboxes â€” time of day
   setRadio('sf-c5', survey.c5);
-  setCheck('sf-c6', survey.c6);  // checkboxes — streaming time
+  setCheck('sf-c6', survey.c6);  // checkboxes â€” streaming time
   setRadio('sf-c7', survey.c7);
-  setCheck('sf-c8', survey.c8);  // checkboxes — apps used
+  setCheck('sf-c8', survey.c8);  // checkboxes â€” apps used
 
-  // ── Section D ───────────────────────────────
+  // â”€â”€ Section D â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   setRadio('sf-d1', survey.d1);
   setRadio('sf-d2', survey.d2);
   setRadio('sf-d3', survey.d3);
   setRadio('sf-d4', survey.d4);
 
-  // ── Section E ───────────────────────────────
+  // â”€â”€ Section E â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   setRadio('sf-e1', survey.e1);
   setRadio('sf-e1n', survey.e1_no);
   setRadio('sf-e2', survey.e2);
   setRadio('sf-e3', survey.e3);
   s('sf-e4', survey.e4);
 
-  // ── GPS ─────────────────────────────────────
+  // â”€â”€ GPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   s('sf-lat', survey.lat);
   s('sf-lon', survey.lng);
 
-  // ── Field Data Steps ─────────────────────────
+  // â”€â”€ Field Data Steps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   restoreFieldData();
   restoreSelectOther('fd-s1-op', 'fd-s1-op-other', survey.fd_s1_op || survey.operator || survey.op);
   restoreSelectOther('fd-s7-top', 'fd-s7-top-other', survey.fd_s7_top);
@@ -6646,7 +6653,7 @@ async function dtEdit(btn) {
   if (typeof checkTowerAccess === 'function') checkTowerAccess();
   if (typeof s7OpChange === 'function') s7OpChange();
 
-  // ── Notes ────────────────────────────────────
+  // â”€â”€ Notes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   s('sf-notes', survey.notes);
   // Existing records must always retain their authoritative stored Respondent ID.
   s('sf-respondent-id', existingRespondentId);
@@ -6663,7 +6670,7 @@ async function dtEdit(btn) {
       formBody.insertBefore(viewBanner, formBody.firstChild);
     }
     viewBanner.style.cssText = 'background:#E8F5EE;border:1px solid #2E7D5B;border-radius:6px;padding:10px 14px;margin:10px 14px;font-size:12px;color:#205C43;display:flex;align-items:center;justify-content:space-between';
-    viewBanner.innerHTML = '<span><strong>Read-only record:</strong> ' + (existingRespondentId || mongoId) + ' — viewing only; no changes can be made</span>' +
+    viewBanner.innerHTML = '<span><strong>Read-only record:</strong> ' + (existingRespondentId || mongoId) + ' â€” viewing only; no changes can be made</span>' +
       '<button onclick="sfCancelEdit()" style="border:none;background:transparent;color:#205C43;cursor:pointer;font-weight:600;font-size:12px">Back to Data Table</button>';
     viewBanner.querySelector('button').disabled = false;
     return;
@@ -6696,8 +6703,8 @@ async function dtEdit(btn) {
     const formBody = document.getElementById('sf-form-body');
     formBody.insertBefore(banner, formBody.firstChild);
   }
-  banner.innerHTML = '<span>✏️ <strong>Editing:</strong> ' + (existingRespondentId || mongoId) + ' — make changes then click Save changes</span>' +
-    '<button onclick="sfCancelEdit()" style="border:none;background:transparent;color:#92400E;cursor:pointer;font-weight:600;font-size:12px">✕ Cancel edit</button>';
+  banner.innerHTML = '<span>âœï¸ <strong>Editing:</strong> ' + (existingRespondentId || mongoId) + ' â€” make changes then click Save changes</span>' +
+    '<button onclick="sfCancelEdit()" style="border:none;background:transparent;color:#92400E;cursor:pointer;font-weight:600;font-size:12px">âœ• Cancel edit</button>';
   banner.style.display = 'flex';
 }
 
@@ -6711,22 +6718,22 @@ function sfCancelEdit() {
   if (dataTnav) {
     switchView('data', dataTnav);
   } else {
-    // fallback — find the Data Table button by text
+    // fallback â€” find the Data Table button by text
     document.querySelectorAll('.tnav').forEach(btn => {
       if (btn.textContent.trim() === 'Data Table') switchView('data', btn);
     });
   }
 }
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  INIT
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  SURVEY FORM LOGIC
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-// Ward tick toggle — must intercept on the label, not the input,
+// Ward tick toggle â€” must intercept on the label, not the input,
 // because the hidden radio input never receives direct user clicks.
 // We track whether the ward was already selected via a data attribute,
 // prevent the default label behaviour, and manually set/clear the input.
@@ -6812,7 +6819,7 @@ function syncAppRecorder() {
 function setSignedField(id, sign) {
   const el = document.getElementById(id);
   if (!el) return;
-  const raw = String(el.value || '').trim().replace(/[−–—]/g, '-');
+  const raw = String(el.value || '').trim().replace(/[âˆ’â€“â€”]/g, '-');
   const numeric = parseFloat(raw);
   if (!Number.isFinite(numeric)) {
     el.value = sign < 0 ? '-' : '';
@@ -6836,15 +6843,15 @@ function sfGetData() {
   return {
     // Header
     respondentId: g('sf-respondent-id'), interviewer: g('sf-interviewer'), appRecorder: g('sf-app-recorder'), date: g('sf-date'), time: g('sf-time'),
-    // Step 1 — DEVICE+SIM
+    // Step 1 â€” DEVICE+SIM
     fd_s1_op: (g('fd-s1-op') === 'Other' ? g('fd-s1-op-other') : g('fd-s1-op')),
     fd_s1_simstate: g('fd-s1-simstate'), fd_s1_svcstate: g('fd-s1-svcstate'), fd_s1_roaming: g('fd-s1-roaming'),
-    // Step 2A — RAW SIM1
+    // Step 2A â€” RAW SIM1
     fd_s2a_mcc: g('fd-s2a-mcc'), fd_s2a_mnc: g('fd-s2a-mnc'), fd_s2a_band: g('fd-s2a-band'),
     fd_s2a_rsrp: g('fd-s2a-rsrp'), fd_s2a_rsrq: g('fd-s2a-rsrq'), fd_s2a_rssnr: g('fd-s2a-rssnr'),
     fd_s2a_tac: g('fd-s2a-tac'), fd_s2a_eci: g('fd-s2a-eci'), fd_s2a_enb: g('fd-s2a-enb'),
     fd_s2a_lcid: g('fd-s2a-lcid'), fd_s2a_pci: g('fd-s2a-pci'), fd_s2a_scr: screenshotValue('fd-s2a-scr'),
-    // Step 2B — RAW SIM2
+    // Step 2B â€” RAW SIM2
     fd_s2b_mcc: g('fd-s2b-mcc'), fd_s2b_mnc: g('fd-s2b-mnc'), fd_s2b_band: g('fd-s2b-band'),
     fd_s2b_rsrp: g('fd-s2b-rsrp'), fd_s2b_rsrq: g('fd-s2b-rsrq'), fd_s2b_rssnr: g('fd-s2b-rssnr'),
     fd_s2b_tac: g('fd-s2b-tac'), fd_s2b_eci: g('fd-s2b-eci'), fd_s2b_enb: g('fd-s2b-enb'),
@@ -6884,9 +6891,9 @@ function sfGetData() {
     fd_s2_nperf_ul: g('fd-s2-nperf-ul') + ' ' + (g('fd-s2-nperf-ul-unit')||'Mbps'),
     fd_s2_ncil_ping: g('fd-s2-ncil-ping'), fd_s2_ookla_ping: g('fd-s2-ookla-ping'), fd_s2_nperf_ping: g('fd-s2-nperf-ping'),
     fd_s2_ncil_jitter: g('fd-s2-ncil-jitter'), fd_s2_ookla_jitter: g('fd-s2-ookla-jitter'), fd_s2_nperf_jitter: g('fd-s2-nperf-jitter'),
-    // Step 6 — GPS
+    // Step 6 â€” GPS
     lat: g('sf-lat'), lng: g('sf-lon'), gps_status, fd_s6_scr: screenshotValue('fd-s6-scr'),
-    // Step 7 — Tower
+    // Step 7 â€” Tower
     fd_s7_tlat: '', fd_s7_tlon: '',
     fd_s7_top: '', fd_s7_ttype: '', fd_s7_enb_conf: '', fd_s7_newenb: '',
     fd_s7_photo: '', fd_s7_photo_file: '', fd_s7_gps_method: '',
@@ -6913,7 +6920,7 @@ function sfGetData() {
   };
 }
 
-// ── Admin Panel ─────────────────────────────────────────────────────
+// â”€â”€ Admin Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function initTowerReadingsView() {
   const host = document.getElementById('tower-form-host');
   const hdr = document.getElementById('tower-step7-hdr');
@@ -7046,7 +7053,7 @@ async function loadAdminUsers() {
         ? '<button data-uid="' + u._id + '" data-uname="' + u.username + '" onclick="adminDeleteUser(this.dataset.uid,this.dataset.uname)" style="border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer">Delete</button>'
         : '';
       return '<tr style="border-bottom:1px solid var(--border)">'
-        + '<td style="padding:10px 12px;font-weight:500">' + (u.fullName || '—') + '</td>'
+        + '<td style="padding:10px 12px;font-weight:500">' + (u.fullName || 'â€”') + '</td>'
         + '<td style="padding:10px 12px;font-family:monospace;font-size:12px">' + u.username + '</td>'
         + '<td style="padding:10px 12px">' + badge + '</td>'
         + '<td style="padding:10px 12px">'
@@ -7126,7 +7133,7 @@ async function adminDeleteUser(userId, username) {
   }
 }
 
-// ── Orientation change handler ──────────────────────────────────────
+// â”€â”€ Orientation change handler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 window.addEventListener('orientationchange', () => {
   // Small delay lets the browser finish rotating before we recalc
   setTimeout(() => {
@@ -7136,7 +7143,7 @@ window.addEventListener('orientationchange', () => {
   }, 200);
 });
 
-// ── Time spinner ──
+// â”€â”€ Time spinner â”€â”€
 function sfTimeSync() {
   const hh = parseInt(document.getElementById('sf-time-hh').value);
   const mm = document.getElementById('sf-time-mm').value;
@@ -7147,7 +7154,7 @@ function sfTimeSync() {
   document.getElementById('sf-time').value = String(h24).padStart(2,'0') + ':' + mm;
 }
 
-// ── Time field format helpers ───────────────────────────────────────
+// â”€â”€ Time field format helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function sfTimeFormat(el) {
   let v = el.value.replace(/[^0-9]/g, '');
   if (v.length > 2) v = v.slice(0,2) + ':' + v.slice(2,4);
@@ -7164,7 +7171,7 @@ function sfTimeBlur(el) {
   }
 }
 
-// ── Band "Other" toggle ──────────────────────────────────────────────
+// â”€â”€ Band "Other" toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function bandOtherToggle(selId, inputId) {
   const sel = document.getElementById(selId);
   const inp = document.getElementById(inputId);
@@ -7172,7 +7179,7 @@ function bandOtherToggle(selId, inputId) {
   if (sel.value === 'Other') inp.focus();
 }
 
-// ── Auto-generate Respondent ID from ward selection ─────────────────
+// â”€â”€ Auto-generate Respondent ID from ward selection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const WARD_CODES = {
   'Nggossi':        'WH-NG',
   'Mbumburu':       'WH-MB',
@@ -7207,7 +7214,7 @@ async function generateRespondentId(ward) {
   if (el.dataset.allocatingWard === ward) return;
 
   const prefix = WARD_CODES[ward];
-  el.value = 'Allocating…';
+  el.value = 'Allocatingâ€¦';
   el.dataset.allocatingWard = ward;
   try {
     const res = await apiCall('GET', '/api/surveys/next-id/' + encodeURIComponent(ward));
@@ -7230,7 +7237,7 @@ async function generateRespondentId(ward) {
   }
 }
 
-// ── Step 1: operator "Other" text field ──────────────────────────────
+// â”€â”€ Step 1: operator "Other" text field â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function s1OpChange() {
   const sel = document.getElementById('fd-s1-op').value;
   const txt = document.getElementById('fd-s1-op-other');
@@ -7245,7 +7252,7 @@ function s1OpChange() {
   }
 }
 
-// ── Step 7: accessible gate ───────────────────────────────────────────
+// â”€â”€ Step 7: accessible gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function checkTowerAccess() {
   const val = document.getElementById('fd-s7-access').value;
   const fields = document.getElementById('tower-fields');
@@ -7257,14 +7264,14 @@ function checkTowerAccess() {
   noReason.disabled = false;
 }
 
-// ── Step 7: tower operator "Other" ───────────────────────────────────
+// â”€â”€ Step 7: tower operator "Other" â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function s7OpChange() {
   const sel = document.getElementById('fd-s7-top').value;
   const txt = document.getElementById('fd-s7-top-other');
   txt.style.display = sel === 'Other' ? 'block' : 'none';
 }
 
-// ── SIM 2 toggle ──────────────────────────────────────────────────
+// â”€â”€ SIM 2 toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function toggleSim2() {
   const block = document.getElementById('sim2-block');
   const speedHdr = document.getElementById('sim2-speed-hdr');
@@ -7274,7 +7281,7 @@ function toggleSim2() {
   block.style.display = isOpen ? 'none' : 'block';
   speedHdr.style.display = isOpen ? 'none' : 'block';
   speedBlock.style.display = isOpen ? 'none' : 'block';
-  label.textContent = isOpen ? '(tap to expand — only if respondent uses Both operators)' : '(tap to collapse)';
+  label.textContent = isOpen ? '(tap to expand â€” only if respondent uses Both operators)' : '(tap to collapse)';
 }
 
 function toggleSim2Auto() {
@@ -7287,7 +7294,7 @@ function toggleSim2Auto() {
   block.style.display = show ? 'block' : 'none';
   speedHdr.style.display = show ? 'block' : 'none';
   speedBlock.style.display = show ? 'block' : 'none';
-  if (label) label.textContent = show ? '(tap to collapse)' : '(tap to expand — only if respondent uses Both operators)';
+  if (label) label.textContent = show ? '(tap to collapse)' : '(tap to expand â€” only if respondent uses Both operators)';
 }
 
 async function sfSubmit() {
@@ -7350,9 +7357,9 @@ async function sfSubmit() {
     }
   }
 
-  // ── EDIT MODE — PUT to existing record ──────────────────
+  // â”€â”€ EDIT MODE â€” PUT to existing record â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (editingId) {
-    if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+    if (btn) { btn.textContent = 'Savingâ€¦'; btn.disabled = true; }
     try {
       const res = await fetch(API_URL + '/api/surveys/' + editingId, {
         method: 'PUT',
@@ -7376,10 +7383,10 @@ async function sfSubmit() {
     return;
   }
 
-  // ── NEW SUBMISSION ───────────────────────────────────────
-  if (btn) { btn.textContent = 'Submitting…'; btn.disabled = true; }
+  // â”€â”€ NEW SUBMISSION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  if (btn) { btn.textContent = 'Submittingâ€¦'; btn.disabled = true; }
 
-  // DEMO MODE — store locally, skip API
+  // DEMO MODE â€” store locally, skip API
   if (DEMO_MODE) {
     if (data.ward && WARDS[data.ward]) {
       const base = WARDS[data.ward];
@@ -7399,7 +7406,7 @@ async function sfSubmit() {
     document.getElementById('sf-success').classList.add('show');
     localStorage.removeItem('honiara_sf_draft');
   document.getElementById('sf-success-txt').textContent =
-      `[DEMO] Survey ${data.respondentId||''} — ${data.ward} — stored locally. Not saved to database.`;
+      `[DEMO] Survey ${data.respondentId||''} â€” ${data.ward} â€” stored locally. Not saved to database.`;
     updateTopBadge();
     if (btn) { btn.textContent = 'Submit survey'; btn.disabled = false; }
     return;
@@ -7433,7 +7440,7 @@ async function sfSubmit() {
     localStorage.removeItem('honiara_sf_draft');
     reservedRespondentIds.delete(data.ward);
     document.getElementById('sf-success-txt').textContent =
-      `Survey ${result.survey?.respondentId || data.respondentId || ''} — ${data.ward} — saved to database. Point added to Live Map.`;
+      `Survey ${result.survey?.respondentId || data.respondentId || ''} â€” ${data.ward} â€” saved to database. Point added to Live Map.`;
     updateTopBadge();
     // Reload all surveys from server so table and map stay in sync with MongoDB
     await syncSurveyViews();
@@ -7654,9 +7661,9 @@ function sfReset(keepEditingId) {
   sfProgress();
 }
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  OPENCELLID TOWER LOOKUP
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 let lastTowerResult = null;
 
@@ -7710,9 +7717,9 @@ function displayTowerResult(data) {
   document.getElementById('tr-lat').textContent     = parseFloat(data.lat).toFixed(6);
   document.getElementById('tr-lon').textContent     = parseFloat(data.lon).toFixed(6);
   document.getElementById('tr-radio').textContent   = data.radio || 'LTE';
-  document.getElementById('tr-cid').textContent     = data.cellid || '—';
-  document.getElementById('tr-range').textContent   = data.range ? data.range + ' m' : '—';
-  document.getElementById('tr-samples').textContent = data.samples || '—';
+  document.getElementById('tr-cid').textContent     = data.cellid || 'â€”';
+  document.getElementById('tr-range').textContent   = data.range ? data.range + ' m' : 'â€”';
+  document.getElementById('tr-samples').textContent = data.samples || 'â€”';
   document.getElementById('tower-result').classList.add('show');
 }
 
@@ -7756,7 +7763,7 @@ function copyTowerCoords() {
   navigator.clipboard.writeText(text)
     .then(() => {
       const btn = document.querySelector('.tower-result-actions .btn:last-child');
-      if (btn) { const o = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => btn.textContent = o, 1500); }
+      if (btn) { const o = btn.textContent; btn.textContent = 'Copied âœ“'; setTimeout(() => btn.textContent = o, 1500); }
     })
     .catch(() => alert('Coordinates: ' + text));
 }
@@ -7788,7 +7795,7 @@ function transformSpeedTestsLayout() {
     if (sim === 's1') {
       const warning = document.createElement('div');
       warning.style.cssText = 'background:var(--red-light);border:1px solid var(--red);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--red);margin-bottom:12px;line-height:1.45';
-      warning.innerHTML = '<strong>WiFi must be OFF.</strong> If result shows Type: WiFi the reading is invalid — turn WiFi off and repeat.';
+      warning.innerHTML = '<strong>WiFi must be OFF.</strong> If result shows Type: WiFi the reading is invalid â€” turn WiFi off and repeat.';
       body.appendChild(warning);
     }
 
@@ -7927,9 +7934,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  AUTH FUNCTIONS
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 async function doLogin() {
   if (DEMO_MODE) { showApp(); return; }
@@ -7939,10 +7946,10 @@ async function doLogin() {
   const btn      = document.getElementById('login-btn');
   const errEl    = document.getElementById('login-error');
   if (!username || !password) { showLoginError('Please enter your username and password.'); return; }
-  btn.textContent = 'Signing in…'; btn.disabled = true;
+  btn.textContent = 'Signing inâ€¦'; btn.disabled = true;
   errEl.classList.remove('show');
   try {
-    btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px">&#9696;</span>Connecting to server…';
+    btn.innerHTML = '<span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px">&#9696;</span>Connecting to serverâ€¦';
     // Add timeout for slow Render cold start
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60000);
@@ -7966,11 +7973,11 @@ async function doLogin() {
       localStorage.removeItem('honiara_user');
     }
     btn.innerHTML = '\u2713 Signed in';
-    // Keep button disabled after success — login screen will hide
+    // Keep button disabled after success â€” login screen will hide
     showApp();
   } catch (err) {
     if (err.name === 'AbortError') {
-      showLoginError('Server is starting up — this can take up to 60 seconds on first use. Please try again.');
+      showLoginError('Server is starting up â€” this can take up to 60 seconds on first use. Please try again.');
     } else {
       showLoginError('Cannot reach the server. Check your internet connection.');
     }
@@ -8057,7 +8064,7 @@ function showApp() {
     const adminTab = document.getElementById('tnav-admin');
     if (adminTab) adminTab.style.display = isAdmin ? '' : 'none';
 
-    // Map sidebar admin tools — view only for non-admin
+    // Map sidebar admin tools â€” view only for non-admin
     const sidebarTools = document.getElementById('sidebar-admin-tools');
     if (sidebarTools) sidebarTools.style.display = isAdmin ? '' : 'none';
     const dtAddBtn = document.getElementById('dt-add-random-btn');
@@ -8400,7 +8407,7 @@ async function checkAuth() {
   }
 }
 
-// ── INIT ──────────────────────────────────────────────────────────
+// â”€â”€ INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 document.getElementById('f-date').value  = new Date().toISOString().split('T')[0];
 initScreenshotInputs();
@@ -8413,3 +8420,4 @@ checkAuth();
 </script>
 </body>
 </html>
+
