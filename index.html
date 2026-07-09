@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-encoding-clean-v20">
+<meta name="portal-build" content="2026-07-09-admin-label-clean-v22">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1055,7 +1055,7 @@
       <button class="tnav" id="tnav-map" onclick="switchView('map', this)">Live Map</button>
       <button class="tnav" id="tnav-dashboard" onclick="switchView('dashboard', this)">Dashboard</button>
       <button class="tnav" id="tnav-data" onclick="switchView('data', this)">Data Table</button>
-      <button class="tnav" id="tnav-admin" onclick="switchView('admin', this)" style="display:none">Admin Admin</button>
+      <button class="tnav" id="tnav-admin" onclick="switchView('admin', this)" style="display:none">Admin</button>
     </div>
     <div class="topbar-right">
       <div class="user-badge">
@@ -1212,7 +1212,7 @@
         <button type="button" onclick="toggleMobileMapPanel('summary')">Summary</button>
         <button type="button" onclick="toggleMobileMapPanel('layers')">Layers</button>
         <button type="button" class="map-action-primary" onclick="fitMobileMap()">Fit</button>
-        <button type="button" class="map-action-close" onclick="closeMobileMapPanels()" title="Close panels">Ã—</button>
+        <button type="button" class="map-action-close" onclick="closeMobileMapPanels()" title="Close panels">x</button>
       </div>
 
       <!-- LAYER CONTROLS -->
@@ -1321,7 +1321,7 @@
 <div class="view-panel" id="view-admin">
   <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
     <div>
-      <div style="font-weight:600;color:var(--navy);font-size:15px">Admin Admin Panel</div>
+      <div style="font-weight:600;color:var(--navy);font-size:15px">Admin Panel</div>
       <div style="font-size:12px;color:var(--gray-600);margin-top:2px">Manage user accounts and access</div>
     </div>
     <button class="btn btn-primary" onclick="showAddUserForm()">+ Add User</button>
@@ -4338,7 +4338,7 @@ function openSurveyPointDetail(p) {
         </div>
         <div style="display:flex;gap:6px;align-items:center">
           <button type="button" data-survey-detail-toggle onclick="toggleSurveyPointDetail()" title="Collapse survey details" style="height:34px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#10243d;cursor:pointer;font-size:11px;font-weight:700;padding:0 10px">Collapse</button>
-          <button type="button" onclick="closeSurveyPointDetail()" title="Close survey point" style="flex:none;width:38px;height:34px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#10243d;cursor:pointer;font-size:20px;font-weight:700">Ã—</button>
+          <button type="button" onclick="closeSurveyPointDetail()" title="Close survey point" style="flex:none;width:38px;height:34px;border:1px solid #94a3b8;border-radius:6px;background:#fff;color:#10243d;cursor:pointer;font-size:20px;font-weight:700">x</button>
         </div>
       </div>
       <div data-survey-detail-content style="flex:1;min-height:0;overflow:auto;padding:16px;box-sizing:border-box;scrollbar-gutter:stable;overscroll-behavior:contain">
@@ -4368,7 +4368,7 @@ function openServingCellDetail() {
           <button type="button" data-cell-text="out" title="Decrease text size" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-weight:700">A-</button>
           <button type="button" data-cell-text="reset" title="Reset text size" style="height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:10px;padding:0 8px">100%</button>
           <button type="button" data-cell-text="in" title="Increase text size" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-weight:700">A+</button>
-          <button type="button" onclick="document.getElementById('serving-cell-detail-overlay')?.remove()" title="Close" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:18px">Ã—</button>
+          <button type="button" onclick="document.getElementById('serving-cell-detail-overlay')?.remove()" title="Close" style="width:34px;height:30px;border:1px solid #94a3b8;border-radius:5px;background:#fff;cursor:pointer;font-size:18px">x</button>
         </div>
       </div>
       <div data-cell-detail-content tabindex="0" title="Drag to pan or scroll to view the report. Use A- and A+ to change text size." style="flex:1;font-size:16px;padding:24px;overflow:scroll;overflow-x:auto;overflow-y:scroll;line-height:1.5;min-height:0;scrollbar-gutter:stable both-edges;overscroll-behavior:contain;outline:none;cursor:grab;user-select:none">
@@ -5460,16 +5460,16 @@ function renderDashboard() {
       </div>
     </div>`,
     `<div class="dash-card">
-      <div class="dash-card-value" style="color:var(--navy)">${clearPlmnCounts.length || '—'}</div>
+      <div class="dash-card-value" style="color:var(--navy)">${clearPlmnCounts.length || '-'}</div>
       <div class="dash-card-label">PLMN / operators detected</div>
       <div style="display:grid;gap:4px;margin-top:8px;font-size:11px">
         ${clearPlmnCounts.length ? clearPlmnCounts.map(([label, count]) => `<div style="display:flex;justify-content:space-between;gap:8px"><span>${dashEscape(label)}</span><strong>${count}</strong></div>`).join('') : '<div style="color:var(--gray-600)">No MCC/MNC readings</div>'}
       </div>
     </div>`,
     `<div class="dash-card">
-      <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '—'}T / ${constituencyRadio.servingCellCount || 0}C</div>
+      <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '-'}T / ${constituencyRadio.servingCellCount || 0}C</div>
       <div class="dash-card-label">Towers, cells and bands detected</div>
-      <div class="dash-card-note">${clearBandCounts.length || '—'} LTE band type${clearBandCounts.length === 1 ? '' : 's'}: ${topCountText(clearBandCounts)}</div>
+      <div class="dash-card-note">${clearBandCounts.length || '-'} LTE band type${clearBandCounts.length === 1 ? '' : 's'}: ${topCountText(clearBandCounts)}</div>
       <div style="display:grid;gap:3px;margin-top:8px;font-size:10px;color:var(--gray-700)">${clearWardNetworkBreakdown}</div>
     </div>`,
   ].join('');
@@ -5771,10 +5771,10 @@ function renderDataTable() {
 
   if (wardMismatchCount) {
     document.getElementById('data-count').textContent +=
-      ` Ã‚- ${wardMismatchCount} ward/GPS mismatch${wardMismatchCount === 1 ? '' : 'es'} flagged`;
+      `  - ${wardMismatchCount} ward/GPS mismatch${wardMismatchCount === 1 ? '' : 'es'} flagged`;
   } else if (wardBoundaryIndexStatus === 'unavailable') {
     document.getElementById('data-count').textContent +=
-      ' Ã‚- ward boundary check unavailable';
+      '  - ward boundary check unavailable';
   }
 
   const tbody = document.getElementById('dt-body');
