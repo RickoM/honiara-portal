@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-mobile-map-v8">
+<meta name="portal-build" content="2026-07-09-mobile-boundaries-v9">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2839,7 +2839,7 @@ function applyMobileMapPerformanceDefaults() {
   const lightDefaults = [
     ['layer-sectors', false],
     ['layer-tower-connections', false],
-    ['layer-wards', false],
+    ['layer-wards', true],
     ['layer-constituencies', false],
   ];
   lightDefaults.forEach(([id, checked]) => {
@@ -3250,6 +3250,7 @@ function refreshBoundaryLayers() {
   if (wardBoundaryLayer) {
     wardBoundaryLayer.setMap(showWards ? gmap : null);
     wardBoundaryLayer.setStyle(feature => {
+      const mobileMap = isMobileMapViewport();
       const wardName = feature.getProperty('name');
       const constituency = WARDS[wardName]?.constituency || 'Central Honiara';
       const constituencyStyle = CONSTITUENCY_BOUNDARY_STYLES[constituency];
@@ -3257,10 +3258,10 @@ function refreshBoundaryLayers() {
       const shadeIndex = Math.max(0, constituencyWards.indexOf(wardName)) % constituencyStyle.wards.length;
       return {
         fillColor: constituencyStyle.wards[shadeIndex],
-        fillOpacity: 0.22,
+        fillOpacity: mobileMap ? 0.10 : 0.22,
         strokeColor: constituencyStyle.stroke,
-        strokeOpacity: 0.88,
-        strokeWeight: 1.4,
+        strokeOpacity: mobileMap ? 0.95 : 0.88,
+        strokeWeight: mobileMap ? 1 : 1.4,
         zIndex: 1,
         clickable: true,
       };
