@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-mobile-boundaries-v9">
+<meta name="portal-build" content="2026-07-09-dashboard-insights-v10">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -869,6 +869,40 @@
     .metric-grid { grid-template-columns: 1fr 1fr !important; }
   }
 
+  .dash-header { display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:14px; }
+  .dash-title { font-size:20px;font-weight:800;color:var(--navy);letter-spacing:-.02em; }
+  .dash-subtitle { font-size:12px;color:var(--gray-600);margin-top:4px;line-height:1.45; }
+  .dash-selector { display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px; }
+  .dash-chip { border:1px solid var(--border);background:#fff;color:var(--navy);border-radius:999px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:var(--shadow); }
+  .dash-chip.on { background:var(--navy);border-color:var(--navy);color:#fff; }
+  .dash-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px; }
+  .dash-card { background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);min-height:96px; }
+  .dash-card-value { font-size:28px;font-weight:800;color:var(--text);line-height:1; }
+  .dash-card-label { font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);font-weight:800;margin-top:8px; }
+  .dash-card-note { font-size:11px;color:var(--gray-600);margin-top:6px;line-height:1.35; }
+  .dash-story { display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-bottom:16px; }
+  .dash-insight-list { display:grid;gap:8px; }
+  .dash-insight { padding:9px 10px;border-radius:9px;border:1px solid var(--border);font-size:12px;line-height:1.45;background:var(--gray-50); }
+  .dash-insight.good { background:var(--green-light);border-color:#b7d8a4;color:#224b0b; }
+  .dash-insight.warn { background:var(--amber-light);border-color:#efc77b;color:#7a4b08; }
+  .dash-insight.bad { background:var(--red-light);border-color:#e7a5a5;color:#7d1f1f; }
+  .dash-ward-table { width:100%;border-collapse:collapse;font-size:12px; }
+  .dash-ward-table th { text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);padding:8px;border-bottom:1px solid var(--border); }
+  .dash-ward-table td { padding:9px 8px;border-bottom:1px solid var(--border);vertical-align:top; }
+  .dash-mini-bar { height:7px;background:var(--gray-200);border-radius:999px;overflow:hidden;min-width:74px; }
+  .dash-mini-fill { height:100%;border-radius:999px; }
+  .dash-two-col { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+  @media (max-width: 900px) {
+    .dash-header { flex-direction:column; }
+    .dash-grid { grid-template-columns:1fr 1fr; }
+    .dash-story, .dash-two-col { grid-template-columns:1fr; }
+  }
+  @media (max-width: 520px) {
+    .dash-grid { grid-template-columns:1fr; }
+    .dash-chip { flex:1;text-align:center; }
+    .dash-card { min-height:0; }
+  }
+
   /* ── Ward table ── */
   @media (max-width: 480px) {
     .sf-ward-table { font-size: 10px; }
@@ -1262,13 +1296,21 @@
 
   <!-- DASHBOARD VIEW -->
   <div class="view-panel" id="view-dashboard">
-    <div style="max-width:1100px;margin:0 auto">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="dash-metrics"></div>
-      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-spectrum-config"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div style="max-width:1180px;margin:0 auto">
+      <div class="dash-header">
+        <div>
+          <div class="dash-title">Constituency intelligence dashboard</div>
+          <div class="dash-subtitle">Select West, Central, or East Honiara to see the survey progress, data readings, signal quality, speed, GPS completeness, and ward-level warnings for that area.</div>
+        </div>
+        <div style="font-size:11px;color:var(--gray-600);text-align:right" id="dash-scope-note"></div>
+      </div>
+      <div class="dash-selector" id="dash-constituency-selector"></div>
+      <div class="dash-grid" id="dash-metrics"></div>
+      <div class="dash-story">
         <div class="data-card" style="padding:16px" id="dash-zone-bars"></div>
         <div class="data-card" style="padding:16px" id="dash-flags"></div>
       </div>
+      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-spectrum-config"></div>
       <div class="data-card" style="padding:16px" id="dash-ward-detail"></div>
     </div>
   </div>
@@ -2574,6 +2616,7 @@ let towerSurveyHighlights = [];
 let towerConnectionOverlays = [];
 let selectedSectorKey = '';
 let selectedServingCell = null;
+let selectedDashboardConstituency = 'West Honiara';
 let heatmap  = null;
 let wardBoundaryLayer = null;
 let constituencyBoundaryLayer = null;
@@ -4470,61 +4513,116 @@ function updateLegend(mode) {
 //  DASHBOARD VIEW
 // ══════════════════════════════════════════════════════
 
-function renderDashboard() {
-  const day   = selDay === 'all' ? null : selDay;
-  const src   = day ? points.filter(p => p.date <= day) : points;
-  const surv  = src.filter(p => p.type === 'survey');
-  const total = surv.length;
-  const pct   = Math.round(total / TOTAL_TARGET * 100);
-  const dlv   = surv.map(p => +p.dl).filter(v => !isNaN(v) && v > 0);
-  const avgDl = dlv.length ? (dlv.reduce((a,b) => a+b) / dlv.length).toFixed(2) : '—';
-  const b1    = dlv.filter(v => v < 1).length;
-  const over  = Object.keys(WARDS).filter(w => wardCount(w, day) / WARDS[w].target > 1.3).length;
+function setDashboardConstituency(constituency) {
+  selectedDashboardConstituency = constituency;
+  renderDashboard();
+}
 
+function dashNumber(value, digits = 1) {
+  return Number.isFinite(value) ? value.toFixed(digits) : '—';
+}
+
+function dashAverage(records, fields) {
+  const vals = records.map(record => {
+    for (const field of fields) {
+      const parsed = parseFloat(record[field]);
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return null;
+  }).filter(Number.isFinite);
+  return vals.length ? vals.reduce((sum, value) => sum + value, 0) / vals.length : NaN;
+}
+
+function dashPct(count, total) {
+  return total ? Math.round(count / total * 100) : 0;
+}
+
+function renderDashboard() {
+  const day = selDay === 'all' ? null : selDay;
+  const constituencyNames = ['West Honiara', 'Central Honiara', 'East Honiara'];
+  if (!constituencyNames.includes(selectedDashboardConstituency)) selectedDashboardConstituency = 'West Honiara';
+  const src = day ? points.filter(p => p.date <= day) : points;
+  const allSurveys = src.filter(p => p.type === 'survey');
+  const selectedWards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === selectedDashboardConstituency);
+  const selectedTarget = selectedWards.reduce((sum, ward) => sum + WARDS[ward].target, 0);
+  const surv = allSurveys.filter(p => p.constituency === selectedDashboardConstituency || selectedWards.includes(p.ward));
+  const mapped = surv.filter(p => gpsStatus(p.lat, p.lng) === 'Valid');
+  const missingGps = surv.length - mapped.length;
+  const towers = towerPoints.filter(p => p.constituency === selectedDashboardConstituency || selectedWards.includes(p.ward));
+  const avgRsrp = dashAverage(surv, ['rsrp', 'fd_s2a_rsrp']);
+  const avgRsrq = dashAverage(surv, ['fd_s2a_rsrq']);
+  const avgSinr = dashAverage(surv, ['fd_s2a_sinr']);
+  const avgDl = dashAverage(surv, ['dl', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg']);
+  const slowDl = surv.filter(p => {
+    const value = parseFloat(p.dl || p.fd_s1_ookla_dl || p.fd_s1_ncil_dl || p.fd_s1_nperf_dl_avg);
+    return Number.isFinite(value) && value < 1;
+  }).length;
+  const poorSignal = surv.filter(p => {
+    const value = parseFloat(p.rsrp || p.fd_s2a_rsrp);
+    return Number.isFinite(value) && value < -100;
+  }).length;
+  const operators = [...new Set(surv.map(p => p.fd_s1_op || p.operator || p.op).filter(Boolean))];
+
+  document.getElementById('dash-scope-note').innerHTML = `${day ? 'Up to ' + day : 'All survey days'}<br>${surv.length} record${surv.length === 1 ? '' : 's'} in selected constituency`;
+  document.getElementById('dash-constituency-selector').innerHTML = constituencyNames.map(name => {
+    const count = allSurveys.filter(p => p.constituency === name || Object.keys(WARDS).some(w => WARDS[w].constituency === name && p.ward === w)).length;
+    return `<button class="dash-chip ${name === selectedDashboardConstituency ? 'on' : ''}" onclick="setDashboardConstituency('${name}')">${name.replace(' Honiara','')} <span style="opacity:.75">(${count})</span></button>`;
+  }).join('');
+
+  const progressPct = dashPct(surv.length, selectedTarget);
+  const gpsPct = dashPct(mapped.length, surv.length);
   document.getElementById('dash-metrics').innerHTML = [
-    {v: total,  l: 'Total surveys', c: ''},
-    {v: pct+'%',l: 'Of 150 target', c: ''},
-    {v: avgDl,  l: 'Avg DL (Mbps)', c: +avgDl >= 1 ? 'var(--green)' : 'var(--red)'},
-    {v: over,   l: 'Over-surveyed wards', c: over > 0 ? 'var(--red)' : ''},
-  ].map(m => `<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 20px;box-shadow:var(--shadow)">
-    <div style="font-size:28px;font-weight:600;color:${m.c||'var(--text)'}">${m.v}</div>
-    <div style="font-size:12px;color:var(--gray-600);margin-top:3px">${m.l}</div>
+    {v: `${surv.length}/${selectedTarget}`, l: 'Survey progress', note: `${progressPct}% of constituency target`, c: progressPct >= 80 ? 'var(--green)' : progressPct < 40 ? 'var(--amber)' : 'var(--navy)'},
+    {v: mapped.length, l: 'Mapped data points', note: `${gpsPct}% have valid GPS; ${missingGps} need GPS check`, c: missingGps ? 'var(--amber)' : 'var(--green)'},
+    {v: Number.isFinite(avgRsrp) ? `${avgRsrp.toFixed(0)} dBm` : '—', l: 'Average RSRP', note: poorSignal ? `${poorSignal} poor/very poor signal reading(s)` : 'Signal readings broadly acceptable', c: Number.isFinite(avgRsrp) && avgRsrp < -100 ? 'var(--red)' : 'var(--green)'},
+    {v: Number.isFinite(avgDl) ? `${avgDl.toFixed(1)}` : '—', l: 'Avg download Mbps', note: slowDl ? `${slowDl} reading(s) below 1 Mbps` : 'No sub‑1 Mbps download reading flagged', c: Number.isFinite(avgDl) && avgDl < 1 ? 'var(--red)' : 'var(--green)'},
+  ].map(m => `<div class="dash-card">
+    <div class="dash-card-value" style="color:${m.c}">${m.v}</div>
+    <div class="dash-card-label">${m.l}</div>
+    <div class="dash-card-note">${m.note}</div>
   </div>`).join('');
 
-  const byConstituency = {'West Honiara':[], 'Central Honiara':[], 'East Honiara':[]};
-  Object.entries(WARDS).forEach(([w,info]) => byConstituency[info.constituency].push(w));
-  let zoneHTML = '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:12px">Constituency & ward progress</div>';
-  Object.keys(byConstituency).forEach(constituency => {
-    const zc = constituencyCount(constituency, day);
-    const zt = Object.values(WARDS).filter(w => w.constituency === constituency).reduce((a,w) => a+w.target, 0);
-    const zp = Math.min(100, Math.round(zc/zt*100));
-    const zcol = zc/zt > 1.2 ? '#E24B4A' : zc/zt >= .8 ? '#639922' : '#378ADD';
-    zoneHTML += `<div style="margin-bottom:14px">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:600">${constituency}</span><span style="color:var(--gray-600)">${zc}/${zt} — ${zp}%</span></div>
-      <div style="background:var(--gray-200);border-radius:3px;height:8px;overflow:hidden"><div style="width:${zp}%;height:100%;background:${zcol};border-radius:3px;transition:width .3s"></div></div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px">
-        ${byConstituency[constituency].map(w => {
-          const c = wardCount(w,day), t = WARDS[w].target;
-          const st = wardStatus(w,day);
-          const bdg = st==='over'?'badge-red':st==='ok'?'badge-ok':st==='empty'?'badge-blue':'badge-warn';
-          return `<span class="badge ${bdg}">${w}: ${c}/${t}</span>`;
-        }).join('')}
-      </div>
-    </div>`;
-  });
-  document.getElementById('dash-zone-bars').innerHTML = zoneHTML;
+  const wardRows = selectedWards.map(ward => {
+    const records = surv.filter(p => p.ward === ward);
+    const target = WARDS[ward].target;
+    const count = records.length;
+    const pct = Math.min(140, dashPct(count, target));
+    const status = count / target > 1.3 ? ['Over', 'badge-red', '#A32D2D'] :
+      count / target >= .8 ? ['On track', 'badge-ok', '#27500A'] :
+      count === 0 ? ['Not started', 'badge-blue', '#378ADD'] :
+      ['Behind', 'badge-warn', '#BA7517'];
+    const wardAvgRsrp = dashAverage(records, ['rsrp', 'fd_s2a_rsrp']);
+    const wardAvgDl = dashAverage(records, ['dl', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg']);
+    const validGps = records.filter(p => gpsStatus(p.lat, p.lng) === 'Valid').length;
+    return `<tr>
+      <td><strong>${ward}</strong><div class="dash-mini-bar" style="margin-top:5px"><div class="dash-mini-fill" style="width:${Math.min(100,pct)}%;background:${status[2]}"></div></div></td>
+      <td>${count}/${target}<br><span class="badge ${status[1]}">${status[0]}</span></td>
+      <td>${validGps}/${count || 0}</td>
+      <td>${dashNumber(wardAvgRsrp,0)} dBm</td>
+      <td>${dashNumber(wardAvgDl,1)} Mbps</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('dash-zone-bars').innerHTML = `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">${selectedDashboardConstituency} ward story</div>
+    <table class="dash-ward-table">
+      <thead><tr><th>Ward</th><th>Survey</th><th>GPS</th><th>RSRP</th><th>DL</th></tr></thead>
+      <tbody>${wardRows}</tbody>
+    </table>`;
 
-  const flags = [];
-  Object.entries(WARDS).forEach(([w,i]) => {
-    const c = wardCount(w,day), t = i.target;
-    if (!c)          flags.push({cls:'blue',  msg:`${w} — not yet started (target: ${t})`});
-    else if (c/t>1.3) flags.push({cls:'red',   msg:`${w} — over-surveyed: ${c} done, target ${t}`});
-    else if (c<t*.5 && total>15) flags.push({cls:'amber', msg:`${w} — behind: ${c}/${t} done`});
-  });
-  if (!flags.length && total > 5) flags.push({cls:'green', msg:'All wards progressing on track'});
-  document.getElementById('dash-flags').innerHTML =
-    '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">Coverage flags</div>' +
-    (flags.map(f => `<div class="flag-item ${f.cls}"><span>${f.msg}</span></div>`).join('') || '<p style="color:var(--gray-400);font-size:12px">Add surveys to see flags</p>');
+  const insights = [];
+  if (!surv.length) {
+    insights.push({cls:'warn', text:`No participant survey records yet for ${selectedDashboardConstituency}.`});
+  } else {
+    insights.push({cls: progressPct >= 80 ? 'good' : 'warn', text:`${selectedDashboardConstituency} is at ${progressPct}% of target (${surv.length}/${selectedTarget}).`});
+    insights.push({cls: missingGps ? 'warn' : 'good', text: missingGps ? `${missingGps} record(s) need GPS correction or verification.` : 'All selected records have valid survey GPS.'});
+    insights.push({cls: poorSignal ? 'bad' : 'good', text: poorSignal ? `${poorSignal} point(s) show poor/very poor signal below -100 dBm.` : 'No poor-signal cluster is dominating the selected records.'});
+    insights.push({cls: slowDl ? 'bad' : 'good', text: slowDl ? `${slowDl} speed reading(s) are below 1 Mbps and should be checked against screenshots.` : 'Download readings do not show a sub‑1 Mbps problem in this selected area.'});
+    insights.push({cls:'warn', text:`Operators represented: ${operators.join(', ') || 'not recorded'} · tower points linked/mapped: ${towers.length}.`});
+  }
+  document.getElementById('dash-flags').innerHTML = `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">Instant interpretation</div>
+    <div class="dash-insight-list">${insights.map(item => `<div class="dash-insight ${item.cls}">${item.text}</div>`).join('')}</div>
+    <div style="margin-top:12px;font-size:11px;color:var(--gray-600);line-height:1.45">
+      Quality snapshot: Avg RSRQ ${dashNumber(avgRsrq,1)} dB · Avg SINR ${dashNumber(avgSinr,1)} dB. Use this with RSRP and download speed to tell whether the issue is weak coverage, interference/congestion, or throughput.
+    </div>`;
 
   renderSpectrumConfiguration(surv);
   renderNetworkIdentityAggregation(surv);
