@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-dashboard-insights-v10">
+<meta name="portal-build" content="2026-07-09-experience-correlation-v11">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1310,6 +1310,7 @@
         <div class="data-card" style="padding:16px" id="dash-zone-bars"></div>
         <div class="data-card" style="padding:16px" id="dash-flags"></div>
       </div>
+      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-experience-correlation"></div>
       <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-spectrum-config"></div>
       <div class="data-card" style="padding:16px" id="dash-ward-detail"></div>
     </div>
@@ -4537,6 +4538,106 @@ function dashPct(count, total) {
   return total ? Math.round(count / total * 100) : 0;
 }
 
+function dashMetric(record, fields) {
+  for (const field of fields) {
+    const parsed = parseFloat(record[field]);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return NaN;
+}
+
+function experienceVsReadingSummary(records) {
+  const signalRows = [];
+  const speedRows = [];
+  records.forEach(record => {
+    const perceivedSignal = parseFloat(record.b1);
+    const perceivedSpeed = parseFloat(record.c5);
+    const rsrp = dashMetric(record, ['rsrp', 'fd_s2a_rsrp']);
+    const rsrq = dashMetric(record, ['fd_s2a_rsrq']);
+    const sinr = dashMetric(record, ['fd_s2a_rssnr', 'fd_s2a_sinr']);
+    const dl = dashMetric(record, ['dl', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl']);
+    const ping = dashMetric(record, ['ping', 'fd_s1_ookla_ping', 'fd_s1_ncil_ping', 'fd_s1_nperf_ping']);
+    const jitter = dashMetric(record, ['jitter', 'fd_s1_ookla_jitter', 'fd_s1_ncil_jitter', 'fd_s1_nperf_jitter']);
+    if (Number.isFinite(perceivedSignal) && Number.isFinite(rsrp)) {
+      const userPoor = perceivedSignal <= 2;
+      const userGood = perceivedSignal >= 4;
+      const measuredPoor = rsrp < -100 || (Number.isFinite(rsrq) && rsrq < -15) || (Number.isFinite(sinr) && sinr <= 0);
+      const measuredGood = rsrp >= -90 && (!Number.isFinite(rsrq) || rsrq >= -12) && (!Number.isFinite(sinr) || sinr >= 5);
+      signalRows.push({ record, userPoor, userGood, measuredPoor, measuredGood, rsrp, rsrq, sinr });
+    }
+    if (Number.isFinite(perceivedSpeed) && Number.isFinite(dl)) {
+      const userPoor = perceivedSpeed <= 2;
+      const userGood = perceivedSpeed >= 4;
+      const measuredPoor = dl < 1 || (Number.isFinite(ping) && ping > 150) || (Number.isFinite(jitter) && jitter > 300);
+      const measuredGood = dl >= 3 && (!Number.isFinite(ping) || ping <= 100);
+      speedRows.push({ record, userPoor, userGood, measuredPoor, measuredGood, dl, ping, jitter });
+    }
+  });
+  const classify = rows => ({
+    total: rows.length,
+    agreePoor: rows.filter(row => row.userPoor && row.measuredPoor).length,
+    agreeGood: rows.filter(row => row.userGood && row.measuredGood).length,
+    userPoorMeasuredGood: rows.filter(row => row.userPoor && row.measuredGood).length,
+    userGoodMeasuredPoor: rows.filter(row => row.userGood && row.measuredPoor).length,
+    mixed: rows.filter(row =>
+      !(row.userPoor && row.measuredPoor) &&
+      !(row.userGood && row.measuredGood) &&
+      !(row.userPoor && row.measuredGood) &&
+      !(row.userGood && row.measuredPoor)
+    ).length,
+  });
+  return { signal: classify(signalRows), speed: classify(speedRows), signalRows, speedRows };
+}
+
+function renderExperienceCorrelation(records) {
+  const target = document.getElementById('dash-experience-correlation');
+  if (!target) return;
+  const summary = experienceVsReadingSummary(records);
+  const totalComparisons = summary.signal.total + summary.speed.total;
+  const totalMismatch = summary.signal.userPoorMeasuredGood + summary.signal.userGoodMeasuredPoor +
+    summary.speed.userPoorMeasuredGood + summary.speed.userGoodMeasuredPoor;
+  const card = (title, data, leftLabel, rightLabel) => {
+    const agreement = data.total ? dashPct(data.agreePoor + data.agreeGood, data.total) : 0;
+    return `<div class="dash-card" style="min-height:0">
+      <div class="dash-card-label">${title}</div>
+      <div class="dash-card-value" style="font-size:24px;color:${totalMismatch ? 'var(--amber)' : 'var(--green)'}">${data.total ? agreement + '%' : '—'}</div>
+      <div class="dash-card-note">${data.total ? 'agreement between reported experience and readings' : 'not enough paired survey/readings yet'}</div>
+      <div style="display:grid;gap:5px;margin-top:10px;font-size:11px">
+        <div style="display:flex;justify-content:space-between"><span>${leftLabel}</span><strong>${data.agreePoor}</strong></div>
+        <div style="display:flex;justify-content:space-between"><span>${rightLabel}</span><strong>${data.agreeGood}</strong></div>
+        <div style="display:flex;justify-content:space-between;color:var(--amber)"><span>User poor, readings good</span><strong>${data.userPoorMeasuredGood}</strong></div>
+        <div style="display:flex;justify-content:space-between;color:var(--red)"><span>User good, readings poor</span><strong>${data.userGoodMeasuredPoor}</strong></div>
+      </div>
+    </div>`;
+  };
+  const mismatchExamples = [...summary.signalRows.map(row => ({ ...row, kind: 'Signal' })), ...summary.speedRows.map(row => ({ ...row, kind: 'Speed' }))]
+    .filter(row => (row.userPoor && row.measuredGood) || (row.userGood && row.measuredPoor))
+    .slice(0, 6)
+    .map(row => {
+      const id = row.record.respondentId || row.record.id || 'record';
+      const ward = row.record.ward || 'ward not recorded';
+      const type = row.userPoor && row.measuredGood ? 'reported poor but readings look acceptable' : 'reported good but readings look poor';
+      const reading = row.kind === 'Signal'
+        ? `RSRP ${dashNumber(row.rsrp,0)} dBm`
+        : `DL ${dashNumber(row.dl,1)} Mbps`;
+      return `<div class="dash-insight warn"><strong>${id}</strong> · ${ward} · ${row.kind}: ${type} (${reading}).</div>`;
+    }).join('');
+  target.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--navy)">Survey experience vs actual readings</div>
+        <div style="font-size:11px;color:var(--gray-600);margin-top:3px;line-height:1.45">Compares participant ratings with measured signal and speed data. Mismatches are useful: they can reveal indoor/device issues, congestion at another time, screenshot/data entry errors, or places where technical readings do not explain the user experience.</div>
+      </div>
+      <span class="badge ${totalMismatch ? 'badge-warn' : 'badge-ok'}">${totalMismatch} mismatch${totalMismatch === 1 ? '' : 'es'}</span>
+    </div>
+    <div class="dash-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:12px">
+      ${card('Signal experience vs RSRP/RSRQ/SINR', summary.signal, 'Both poor signal', 'Both good signal')}
+      ${card('Data-speed experience vs DL/ping/jitter', summary.speed, 'Both poor speed', 'Both good speed')}
+    </div>
+    <div class="dash-insight-list">
+      ${mismatchExamples || `<div class="dash-insight ${totalComparisons ? 'good' : 'warn'}">${totalComparisons ? 'No major experience/readings mismatch found in the selected constituency.' : 'Need paired participant ratings and field readings before correlation can be assessed.'}</div>`}
+    </div>`;
+}
+
 function renderDashboard() {
   const day = selDay === 'all' ? null : selDay;
   const constituencyNames = ['West Honiara', 'Central Honiara', 'East Honiara'];
@@ -4624,6 +4725,7 @@ function renderDashboard() {
       Quality snapshot: Avg RSRQ ${dashNumber(avgRsrq,1)} dB · Avg SINR ${dashNumber(avgSinr,1)} dB. Use this with RSRP and download speed to tell whether the issue is weak coverage, interference/congestion, or throughput.
     </div>`;
 
+  renderExperienceCorrelation(surv);
   renderSpectrumConfiguration(surv);
   renderNetworkIdentityAggregation(surv);
   renderWardBars();
