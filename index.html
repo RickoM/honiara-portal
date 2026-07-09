@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-mobile-map-v7">
+<meta name="portal-build" content="2026-07-09-mobile-map-v8">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2640,6 +2640,10 @@ function getDays() {
   return [...new Set(points.filter(p => p.type === 'survey').map(p => p.date))].sort();
 }
 
+function isMobileMapViewport() {
+  return window.matchMedia?.('(max-width: 900px)').matches || window.innerWidth <= 900;
+}
+
 // ══════════════════════════════════════════════════════
 //  ADD DATA
 // ══════════════════════════════════════════════════════
@@ -2828,6 +2832,20 @@ function fitMobileMap() {
   closeMobileMapPanels();
   if (gmap && window.google?.maps?.event) google.maps.event.trigger(gmap, 'resize');
   fitSurveyWaypoints(false, false);
+}
+
+function applyMobileMapPerformanceDefaults() {
+  if (!isMobileMapViewport()) return;
+  const lightDefaults = [
+    ['layer-sectors', false],
+    ['layer-tower-connections', false],
+    ['layer-wards', false],
+    ['layer-constituencies', false],
+  ];
+  lightDefaults.forEach(([id, checked]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = checked;
+  });
 }
 
 // ══════════════════════════════════════════════════════
@@ -3090,17 +3108,23 @@ function loadGoogleMaps(key) {
 
 window.initMap = function() {
   document.getElementById('map').innerHTML = '';
+  const mobileMap = isMobileMapViewport();
   gmap = new google.maps.Map(document.getElementById('map'), {
     center: HONIARA_CENTER,
     zoom: 14,
     mapTypeId: 'satellite',
     tilt: 0,
     styles: [],
-    mapTypeControl: true,
+    gestureHandling: 'greedy',
+    clickableIcons: false,
+    keyboardShortcuts: !mobileMap,
+    zoomControl: true,
+    mapTypeControl: !mobileMap,
     mapTypeControlOptions: { style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR, position: google.maps.ControlPosition.BOTTOM_CENTER },
     streetViewControl: false,
-    fullscreenControl: true,
+    fullscreenControl: !mobileMap,
   });
+  applyMobileMapPerformanceDefaults();
   gmap.addListener('zoom_changed', collapseSurveyPointDetail);
   gmap.addListener('dragstart', collapseSurveyPointDetail);
   markerProjectionOverlay = new google.maps.OverlayView();
@@ -3745,7 +3769,7 @@ function refreshMap() {
         title: layout.count > 1
           ? `${layout.count} survey records share this GPS location — ${p.id || p.ward || 'waypoint'}`
           : `Survey participant — ${p.id || p.ward || 'waypoint'}`,
-        optimized: false,
+        optimized: isMobileMapViewport() ? true : false,
         zIndex: layout.count > 1 && layout.index === 0 ? 1100 : 1000 - layout.index,
       });
       marker.normalIcon = normalIcon;
@@ -3772,7 +3796,7 @@ function refreshMap() {
         title: `Tower eNB ${p.enb || 'unknown'} — ${(p.connectedSurveys || []).length} connected survey record${(p.connectedSurveys || []).length === 1 ? '' : 's'}`,
         clickable: true,
         cursor: 'pointer',
-        optimized: false,
+        optimized: isMobileMapViewport() ? true : false,
         zIndex: 5000,
       });
       const info = new google.maps.InfoWindow({
@@ -3829,7 +3853,7 @@ function refreshMap() {
         },
         label: { text: String(sector.lcid || sector.eci.slice(-2)), color: '#fff', fontSize: '9px', fontWeight: '700' },
         title: `Serving LTE cell ECI ${sector.eci} — ${sector.records.length} survey records`,
-        optimized: false,
+        optimized: isMobileMapViewport() ? true : false,
         zIndex: selectedSectorKey === sector.key ? 900 : 850,
       });
       const info = new google.maps.InfoWindow({ content: sectorSummaryHTML(sector), maxWidth: 520 });
