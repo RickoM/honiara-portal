@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-constituency-top-ward-radio-v17">
+<meta name="portal-build" content="2026-07-09-clear-top-cards-v18">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -5428,34 +5428,41 @@ function renderDashboard() {
   ].join('');
 
   const constituencyRadio = wardRadioTechnicalSummary(surv);
+  const validGpsPct = dashPct(gpsStats.validGps, gpsStats.total);
+  const operatorCount = countValues(
+    surv.map(record => record.fd_s2a_mcc && record.fd_s2a_mnc
+      ? plmnOperatorName(record.fd_s2a_mcc, record.fd_s2a_mnc)
+      : '')
+  ).length;
+  const bandCount = countValues(
+    surv.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)])
+      .filter(Boolean)
+      .map(band => `B${band}`)
+  ).length;
   document.getElementById('dash-metrics').innerHTML = [
     `<div class="dash-card">
       <div class="dash-card-value" style="color:var(--navy)">${gpsStats.total}</div>
-      <div class="dash-card-label">Constituency survey data points</div>
-      <div class="dash-card-note">${selectedDashboardConstituency}: ${progressPct}% of target (${gpsStats.total}/${selectedTarget}).</div>
-      <div style="font-size:11px;color:var(--gray-600);margin-top:8px">This card is constituency-level only. Use the ward table below for RSRP/RSRQ/RSSNR radio interpretation.</div>
+      <div class="dash-card-label">Surveys completed</div>
+      <div class="dash-card-note">${selectedDashboardConstituency}: ${gpsStats.total} of ${selectedTarget} target surveys completed (${progressPct}%).</div>
+      <div style="font-size:11px;color:var(--gray-600);margin-top:8px">This is the constituency progress view. Technical quality is interpreted by ward below.</div>
     </div>`,
     `<div class="dash-card">
-      <div class="dash-card-value" style="color:${gpsStats.outsideBoundary || gpsStats.wardMismatch || gpsStats.missingOrInvalid ? 'var(--amber)' : 'var(--green)'}">${gpsStats.validGps}/${gpsStats.total}</div>
-      <div class="dash-card-label">GPS and boundary status</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:11px">
-        <div><strong style="color:var(--green)">${gpsStats.insideBoundary}</strong><br><span style="color:var(--gray-600)">inside boundary</span></div>
-        <div><strong style="color:${gpsStats.outsideBoundary ? 'var(--red)' : 'var(--green)'}">${gpsStats.outsideBoundary}</strong><br><span style="color:var(--gray-600)">outside boundary</span></div>
-        <div><strong style="color:${gpsStats.wardMismatch ? 'var(--amber)' : 'var(--green)'}">${gpsStats.wardMismatch}</strong><br><span style="color:var(--gray-600)">ward mismatch</span></div>
-        <div><strong style="color:${gpsStats.missingOrInvalid ? 'var(--amber)' : 'var(--green)'}">${gpsStats.missingOrInvalid}</strong><br><span style="color:var(--gray-600)">missing/invalid</span></div>
-      </div>
+      <div class="dash-card-value" style="color:${gpsStats.outsideBoundary || gpsStats.wardMismatch || gpsStats.missingOrInvalid ? 'var(--amber)' : 'var(--green)'}">${validGpsPct}%</div>
+      <div class="dash-card-label">GPS usable for mapping</div>
+      <div class="dash-card-note">${gpsStats.validGps}/${gpsStats.total} records have valid GPS. ${gpsStats.insideBoundary} are inside ward boundaries.</div>
+      <div style="font-size:11px;color:${gpsStats.outsideBoundary || gpsStats.wardMismatch ? 'var(--red)' : 'var(--gray-600)'};margin-top:8px">${gpsStats.outsideBoundary} outside boundary · ${gpsStats.wardMismatch} ward mismatch · ${gpsStats.missingOrInvalid} missing/invalid.</div>
     </div>`,
     `<div class="dash-card">
-      <div class="dash-card-value" style="font-size:20px;color:var(--navy)">${constituencyRadio.plmnText}</div>
-      <div class="dash-card-label">MCC/MNC operator mix</div>
-      <div class="dash-card-note">Operator identity inferred from recorded PLMN. 540-01 = Our Telekom; 540-02 = BMobile.</div>
-      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">This is a constituency summary of SIM observations; ward-level operator patterns are shown below.</div>
+      <div class="dash-card-value" style="color:var(--navy)">${operatorCount || '—'}</div>
+      <div class="dash-card-label">Operators detected by MCC/MNC</div>
+      <div class="dash-card-note">${constituencyRadio.plmnText}</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">540-01 = Our Telekom. 540-02 = BMobile. Ward-level operator mix is shown below.</div>
     </div>`,
     `<div class="dash-card">
-      <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '—'} / ${constituencyRadio.servingCellCount || 0}</div>
-      <div class="dash-card-label">Serving towers / cells detected</div>
-      <div class="dash-card-note">${constituencyRadio.bandText}</div>
-      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">Approximate serving eNB/tower groups and serving cells picked up from the field readings in this constituency.</div>
+      <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '—'} towers · ${constituencyRadio.servingCellCount || 0} cells</div>
+      <div class="dash-card-label">Network readings detected</div>
+      <div class="dash-card-note">${bandCount || '—'} LTE band type${bandCount === 1 ? '' : 's'} seen: ${constituencyRadio.bandText}</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">Approximate serving eNB/tower groups and serving cells from field readings.</div>
     </div>`,
   ].join('');
 
