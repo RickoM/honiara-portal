@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-dissertation-analytics-v12">
+<meta name="portal-build" content="2026-07-09-aggregate-analytics-dashboard-v14">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1312,6 +1312,7 @@
       </div>
       <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-experience-correlation"></div>
       <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-dissertation-insights"></div>
+      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-questionnaire-results"></div>
       <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-spectrum-config"></div>
       <div class="data-card" style="padding:16px" id="dash-ward-detail"></div>
     </div>
@@ -4856,6 +4857,363 @@ function renderDissertationInsights(records) {
     </div>`;
 }
 
+function dashEscape(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function dashFirstValue(record, fields) {
+  for (const field of fields) {
+    const value = dashText(record[field]);
+    if (value) return value;
+  }
+  return '';
+}
+
+function dashCompletion(records, fields) {
+  return records.filter(record => dashFirstValue(record, fields)).length;
+}
+
+function dashOptionCounts(records, fields, split = false) {
+  const counts = new Map();
+  records.forEach(record => {
+    const value = dashFirstValue(record, fields);
+    const values = split ? dashSplitOptions(value) : [value];
+    values.filter(Boolean).forEach(item => counts.set(item, (counts.get(item) || 0) + 1));
+  });
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function dashTopText(counts, total, emptyText = 'No responses yet') {
+  if (!counts.length) return emptyText;
+  return counts.slice(0, 2).map(([label, count]) => `${dashEscape(label)} (${dashPct(count, total)}%)`).join('; ');
+}
+
+function questionnaireLikert(records, field, poorFn, goodFn, labels = {}) {
+  const answered = records.filter(record => Number.isFinite(dashScore(record, field)));
+  const values = answered.map(record => dashScore(record, field));
+  const avg = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : NaN;
+  const poor = answered.filter(record => poorFn(dashScore(record, field))).length;
+  const good = answered.filter(record => goodFn(dashScore(record, field))).length;
+  return {
+    answered: answered.length,
+    issue: poor,
+    summary: answered.length ? `Avg ${dashNumber(avg, 1)} / 5; ${poor} poor (${dashPct(poor, answered.length)}%); ${good} positive (${dashPct(good, answered.length)}%)` : 'No responses yet',
+    status: poor ? (dashPct(poor, answered.length) >= 40 ? 'bad' : 'warn') : 'good',
+    interpretation: labels.interpretation || (poor ? 'Watch this indicator in the selected area.' : 'No strong problem signal yet.')
+  };
+}
+
+function questionnaireCategory(records, fields, problemTerms = [], interpretation = '') {
+  const answered = records.filter(record => dashFirstValue(record, fields));
+  const issue = answered.filter(record => dashHasAny(record, fields[0], problemTerms)).length;
+  const counts = dashOptionCounts(records, fields, false);
+  return {
+    answered: answered.length,
+    issue,
+    summary: dashTopText(counts, answered.length),
+    status: issue ? (dashPct(issue, answered.length) >= 40 ? 'bad' : 'warn') : 'good',
+    interpretation
+  };
+}
+
+function questionnaireMulti(records, field, problemMode, interpretation = '') {
+  const answered = records.filter(record => dashText(record[field]));
+  const issue = answered.filter(record => {
+    const value = dashText(record[field]);
+    if (!value) return false;
+    if (problemMode === 'any-not-none') return !/no problems|no difference/i.test(value);
+    return dashHasAny(record, field, problemMode || []);
+  }).length;
+  const counts = dashOptionCounts(records, [field], true).filter(([label]) => !/^no problems$/i.test(label));
+  return {
+    answered: answered.length,
+    issue,
+    summary: dashTopText(counts, answered.length, answered.length ? 'No dominant pattern' : 'No responses yet'),
+    status: issue ? (dashPct(issue, answered.length) >= 40 ? 'bad' : 'warn') : 'good',
+    interpretation
+  };
+}
+
+function questionnaireNumeric(records, fields, unit, problemFn, interpretation = '') {
+  const values = records.map(record => dashMetric(record, fields)).filter(Number.isFinite);
+  const avg = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : NaN;
+  const issue = values.filter(problemFn).length;
+  return {
+    answered: values.length,
+    issue,
+    summary: values.length ? `Avg ${dashNumber(avg, unit === 'dBm' || unit === 'ms' ? 0 : 1)} ${unit}; ${issue} flagged (${dashPct(issue, values.length)}%)` : 'No readings yet',
+    status: issue ? (dashPct(issue, values.length) >= 40 ? 'bad' : 'warn') : 'good',
+    interpretation
+  };
+}
+
+function questionnaireText(records, fields, interpretation = '') {
+  const answered = dashCompletion(records, fields);
+  return {
+    answered,
+    issue: 0,
+    summary: answered ? `${answered} text response${answered === 1 ? '' : 's'} available for coding` : 'No text responses yet',
+    status: answered ? 'warn' : 'good',
+    interpretation
+  };
+}
+
+function renderQuestionnaireResultsTable(records) {
+  const target = document.getElementById('dash-questionnaire-results');
+  if (!target) return;
+  const total = records.length;
+  const pct = count => dashPct(count, total);
+  const avgScore = fields => {
+    const values = [];
+    records.forEach(record => fields.forEach(field => {
+      const value = dashScore(record, field);
+      if (Number.isFinite(value)) values.push(value);
+    }));
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : NaN;
+  };
+  const countWhere = fn => records.filter(fn).length;
+  const coverageProblem = record => {
+    const b1 = dashScore(record, 'b1');
+    return (Number.isFinite(b1) && b1 <= 2) ||
+      dashHasAny(record, 'b2', ['Often', 'Very often']) ||
+      dashHasAny(record, 'b3', ['Yes']) ||
+      (dashText(record.b4) && !dashHasAny(record, 'b4', ['No problems']));
+  };
+  const voiceProblem = record => {
+    const c1 = dashScore(record, 'c1');
+    const c2 = dashScore(record, 'c2');
+    const c3 = dashScore(record, 'c3');
+    return (Number.isFinite(c1) && c1 <= 2) ||
+      (Number.isFinite(c2) && c2 <= 2) ||
+      (Number.isFinite(c3) && c3 <= 2) ||
+      dashHasAny(record, 'b2', ['Often', 'Very often']);
+  };
+  const dataProblem = record => {
+    const c5 = dashScore(record, 'c5');
+    const reading = dashboardReadingProfile(record);
+    return (Number.isFinite(c5) && c5 <= 2) ||
+      dashHasAny(record, 'c7', ['Yes']) ||
+      reading.poorSpeed;
+  };
+  const affordabilityProblem = record => {
+    const d2 = dashScore(record, 'd2');
+    return (Number.isFinite(d2) && d2 <= 2) ||
+      dashHasAny(record, 'd3', ['Sometimes', 'Often']) ||
+      (dashHasAny(record, 'd1', ['200', '500']) && Number.isFinite(d2) && d2 <= 3);
+  };
+  const competitionSignal = record =>
+    dashHasAny(record, 'e1', ['Yes']) ||
+    dashHasAny(record, 'e2', ['better']) ||
+    dashHasAny(record, 'e3', ['Yes']);
+  const readingProblem = record => dashboardReadingProfile(record).measuredPoor;
+  const pairedTechnicalSupport = record => (coverageProblem(record) || voiceProblem(record) || dataProblem(record)) && readingProblem(record);
+
+  const coverageCount = countWhere(coverageProblem);
+  const voiceCount = countWhere(voiceProblem);
+  const dataCount = countWhere(dataProblem);
+  const affordCount = countWhere(affordabilityProblem);
+  const compCount = countWhere(competitionSignal);
+  const readingCount = countWhere(readingProblem);
+  const supportedCount = countWhere(pairedTechnicalSupport);
+  const validGps = records.filter(record => gpsStatus(record.lat, record.lng) === 'Valid').length;
+  const avgCoverage = avgScore(['b1']);
+  const avgVoice = avgScore(['c1','c3']);
+  const avgData = avgScore(['c5']);
+  const avgAfford = avgScore(['d2']);
+  const avgRsrp = dashAverage(records, ['rsrp','fd_s2a_rsrp']);
+  const avgDl = dashAverage(records, ['dl','fd_s1_ookla_dl','fd_s1_ncil_dl','fd_s1_nperf_dl_avg','fd_s1_nperf_dl']);
+
+  const riskLevel = value => value >= 50 ? ['High', 'badge-red', 'var(--red)'] : value >= 25 ? ['Moderate', 'badge-warn', 'var(--amber)'] : ['Low', 'badge-ok', 'var(--green)'];
+  const analyticalCards = [
+    ['Coverage experience risk', coverageCount, 'coverage complaints or weak signal ratings', avgCoverage, 'B1/B2/B3/B4'],
+    ['Voice QoS risk', voiceCount, 'dropped calls, interference, or unreliable voice', avgVoice, 'B2/C1/C2/C3'],
+    ['Data QoS risk', dataCount, 'slow perceived data or poor speed/latency readings', avgData, 'C5/C6/C7 + speed tests'],
+    ['Affordability pressure', affordCount, 'cost, top-up or value-for-money pressure', avgAfford, 'D1/D2/D3/D4'],
+    ['Competition/substitution signal', compCount, 'switching, operator preference, or Starlink awareness/use', NaN, 'E1/E2/E3'],
+    ['Technical reading risk', readingCount, 'poor RSRP/RSRQ/SINR/download/ping/jitter readings', NaN, 'Field readings'],
+  ].map(([title, count, note, avg, source]) => {
+    const rate = pct(count);
+    const [level, badge, color] = riskLevel(rate);
+    return `<div class="dash-card" style="min-height:0">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div class="dash-card-label">${title}</div><span class="badge ${badge}">${level}</span></div>
+      <div class="dash-card-value" style="font-size:26px;color:${color}">${rate}%</div>
+      <div class="dash-card-note">${count}/${total} record${count === 1 ? '' : 's'} show ${note}.</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">${Number.isFinite(avg) ? `Average score ${dashNumber(avg,1)}/5 · ` : ''}${source}</div>
+      <div class="dash-mini-bar" style="margin-top:8px"><div class="dash-mini-fill" style="width:${rate}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+
+  const topApps = dashTopOptions(records, 'c8', 5);
+  const slowTimes = dashTopOptions(records, 'c6', 4);
+  const coverageSituations = dashTopOptions(records, 'b4', 4);
+  const noWifi = countWhere(record => dashHasAny(record, 'd4', ['No WiFi']));
+  const noWifiProblem = countWhere(record => dashHasAny(record, 'd4', ['No WiFi']) && (dataProblem(record) || affordabilityProblem(record)));
+  const appDemandText = topApps.length ? topApps.map(([name, count]) => `${dashEscape(name)} (${count})`).join(', ') : 'not enough app-use responses yet';
+  const slowTimeText = slowTimes.length ? slowTimes.map(([name, count]) => `${dashEscape(name)} (${count})`).join(', ') : 'no clear slow-time pattern yet';
+  const coverageSituationText = coverageSituations.length ? coverageSituations.map(([name, count]) => `${dashEscape(name)} (${count})`).join(', ') : 'no clear coverage-situation pattern yet';
+
+  const headline = supportedCount
+    ? `${supportedCount} record${supportedCount === 1 ? '' : 's'} connect poor user experience with poor technical readings, giving you stronger evidence than perception alone.`
+    : total
+      ? 'The selected records currently show more perception/response evidence than technically supported problem cases; collect or verify more paired readings where possible.'
+      : 'No records are available in this dashboard scope yet.';
+  const valueGap = affordCount && (dataCount || voiceCount || coverageCount)
+    ? `${affordCount} record${affordCount === 1 ? '' : 's'} show affordability pressure. Where this overlaps with QoS problems, the dissertation argument becomes value-for-money rather than only network performance.`
+    : 'Affordability pressure is not yet a dominant finding in the selected records.';
+
+  const groupStats = (field, fallback = 'Not recorded') => {
+    const groups = new Map();
+    records.forEach(record => {
+      const key = dashText(record[field]) || fallback;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(record);
+    });
+    return [...groups.entries()].sort((a, b) => b[1].length - a[1].length);
+  };
+  const groupRow = ([name, group]) => {
+    const n = group.length;
+    const cov = group.filter(coverageProblem).length;
+    const dat = group.filter(dataProblem).length;
+    const aff = group.filter(affordabilityProblem).length;
+    const read = group.filter(readingProblem).length;
+    const dominant = [
+      ['Coverage', dashPct(cov,n)],
+      ['Data QoS', dashPct(dat,n)],
+      ['Affordability', dashPct(aff,n)],
+      ['Readings', dashPct(read,n)]
+    ].sort((a,b) => b[1]-a[1])[0];
+    return `<tr>
+      <td><strong>${dashEscape(name)}</strong><div style="font-size:9px;color:var(--gray-600)">${n} record${n === 1 ? '' : 's'}</div></td>
+      <td>${dashPct(cov,n)}%</td><td>${dashPct(dat,n)}%</td><td>${dashPct(aff,n)}%</td><td>${dashPct(read,n)}%</td>
+      <td>${dominant[1] ? `${dominant[0]} is the strongest signal` : 'No dominant problem signal'}</td>
+    </tr>`;
+  };
+  const wardAnalytics = groupStats('ward').map(groupRow).join('');
+  const operatorAnalytics = groupStats('a3', 'Operator not recorded').map(groupRow).join('');
+
+  const rows = [
+    ['Profile', 'A1', 'Constituency / ward', ['constituency','ward'], () => ({ answered: total, issue: 0, summary: `${total} selected record${total === 1 ? '' : 's'} in this dashboard scope`, status: 'good', interpretation: 'Used to compare West, Central and East Honiara and their wards.' })],
+    ['Profile', 'A2', 'Residence duration', ['a2'], () => questionnaireCategory(records, ['a2'], [], 'Longer residence gives stronger evidence of persistent local network experience.')],
+    ['Profile', 'A3', 'Primary mobile operator', ['a3'], () => questionnaireCategory(records, ['a3'], [], 'Use this to compare Our Telekom, BMobile, both-SIM and other-user experiences.')],
+    ['Profile', 'A4', 'Operator SIM used when problems occur', ['a4'], () => questionnaireCategory(records, ['a4'], ['Our Telekom','BMobile','Both'], 'Shows which operator respondents associate with coverage or speed problems.')],
+    ['Profile', 'A5', 'Plan type', ['a5'], () => questionnaireCategory(records, ['a5'], [], 'Prepaid users can be more exposed to affordability and top-up interruptions.')],
+    ['Profile', 'A6', 'Household mobile-data users', ['a6'], () => questionnaireCategory(records, ['a6'], ['4','6'], 'Higher household use indicates stronger dependence on mobile data.')],
+    ['Coverage', 'B1', 'Signal strength at home', ['b1'], () => questionnaireLikert(records, 'b1', v => v <= 2, v => v >= 4, { interpretation: 'Compare poor perceived signal with RSRP/RSRQ/SINR readings.' })],
+    ['Coverage', 'B2', 'Dropped calls', ['b2'], () => questionnaireCategory(records, ['b2'], ['Often','Very often'], 'Frequent dropped calls support a voice reliability problem.')],
+    ['Coverage', 'B3', 'Specific locations where signal is lost', ['b3'], () => questionnaireCategory(records, ['b3'], ['Yes'], 'A high Yes rate suggests local weak-signal hotspots that should be mapped or described.')],
+    ['Coverage', 'B3 detail', 'Named signal-loss places', ['b3_detail'], () => questionnaireText(records, ['b3_detail'], 'Code recurring place names as qualitative hotspot evidence.')],
+    ['Coverage', 'B4', 'Coverage problem situations', ['b4'], () => questionnaireMulti(records, 'b4', 'any-not-none', 'Indoor, night, or bad-weather patterns can explain why outdoor readings may not match user experience.')],
+    ['Voice QoS', 'C1', 'Voice-call quality', ['c1'], () => questionnaireLikert(records, 'c1', v => v <= 2, v => v >= 4, { interpretation: 'Core voice QoS perception indicator.' })],
+    ['Voice QoS', 'C2', 'Cross-talk, echo or interference', ['c2'], () => questionnaireLikert(records, 'c2', v => v <= 2, v => v >= 4, { interpretation: 'This scale is reversed: low values mean frequent interference; high values mean rare/never.' })],
+    ['Voice QoS', 'C3', 'Voice reliability', ['c3'], () => questionnaireLikert(records, 'c3', v => v <= 2, v => v >= 4, { interpretation: 'Combines with dropped calls to explain voice-service reliability.' })],
+    ['Voice QoS', 'C4', 'Times voice problems occur', ['c4'], () => questionnaireMulti(records, 'c4', ['Morning','Midday','Evening','Night'], 'Time-of-day patterns may indicate congestion or changing propagation conditions.')],
+    ['Data QoS', 'C5', 'Mobile data speed rating', ['c5'], () => questionnaireLikert(records, 'c5', v => v <= 2, v => v >= 4, { interpretation: 'Compare directly with Ookla/NCIL/nPerf download, ping and jitter.' })],
+    ['Data QoS', 'C6', 'Slowest mobile-data time', ['c6'], () => questionnaireMulti(records, 'c6', ['Morning','Midday','Evening','Night'], 'A peak-time slow-data pattern supports a congestion explanation.')],
+    ['Data QoS', 'C7', 'Data slower over past 1-2 years', ['c7'], () => questionnaireCategory(records, ['c7'], ['Yes'], 'A high Yes rate supports a perceived deterioration or demand-growth argument.')],
+    ['Data QoS', 'C8', 'Apps needing mobile data', ['c8'], () => questionnaireMulti(records, 'c8', ['WhatsApp','Facebook','YouTube','Mobile banking','Voice calls'], 'App demand explains why speed, latency and reliability matter to daily life.')],
+    ['Affordability', 'D1', 'Monthly mobile spend', ['d1'], () => questionnaireCategory(records, ['d1'], ['200','500'], 'High spend bands can indicate cost burden, especially when QoS is weak.')],
+    ['Affordability', 'D2', 'Plan affordability', ['d2'], () => questionnaireLikert(records, 'd2', v => v <= 2, v => v >= 4, { interpretation: 'Central affordability indicator for value-for-money analysis.' })],
+    ['Affordability', 'D3', 'Unable to afford top-up', ['d3'], () => questionnaireCategory(records, ['d3'], ['Sometimes','Often'], 'Sometimes/Often means cost directly interrupts connectivity.')],
+    ['Affordability', 'D4', 'Home WiFi comparison', ['d4'], () => questionnaireCategory(records, ['d4'], ['No WiFi'], 'No WiFi households depend more heavily on mobile-network quality.')],
+    ['Competition', 'E1', 'Switched operators', ['e1'], () => questionnaireCategory(records, ['e1'], ['Yes'], 'Switching shows consumer response to price, quality, or coverage differences.')],
+    ['Competition', 'E1 reason', 'Reason for switching/not switching', ['e1_yes_reason','e1_no'], () => questionnaireText(records, ['e1_yes_reason','e1_no'], 'Code reasons into price, coverage, speed, reliability, satisfaction, or switching barriers.')],
+    ['Competition', 'E2', 'Perceived operator quality difference', ['e2'], () => questionnaireCategory(records, ['e2'], ['better'], 'Compare perceived operator advantage with measured readings by SIM/operator.')],
+    ['Competition', 'E3', 'Starlink awareness/use', ['e3'], () => questionnaireCategory(records, ['e3'], ['Yes'], 'Starlink awareness/use can indicate substitution pressure where mobile service is weak.')],
+    ['Competition', 'E4', 'Most needed service improvement', ['e4'], () => questionnaireText(records, ['e4'], 'Use these responses to support recommendations in the dissertation.')],
+    ['Field readings', 'GPS', 'Valid GPS waypoint', ['lat','lng'], () => {
+      const valid = records.filter(record => gpsStatus(record.lat, record.lng) === 'Valid').length;
+      const missing = total - valid;
+      return { answered: valid, issue: missing, summary: `${valid}/${total} valid GPS (${dashPct(valid, total)}%); ${missing} need GPS check`, status: missing ? 'warn' : 'good', interpretation: 'GPS completeness controls whether records can support map-based spatial analysis.' };
+    }],
+    ['Field readings', 'RSRP', 'Signal strength reading', ['rsrp','fd_s2a_rsrp'], () => questionnaireNumeric(records, ['rsrp','fd_s2a_rsrp'], 'dBm', value => value < -100, 'Below -100 dBm indicates poor/very poor LTE signal strength.')],
+    ['Field readings', 'RSRQ', 'Signal quality reading', ['fd_s2a_rsrq'], () => questionnaireNumeric(records, ['fd_s2a_rsrq'], 'dB', value => value < -15, 'Poor RSRQ can indicate interference, load, or weak reference-signal quality.')],
+    ['Field readings', 'SINR', 'Signal-to-noise reading', ['fd_s2a_sinr','fd_s2a_rssnr'], () => questionnaireNumeric(records, ['fd_s2a_sinr','fd_s2a_rssnr'], 'dB', value => value <= 0, 'Low SINR suggests noisy or interference-limited conditions.')],
+    ['Field readings', 'Download', 'Measured download speed', ['dl','fd_s1_ookla_dl','fd_s1_ncil_dl','fd_s1_nperf_dl_avg','fd_s1_nperf_dl'], () => questionnaireNumeric(records, ['dl','fd_s1_ookla_dl','fd_s1_ncil_dl','fd_s1_nperf_dl_avg','fd_s1_nperf_dl'], 'Mbps', value => value < 1, 'Below 1 Mbps is a strong everyday-usability concern.')],
+    ['Field readings', 'Upload', 'Measured upload speed', ['ul','fd_s1_ookla_ul','fd_s1_ncil_ul','fd_s1_nperf_ul_avg','fd_s1_nperf_ul'], () => questionnaireNumeric(records, ['ul','fd_s1_ookla_ul','fd_s1_ncil_ul','fd_s1_nperf_ul_avg','fd_s1_nperf_ul'], 'Mbps', value => value < 0.5, 'Low upload affects messaging, social media and sending evidence/screenshots.')],
+    ['Field readings', 'Ping', 'Measured latency', ['ping','fd_s1_ookla_ping','fd_s1_ncil_ping','fd_s1_nperf_ping'], () => questionnaireNumeric(records, ['ping','fd_s1_ookla_ping','fd_s1_ncil_ping','fd_s1_nperf_ping'], 'ms', value => value > 150, 'High latency affects calls, banking and interactive apps.')],
+    ['Field readings', 'Cell ID', 'Serving cell identity', ['fd_s2a_eci','fd_s2a_lcid','fd_s2a_enb','cell_id'], () => questionnaireText(records, ['fd_s2a_eci','fd_s2a_lcid','fd_s2a_enb','cell_id'], 'Cell IDs allow survey readings to link to tower readings and serving-cell clusters.')],
+  ];
+
+  const tableRows = rows.map(([section, code, label, fields, analyse]) => {
+    const result = analyse();
+    const completionPct = dashPct(result.answered, total);
+    const issuePct = result.answered ? dashPct(result.issue, result.answered) : 0;
+    const badge = result.status === 'bad' ? 'badge-red' : result.status === 'warn' ? 'badge-warn' : 'badge-ok';
+    return `<tr>
+      <td><span class="badge badge-blue">${dashEscape(section)}</span><div style="font-family:'JetBrains Mono',monospace;margin-top:4px;color:var(--gray-600)">${dashEscape(code)}</div></td>
+      <td><strong>${dashEscape(label)}</strong><div style="font-size:9px;color:var(--gray-500);margin-top:3px">${fields.map(dashEscape).join(', ')}</div></td>
+      <td>${result.answered}/${total}<div class="dash-mini-bar" style="margin-top:5px"><div class="dash-mini-fill" style="width:${completionPct}%;background:${completionPct < 70 ? 'var(--amber)' : 'var(--green)'}"></div></div></td>
+      <td>${dashEscape(result.summary)}</td>
+      <td><span class="badge ${badge}">${result.issue ? `${result.issue} flagged (${issuePct}%)` : 'No major flag'}</span></td>
+      <td>${dashEscape(result.interpretation || '')}</td>
+    </tr>`;
+  }).join('');
+
+  target.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--navy)">Survey analytics dashboard: experience, QoS, affordability and readings</div>
+        <div style="font-size:11px;color:var(--gray-600);margin-top:3px;line-height:1.45">Aggregated interpretation of the questionnaire and field readings for the selected dashboard area. This is designed to answer: where is the problem, how big is it, what causes it, and what can be written in the dissertation?</div>
+      </div>
+      <span class="badge badge-blue">${total} selected record${total === 1 ? '' : 's'}</span>
+    </div>
+    <div class="dash-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">
+      <div class="dash-card" style="min-height:0"><div class="dash-card-label">Evidence-backed problem cases</div><div class="dash-card-value" style="font-size:28px;color:${supportedCount ? 'var(--amber)' : 'var(--green)'}">${supportedCount}</div><div class="dash-card-note">Poor survey experience plus poor field reading in the same record.</div></div>
+      <div class="dash-card" style="min-height:0"><div class="dash-card-label">GPS analysis readiness</div><div class="dash-card-value" style="font-size:28px;color:${validGps === total ? 'var(--green)' : 'var(--amber)'}">${dashPct(validGps,total)}%</div><div class="dash-card-note">${validGps}/${total} records can support mapped ward/spatial analysis.</div></div>
+      <div class="dash-card" style="min-height:0"><div class="dash-card-label">Technical averages</div><div class="dash-card-value" style="font-size:22px;color:var(--navy)">${dashNumber(avgRsrp,0)} dBm / ${dashNumber(avgDl,1)} Mbps</div><div class="dash-card-note">Average RSRP and download speed in selected records.</div></div>
+    </div>
+    <div class="dash-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px">${analyticalCards}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div>
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:8px">Analytical story</div>
+        <div class="dash-insight-list">
+          <div class="dash-insight ${supportedCount ? 'warn' : 'good'}">${headline}</div>
+          <div class="dash-insight ${affordCount ? 'warn' : 'good'}">${valueGap}</div>
+          <div class="dash-insight warn">Most common mobile-data uses: ${appDemandText}. This helps explain why slow data, high latency or unstable signal matters socially, not just technically.</div>
+          <div class="dash-insight warn">Most reported slow-data times: ${slowTimeText}. Most reported coverage situations: ${coverageSituationText}.</div>
+          <div class="dash-insight ${noWifiProblem ? 'bad' : 'good'}">${noWifi} record${noWifi === 1 ? '' : 's'} report no home WiFi; ${noWifiProblem} also show data/affordability pressure. This is a stronger digital-inclusion concern.</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:8px">How to read this for the dissertation</div>
+        <div class="dash-insight-list">
+          <div class="dash-insight good"><strong>Coverage question:</strong> use B1-B4 with RSRP/RSRQ/SINR to show whether poor experience is spatial, indoor, weather/time related, or technically confirmed.</div>
+          <div class="dash-insight good"><strong>QoS question:</strong> use C1-C8 with speed tests to separate voice reliability, data throughput, latency and daily app dependence.</div>
+          <div class="dash-insight good"><strong>Affordability question:</strong> use D1-D4 to show whether mobile cost restricts access, especially where service quality is poor.</div>
+          <div class="dash-insight good"><strong>Competition question:</strong> use A3/A4/E1-E3 to explain whether users can respond to poor service by switching operator or using alternatives.</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+      <div style="overflow:auto;border:1px solid var(--border);border-radius:8px">
+        <table class="dash-ward-table" style="min-width:620px">
+          <thead><tr><th>Ward</th><th>Coverage</th><th>Data QoS</th><th>Afford.</th><th>Readings</th><th>Dominant story</th></tr></thead>
+          <tbody>${wardAnalytics || `<tr><td colspan="6">No ward records available.</td></tr>`}</tbody>
+        </table>
+      </div>
+      <div style="overflow:auto;border:1px solid var(--border);border-radius:8px">
+        <table class="dash-ward-table" style="min-width:620px">
+          <thead><tr><th>Operator</th><th>Coverage</th><th>Data QoS</th><th>Afford.</th><th>Readings</th><th>Dominant story</th></tr></thead>
+          <tbody>${operatorAnalytics || `<tr><td colspan="6">No operator records available.</td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>
+    <details>
+      <summary style="cursor:pointer;font-size:12px;font-weight:800;color:var(--navy);margin-bottom:8px">Open questionnaire drill-down table</summary>
+    <div style="overflow:auto;border:1px solid var(--border);border-radius:8px;max-height:520px">
+      <table class="dash-ward-table" style="min-width:1080px">
+        <thead><tr><th>Theme / code</th><th>Questionnaire data point</th><th>Answered</th><th>What the results say</th><th>Flag</th><th>Dissertation use</th></tr></thead>
+        <tbody>${tableRows || `<tr><td colspan="6">No records available in this dashboard scope.</td></tr>`}</tbody>
+      </table>
+    </div>
+    </details>
+    <div style="font-size:10px;color:var(--gray-600);margin-top:8px;line-height:1.4">Analyst note: high percentages indicate patterns worth discussing, but causal claims should be supported by paired readings, screenshots, location clusters, repeated ward patterns, or field notes.</div>`;
+}
+
 function renderDashboard() {
   const day = selDay === 'all' ? null : selDay;
   const constituencyNames = ['West Honiara', 'Central Honiara', 'East Honiara'];
@@ -4945,6 +5303,7 @@ function renderDashboard() {
 
   renderExperienceCorrelation(surv);
   renderDissertationInsights(surv);
+  renderQuestionnaireResultsTable(surv);
   renderSpectrumConfiguration(surv);
   renderNetworkIdentityAggregation(surv);
   renderWardBars();
