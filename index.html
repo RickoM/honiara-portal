@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-ward-radio-operator-dashboard-v16">
+<meta name="portal-build" content="2026-07-09-constituency-top-ward-radio-v17">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -5427,6 +5427,38 @@ function renderDashboard() {
     </div>`,
   ].join('');
 
+  const constituencyRadio = wardRadioTechnicalSummary(surv);
+  document.getElementById('dash-metrics').innerHTML = [
+    `<div class="dash-card">
+      <div class="dash-card-value" style="color:var(--navy)">${gpsStats.total}</div>
+      <div class="dash-card-label">Constituency survey data points</div>
+      <div class="dash-card-note">${selectedDashboardConstituency}: ${progressPct}% of target (${gpsStats.total}/${selectedTarget}).</div>
+      <div style="font-size:11px;color:var(--gray-600);margin-top:8px">This card is constituency-level only. Use the ward table below for RSRP/RSRQ/RSSNR radio interpretation.</div>
+    </div>`,
+    `<div class="dash-card">
+      <div class="dash-card-value" style="color:${gpsStats.outsideBoundary || gpsStats.wardMismatch || gpsStats.missingOrInvalid ? 'var(--amber)' : 'var(--green)'}">${gpsStats.validGps}/${gpsStats.total}</div>
+      <div class="dash-card-label">GPS and boundary status</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:11px">
+        <div><strong style="color:var(--green)">${gpsStats.insideBoundary}</strong><br><span style="color:var(--gray-600)">inside boundary</span></div>
+        <div><strong style="color:${gpsStats.outsideBoundary ? 'var(--red)' : 'var(--green)'}">${gpsStats.outsideBoundary}</strong><br><span style="color:var(--gray-600)">outside boundary</span></div>
+        <div><strong style="color:${gpsStats.wardMismatch ? 'var(--amber)' : 'var(--green)'}">${gpsStats.wardMismatch}</strong><br><span style="color:var(--gray-600)">ward mismatch</span></div>
+        <div><strong style="color:${gpsStats.missingOrInvalid ? 'var(--amber)' : 'var(--green)'}">${gpsStats.missingOrInvalid}</strong><br><span style="color:var(--gray-600)">missing/invalid</span></div>
+      </div>
+    </div>`,
+    `<div class="dash-card">
+      <div class="dash-card-value" style="font-size:20px;color:var(--navy)">${constituencyRadio.plmnText}</div>
+      <div class="dash-card-label">MCC/MNC operator mix</div>
+      <div class="dash-card-note">Operator identity inferred from recorded PLMN. 540-01 = Our Telekom; 540-02 = BMobile.</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">This is a constituency summary of SIM observations; ward-level operator patterns are shown below.</div>
+    </div>`,
+    `<div class="dash-card">
+      <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '—'} / ${constituencyRadio.servingCellCount || 0}</div>
+      <div class="dash-card-label">Serving towers / cells detected</div>
+      <div class="dash-card-note">${constituencyRadio.bandText}</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px">Approximate serving eNB/tower groups and serving cells picked up from the field readings in this constituency.</div>
+    </div>`,
+  ].join('');
+
   const wardRows = selectedWards.map(ward => {
     const records = surv.filter(p => p.ward === ward);
     const target = WARDS[ward].target;
@@ -5451,7 +5483,7 @@ function renderDashboard() {
     </tr>`;
   }).join('');
   document.getElementById('dash-zone-bars').innerHTML = `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">${selectedDashboardConstituency} ward-level radio, operator and serving-cell summary</div>
-    <div style="font-size:10px;color:var(--gray-600);line-height:1.4;margin-bottom:10px">Ward-level analysis is more accurate than constituency averages because radio conditions vary by local terrain, buildings, serving cell, band and operator PLMN. Operator identity is inferred from MCC/MNC where recorded: 540-01 = Our Telekom, 540-02 = BMobile.</div>
+    <div style="font-size:10px;color:var(--gray-600);line-height:1.4;margin-bottom:10px">Ward-level analysis is more accurate than constituency averages because radio conditions vary by local terrain, buildings, serving cell, band and operator PLMN. Operator identity is inferred from MCC/MNC where recorded: 540-01 = Our Telekom, 540-02 = BMobile.<br>Ward radio thresholds: RSRP ≥-80 Excellent · -80 to -90 Good · -90 to -100 Fair · -100 to -110 Poor · below -110 Very Poor. RSRQ below -15 dB = degraded quality. RSSNR/SINR low or 0 dB = noisy signal environment.</div>
     <div style="overflow:auto">
       <table class="dash-ward-table" style="min-width:1280px">
         <thead><tr><th>Ward</th><th>GPS boundary</th><th>MCC/MNC operator</th><th>Band</th><th>Serving towers/cells</th><th>RSRP</th><th>RSRQ</th><th>RSSNR</th><th>Speed</th><th>Interpretation</th></tr></thead>
