@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-aggregate-analytics-dashboard-v14">
+<meta name="portal-build" content="2026-07-09-ward-radio-operator-dashboard-v16">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2467,6 +2467,7 @@ function loadWardBoundaryIndex() {
       wardBoundaryGeoFeatures = Array.isArray(geojson.features) ? geojson.features : [];
       wardBoundaryIndexStatus = wardBoundaryGeoFeatures.length ? 'loaded' : 'unavailable';
       if (activeView === 'data') renderDataTable();
+      if (activeView === 'dashboard') renderDashboard();
       if (activeView === 'map') refresh();
       return wardBoundaryGeoFeatures;
     })
@@ -2475,6 +2476,7 @@ function loadWardBoundaryIndex() {
       wardBoundaryGeoFeatures = [];
       wardBoundaryIndexStatus = 'unavailable';
       if (activeView === 'data') renderDataTable();
+      if (activeView === 'dashboard') renderDashboard();
       return [];
     });
   return wardBoundaryIndexPromise;
@@ -4963,6 +4965,135 @@ function questionnaireText(records, fields, interpretation = '') {
   };
 }
 
+function classifyRsrp(value) {
+  if (!Number.isFinite(value)) return { label: 'No reading', color: 'var(--gray-400)', note: 'RSRP is Reference Signal Received Power, the LTE signal-strength indicator, measured in dBm.' };
+  if (value >= -80) return { label: 'Excellent', color: 'var(--green)', note: '≥ -80 dBm: strong LTE signal strength.' };
+  if (value >= -90) return { label: 'Good', color: 'var(--green)', note: '-80 to -90 dBm: good LTE signal strength.' };
+  if (value >= -100) return { label: 'Fair', color: 'var(--amber)', note: '-90 to -100 dBm: fair/usable, but may vary indoors.' };
+  if (value >= -110) return { label: 'Poor', color: 'var(--red)', note: '-100 to -110 dBm: poor signal strength.' };
+  return { label: 'Very Poor', color: 'var(--red)', note: 'Below -110 dBm: very poor LTE signal strength.' };
+}
+
+function classifyRsrq(value) {
+  if (!Number.isFinite(value)) return { label: 'No reading', color: 'var(--gray-400)', note: 'RSRQ is Reference Signal Received Quality, measured in dB, not dBm.' };
+  if (value < -15) return { label: 'Degraded', color: 'var(--red)', note: 'Below -15 dB: degraded reference-signal quality; may indicate interference, load, or weak quality.' };
+  if (value < -12) return { label: 'Watch', color: 'var(--amber)', note: '-12 to -15 dB: borderline quality; check against speed and SINR/RSSNR.' };
+  return { label: 'Acceptable', color: 'var(--green)', note: 'Above -12 dB: reference-signal quality is broadly acceptable.' };
+}
+
+function classifyRssnr(value) {
+  if (!Number.isFinite(value)) return { label: 'No reading', color: 'var(--gray-400)', note: 'RSSNR/SINR is the signal-to-noise indicator, measured in dB.' };
+  if (value <= 0) return { label: 'Noisy', color: 'var(--red)', note: 'Low / 0 dB: noisy signal environment; interference can reduce throughput.' };
+  if (value < 5) return { label: 'Weak', color: 'var(--amber)', note: '0 to 5 dB: weak signal-to-noise margin; performance may be unstable.' };
+  if (value < 10) return { label: 'Usable', color: 'var(--green)', note: '5 to 10 dB: usable signal-to-noise condition.' };
+  return { label: 'Good', color: 'var(--green)', note: 'Above 10 dB: good signal-to-noise condition.' };
+}
+
+function dashboardGpsBoundaryStats(records) {
+  const total = records.length;
+  const validGps = records.filter(record => gpsStatus(record.lat, record.lng) === 'Valid');
+  const outsideStudy = records.filter(record => gpsStatus(record.lat, record.lng) === 'Outside study area').length;
+  const missingOrInvalid = total - validGps.length - outsideStudy;
+  const boundaryReady = wardBoundaryGeoFeatures.length > 0;
+  const insideBoundary = boundaryReady
+    ? validGps.filter(record => !!wardContainingCoordinate(record.lat, record.lng)).length
+    : validGps.length;
+  const wardMismatch = boundaryReady
+    ? validGps.filter(record => wardGpsValidation(record)?.type === 'mismatch').length
+    : 0;
+  const outsideWardBoundary = boundaryReady
+    ? validGps.filter(record => wardGpsValidation(record)?.type === 'outside-boundary').length
+    : 0;
+  const outsideBoundary = outsideStudy + outsideWardBoundary;
+  return { total, validGps: validGps.length, insideBoundary, outsideBoundary, outsideStudy, outsideWardBoundary, wardMismatch, missingOrInvalid, boundaryReady };
+}
+
+function plmnOperatorName(mcc, mnc) {
+  const cleanMcc = String(mcc || '').trim();
+  const cleanMnc = String(mnc || '').trim().replace(/^0+/, '') || '0';
+  const key = `${cleanMcc}-${cleanMnc}`;
+  if (key === '540-1') return 'Our Telekom';
+  if (key === '540-2') return 'BMobile';
+  return cleanMcc && cleanMnc ? `PLMN ${cleanMcc}-${cleanMnc}` : 'Unknown';
+}
+
+function normaliseRadioBand(value) {
+  return String(value || '')
+    .replace(/^LTE\s*/i, '')
+    .replace(/^Band\s*/i, '')
+    .replace(/^B(?=\d)/i, '')
+    .trim();
+}
+
+function countValues(values) {
+  const counts = new Map();
+  values.map(value => String(value || '').trim()).filter(Boolean).forEach(value => {
+    counts.set(value, (counts.get(value) || 0) + 1);
+  });
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function topCountText(counts, empty = 'Not recorded', limit = 2) {
+  return counts.length
+    ? counts.slice(0, limit).map(([label, count]) => `${dashEscape(label)} (${count})`).join(', ')
+    : empty;
+}
+
+function wardRadioTechnicalSummary(records) {
+  const simObservations = [];
+  records.forEach(record => {
+    [
+      { sim: 'SIM 1', mcc: record.fd_s2a_mcc, mnc: record.fd_s2a_mnc, band: record.fd_s2a_band },
+      { sim: 'SIM 2', mcc: record.fd_s2b_mcc, mnc: record.fd_s2b_mnc, band: record.fd_s2b_band },
+    ].forEach(obs => {
+      const mcc = String(obs.mcc || '').trim();
+      const mnc = String(obs.mnc || '').trim();
+      const band = normaliseRadioBand(obs.band);
+      if (mcc || mnc || band) simObservations.push({ ...obs, mcc, mnc, band });
+    });
+  });
+  const plmnCounts = countValues(simObservations.map(obs => obs.mcc && obs.mnc ? `${obs.mcc}-${String(obs.mnc).padStart(2, '0')} ${plmnOperatorName(obs.mcc, obs.mnc)}` : ''));
+  const bandCounts = countValues(simObservations.map(obs => obs.band ? `B${obs.band}` : ''));
+  const servingCells = new Set();
+  const servingEnbs = new Set();
+  records.forEach(record => {
+    const mcc = String(record.fd_s2a_mcc || '').trim();
+    const mnc = String(record.fd_s2a_mnc || '').trim();
+    const eci = String(record.fd_s2a_eci || '').trim();
+    const enb = String(record.fd_s2a_enb || String(record.enb || '').split('-')[0] || '').trim();
+    const lcid = String(record.fd_s2a_lcid || '').trim();
+    const pci = String(record.fd_s2a_pci || '').trim();
+    if (eci) servingCells.add(`${mcc}-${mnc}|ECI:${eci}`);
+    else if (enb || lcid || pci) servingCells.add(`${mcc}-${mnc}|eNB:${enb}|LCID:${lcid}|PCI:${pci}`);
+    if (enb) servingEnbs.add(`${mcc}-${mnc}|eNB:${enb}`);
+  });
+  const avgRsrp = dashAverage(records, ['rsrp', 'fd_s2a_rsrp']);
+  const avgRsrq = dashAverage(records, ['fd_s2a_rsrq']);
+  const avgRssnr = dashAverage(records, ['fd_s2a_rssnr', 'fd_s2a_sinr']);
+  const avgDl = dashAverage(records, ['dl', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl']);
+  const avgPing = dashAverage(records, ['ping', 'fd_s1_ookla_ping', 'fd_s1_ncil_ping', 'fd_s1_nperf_ping']);
+  const gps = dashboardGpsBoundaryStats(records);
+  const rsrpClass = classifyRsrp(avgRsrp);
+  const rsrqClass = classifyRsrq(avgRsrq);
+  const rssnrClass = classifyRssnr(avgRssnr);
+  const dominantIssue = !records.length ? 'No readings yet' :
+    Number.isFinite(avgRsrp) && avgRsrp < -100 ? 'Weak coverage strength' :
+    Number.isFinite(avgRsrq) && avgRsrq < -15 ? 'Degraded signal quality' :
+    Number.isFinite(avgRssnr) && avgRssnr <= 0 ? 'Noisy radio environment' :
+    Number.isFinite(avgDl) && avgDl < 1 ? 'Low throughput' :
+    'No dominant radio issue';
+  return {
+    gps,
+    plmnText: topCountText(plmnCounts),
+    bandText: topCountText(bandCounts),
+    servingCellCount: servingCells.size,
+    servingTowerCount: servingEnbs.size,
+    avgRsrp, avgRsrq, avgRssnr, avgDl, avgPing,
+    rsrpClass, rsrqClass, rssnrClass,
+    dominantIssue
+  };
+}
+
 function renderQuestionnaireResultsTable(records) {
   const target = document.getElementById('dash-questionnaire-results');
   if (!target) return;
@@ -5228,7 +5359,7 @@ function renderDashboard() {
   const towers = towerPoints.filter(p => p.constituency === selectedDashboardConstituency || selectedWards.includes(p.ward));
   const avgRsrp = dashAverage(surv, ['rsrp', 'fd_s2a_rsrp']);
   const avgRsrq = dashAverage(surv, ['fd_s2a_rsrq']);
-  const avgSinr = dashAverage(surv, ['fd_s2a_sinr']);
+  const avgSinr = dashAverage(surv, ['fd_s2a_rssnr', 'fd_s2a_sinr']);
   const avgDl = dashAverage(surv, ['dl', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg']);
   const slowDl = surv.filter(p => {
     const value = parseFloat(p.dl || p.fd_s1_ookla_dl || p.fd_s1_ncil_dl || p.fd_s1_nperf_dl_avg);
@@ -5259,6 +5390,43 @@ function renderDashboard() {
     <div class="dash-card-note">${m.note}</div>
   </div>`).join('');
 
+  const gpsStats = dashboardGpsBoundaryStats(surv);
+  const rsrpClass = classifyRsrp(avgRsrp);
+  const rsrqClass = classifyRsrq(avgRsrq);
+  const rssnrClass = classifyRssnr(avgSinr);
+  document.getElementById('dash-metrics').innerHTML = [
+    `<div class="dash-card">
+      <div class="dash-card-value" style="color:var(--navy)">${gpsStats.total}</div>
+      <div class="dash-card-label">Survey data points</div>
+      <div class="dash-card-note">${progressPct}% of target (${gpsStats.total}/${selectedTarget}). ${gpsStats.validGps} have valid GPS.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:11px">
+        <div><strong style="color:var(--green)">${gpsStats.insideBoundary}</strong><br><span style="color:var(--gray-600)">inside boundary</span></div>
+        <div><strong style="color:${gpsStats.outsideBoundary ? 'var(--red)' : 'var(--green)'}">${gpsStats.outsideBoundary}</strong><br><span style="color:var(--gray-600)">outside boundary</span></div>
+        <div><strong style="color:${gpsStats.wardMismatch ? 'var(--amber)' : 'var(--green)'}">${gpsStats.wardMismatch}</strong><br><span style="color:var(--gray-600)">ward mismatch</span></div>
+        <div><strong style="color:${gpsStats.missingOrInvalid ? 'var(--amber)' : 'var(--green)'}">${gpsStats.missingOrInvalid}</strong><br><span style="color:var(--gray-600)">missing/invalid GPS</span></div>
+      </div>
+      <div style="font-size:9px;color:var(--gray-500);margin-top:8px">${gpsStats.boundaryReady ? 'Boundary check uses loaded Honiara ward polygons.' : 'Ward boundary polygons not loaded yet; showing broad GPS validity.'}</div>
+    </div>`,
+    `<div class="dash-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="dash-card-label">Average RSRP</div><span class="badge ${avgRsrp < -100 ? 'badge-red' : avgRsrp < -90 ? 'badge-warn' : 'badge-ok'}">${rsrpClass.label}</span></div>
+      <div class="dash-card-value" style="color:${rsrpClass.color}">${Number.isFinite(avgRsrp) ? avgRsrp.toFixed(0) + ' dBm' : '—'}</div>
+      <div class="dash-card-note"><strong>RSRP</strong> = Reference Signal Received Power. It measures LTE signal strength.</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px;line-height:1.35">${rsrpClass.note}<br>Scale: ≥-80 Excellent · -80 to -90 Good · -90 to -100 Fair · -100 to -110 Poor · below -110 Very Poor.</div>
+    </div>`,
+    `<div class="dash-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="dash-card-label">Average RSRQ</div><span class="badge ${avgRsrq < -15 ? 'badge-red' : avgRsrq < -12 ? 'badge-warn' : 'badge-ok'}">${rsrqClass.label}</span></div>
+      <div class="dash-card-value" style="color:${rsrqClass.color}">${Number.isFinite(avgRsrq) ? avgRsrq.toFixed(1) + ' dB' : '—'}</div>
+      <div class="dash-card-note"><strong>RSRQ</strong> = Reference Signal Received Quality. It is a quality indicator, measured in dB.</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px;line-height:1.35">${rsrqClass.note}<br>Rule: below -15 dB = degraded quality.</div>
+    </div>`,
+    `<div class="dash-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div class="dash-card-label">Average RSSNR / SINR</div><span class="badge ${avgSinr <= 0 ? 'badge-red' : avgSinr < 5 ? 'badge-warn' : 'badge-ok'}">${rssnrClass.label}</span></div>
+      <div class="dash-card-value" style="color:${rssnrClass.color}">${Number.isFinite(avgSinr) ? avgSinr.toFixed(1) + ' dB' : '—'}</div>
+      <div class="dash-card-note"><strong>RSSNR</strong> = Reference Signal Signal-to-Noise Ratio. It shows how clean or noisy the radio signal is.</div>
+      <div style="font-size:10px;color:var(--gray-600);margin-top:8px;line-height:1.35">${rssnrClass.note}<br>Rule: low / 0 dB = noisy signal environment.</div>
+    </div>`,
+  ].join('');
+
   const wardRows = selectedWards.map(ward => {
     const records = surv.filter(p => p.ward === ward);
     const target = WARDS[ward].target;
@@ -5268,22 +5436,28 @@ function renderDashboard() {
       count / target >= .8 ? ['On track', 'badge-ok', '#27500A'] :
       count === 0 ? ['Not started', 'badge-blue', '#378ADD'] :
       ['Behind', 'badge-warn', '#BA7517'];
-    const wardAvgRsrp = dashAverage(records, ['rsrp', 'fd_s2a_rsrp']);
-    const wardAvgDl = dashAverage(records, ['dl', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg']);
-    const validGps = records.filter(p => gpsStatus(p.lat, p.lng) === 'Valid').length;
+    const tech = wardRadioTechnicalSummary(records);
     return `<tr>
-      <td><strong>${ward}</strong><div class="dash-mini-bar" style="margin-top:5px"><div class="dash-mini-fill" style="width:${Math.min(100,pct)}%;background:${status[2]}"></div></div></td>
-      <td>${count}/${target}<br><span class="badge ${status[1]}">${status[0]}</span></td>
-      <td>${validGps}/${count || 0}</td>
-      <td>${dashNumber(wardAvgRsrp,0)} dBm</td>
-      <td>${dashNumber(wardAvgDl,1)} Mbps</td>
+      <td><strong>${ward}</strong><div class="dash-mini-bar" style="margin-top:5px"><div class="dash-mini-fill" style="width:${Math.min(100,pct)}%;background:${status[2]}"></div></div><span class="badge ${status[1]}" style="margin-top:5px">${status[0]} ${count}/${target}</span></td>
+      <td>${tech.gps.insideBoundary}/${count || 0}<div style="font-size:9px;color:${tech.gps.outsideBoundary ? 'var(--red)' : 'var(--gray-600)'}">${tech.gps.outsideBoundary} outside · ${tech.gps.wardMismatch} mismatch</div></td>
+      <td>${tech.plmnText}</td>
+      <td>${tech.bandText}</td>
+      <td><strong>${tech.servingTowerCount || '—'}</strong> eNB/tower<div style="font-size:9px;color:var(--gray-600)">${tech.servingCellCount || 0} serving cell${tech.servingCellCount === 1 ? '' : 's'}</div></td>
+      <td><span style="color:${tech.rsrpClass.color};font-weight:700">${dashNumber(tech.avgRsrp,0)} dBm</span><div style="font-size:9px">${tech.rsrpClass.label}</div></td>
+      <td><span style="color:${tech.rsrqClass.color};font-weight:700">${dashNumber(tech.avgRsrq,1)} dB</span><div style="font-size:9px">${tech.rsrqClass.label}</div></td>
+      <td><span style="color:${tech.rssnrClass.color};font-weight:700">${dashNumber(tech.avgRssnr,1)} dB</span><div style="font-size:9px">${tech.rssnrClass.label}</div></td>
+      <td>${dashNumber(tech.avgDl,1)} Mbps<div style="font-size:9px;color:var(--gray-600)">Ping ${dashNumber(tech.avgPing,0)} ms</div></td>
+      <td>${tech.dominantIssue}</td>
     </tr>`;
   }).join('');
-  document.getElementById('dash-zone-bars').innerHTML = `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">${selectedDashboardConstituency} ward story</div>
-    <table class="dash-ward-table">
-      <thead><tr><th>Ward</th><th>Survey</th><th>GPS</th><th>RSRP</th><th>DL</th></tr></thead>
-      <tbody>${wardRows}</tbody>
-    </table>`;
+  document.getElementById('dash-zone-bars').innerHTML = `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:10px">${selectedDashboardConstituency} ward-level radio, operator and serving-cell summary</div>
+    <div style="font-size:10px;color:var(--gray-600);line-height:1.4;margin-bottom:10px">Ward-level analysis is more accurate than constituency averages because radio conditions vary by local terrain, buildings, serving cell, band and operator PLMN. Operator identity is inferred from MCC/MNC where recorded: 540-01 = Our Telekom, 540-02 = BMobile.</div>
+    <div style="overflow:auto">
+      <table class="dash-ward-table" style="min-width:1280px">
+        <thead><tr><th>Ward</th><th>GPS boundary</th><th>MCC/MNC operator</th><th>Band</th><th>Serving towers/cells</th><th>RSRP</th><th>RSRQ</th><th>RSSNR</th><th>Speed</th><th>Interpretation</th></tr></thead>
+        <tbody>${wardRows}</tbody>
+      </table>
+    </div>`;
 
   const insights = [];
   if (!surv.length) {
