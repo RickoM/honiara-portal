@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-experience-correlation-v11">
+<meta name="portal-build" content="2026-07-09-dissertation-analytics-v12">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1311,6 +1311,7 @@
         <div class="data-card" style="padding:16px" id="dash-flags"></div>
       </div>
       <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-experience-correlation"></div>
+      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-dissertation-insights"></div>
       <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-spectrum-config"></div>
       <div class="data-card" style="padding:16px" id="dash-ward-detail"></div>
     </div>
@@ -4638,6 +4639,223 @@ function renderExperienceCorrelation(records) {
     </div>`;
 }
 
+function dashText(value) {
+  return String(value ?? '').trim();
+}
+
+function dashScore(record, field) {
+  const parsed = parseFloat(record[field]);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function dashHasAny(record, field, terms) {
+  const text = dashText(record[field]).toLowerCase();
+  return terms.some(term => text.includes(term.toLowerCase()));
+}
+
+function dashSplitOptions(value) {
+  return dashText(value)
+    .split(/[;,|]/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function dashTopOptions(records, field, limit = 3) {
+  const counts = new Map();
+  records.forEach(record => {
+    dashSplitOptions(record[field]).forEach(option => {
+      if (/no problem/i.test(option)) return;
+      counts.set(option, (counts.get(option) || 0) + 1);
+    });
+  });
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit);
+}
+
+function dashboardReadingProfile(record) {
+  const rsrp = dashMetric(record, ['rsrp', 'fd_s2a_rsrp']);
+  const rsrq = dashMetric(record, ['fd_s2a_rsrq']);
+  const sinr = dashMetric(record, ['fd_s2a_sinr', 'fd_s2a_rssnr']);
+  const dl = dashMetric(record, ['dl', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl']);
+  const ping = dashMetric(record, ['ping', 'fd_s1_ookla_ping', 'fd_s1_ncil_ping', 'fd_s1_nperf_ping']);
+  const jitter = dashMetric(record, ['jitter', 'fd_s1_ookla_jitter', 'fd_s1_ncil_jitter', 'fd_s1_nperf_jitter']);
+  const poorSignal = Number.isFinite(rsrp) && rsrp < -100;
+  const poorQuality = (Number.isFinite(rsrq) && rsrq < -15) || (Number.isFinite(sinr) && sinr <= 0);
+  const poorSpeed = (Number.isFinite(dl) && dl < 1) || (Number.isFinite(ping) && ping > 150) || (Number.isFinite(jitter) && jitter > 300);
+  return {
+    rsrp, rsrq, sinr, dl, ping, jitter,
+    hasReading: [rsrp, rsrq, sinr, dl, ping, jitter].some(Number.isFinite),
+    poorSignal,
+    poorQuality,
+    poorSpeed,
+    measuredPoor: poorSignal || poorQuality || poorSpeed
+  };
+}
+
+function dashboardSurveyProfile(record) {
+  const b1 = dashScore(record, 'b1');
+  const c1 = dashScore(record, 'c1');
+  const c2 = dashScore(record, 'c2');
+  const c3 = dashScore(record, 'c3');
+  const c5 = dashScore(record, 'c5');
+  const d2 = dashScore(record, 'd2');
+  const coverageConcern =
+    (Number.isFinite(b1) && b1 <= 2) ||
+    dashHasAny(record, 'b2', ['often', 'very often']) ||
+    dashHasAny(record, 'b3', ['yes']) ||
+    (dashText(record.b4) && !dashHasAny(record, 'b4', ['no problems']));
+  const qosConcern =
+    (Number.isFinite(c1) && c1 <= 2) ||
+    (Number.isFinite(c2) && c2 <= 2) ||
+    (Number.isFinite(c3) && c3 <= 2) ||
+    (Number.isFinite(c5) && c5 <= 2) ||
+    dashHasAny(record, 'c7', ['yes']);
+  const affordabilityPressure =
+    (Number.isFinite(d2) && d2 <= 2) ||
+    dashHasAny(record, 'd3', ['sometimes', 'often']) ||
+    (dashHasAny(record, 'd1', ['200', '500']) && Number.isFinite(d2) && d2 <= 3);
+  const marketSignal =
+    dashHasAny(record, 'e1', ['yes']) ||
+    dashHasAny(record, 'e2', ['better']) ||
+    dashHasAny(record, 'e3', ['yes']);
+  return { coverageConcern, qosConcern, affordabilityPressure, marketSignal };
+}
+
+function dashboardInterpretationLabel(qosPct, measuredPct, affordabilityPct) {
+  if (qosPct >= 50 && measuredPct >= 40) return 'QoS issue technically supported';
+  if (qosPct >= 50 && measuredPct < 30) return 'Experience issue not fully explained by readings';
+  if (affordabilityPct >= 40) return 'Affordability/value-for-money pressure';
+  if (measuredPct >= 40) return 'Technical risk despite mixed survey experience';
+  return 'No dominant risk yet';
+}
+
+function renderDissertationInsights(records) {
+  const target = document.getElementById('dash-dissertation-insights');
+  if (!target) return;
+  const total = records.length;
+  if (!total) {
+    target.innerHTML = `<div style="font-size:13px;font-weight:800;color:var(--navy)">Dissertation interpretation</div>
+      <div class="dash-insight warn" style="margin-top:10px">No records are available for this selected constituency yet, so the portal cannot build a defensible interpretation.</div>`;
+    return;
+  }
+
+  const profiles = records.map(record => ({
+    record,
+    survey: dashboardSurveyProfile(record),
+    reading: dashboardReadingProfile(record)
+  }));
+  const withReadings = profiles.filter(item => item.reading.hasReading);
+  const coverageConcern = profiles.filter(item => item.survey.coverageConcern).length;
+  const qosConcern = profiles.filter(item => item.survey.qosConcern).length;
+  const affordabilityPressure = profiles.filter(item => item.survey.affordabilityPressure).length;
+  const marketSignal = profiles.filter(item => item.survey.marketSignal).length;
+  const measuredPoor = profiles.filter(item => item.reading.measuredPoor).length;
+  const technicalSupport = profiles.filter(item => item.survey.qosConcern && item.reading.measuredPoor).length;
+  const unexplainedExperience = profiles.filter(item => item.survey.qosConcern && item.reading.hasReading && !item.reading.measuredPoor).length;
+  const hiddenTechnicalRisk = profiles.filter(item => !item.survey.qosConcern && item.reading.measuredPoor).length;
+  const affordabilityValueGap = profiles.filter(item => item.survey.affordabilityPressure && (item.survey.qosConcern || item.reading.measuredPoor)).length;
+
+  const appDemand = dashTopOptions(records, 'c8', 4);
+  const coverageSituations = dashTopOptions(records, 'b4', 3);
+  const slowDataTimes = dashTopOptions(records, 'c6', 3);
+  const voiceProblemTimes = dashTopOptions(records, 'c4', 3);
+  const situationText = (label, rows) => rows.length
+    ? `${label}: ${rows.map(([name, count]) => `${name} (${count})`).join(', ')}.`
+    : `${label}: not enough responses yet.`;
+
+  const readingBase = withReadings.length || total;
+  const qosPct = dashPct(qosConcern, total);
+  const measuredPct = dashPct(measuredPoor, readingBase);
+  const affordPct = dashPct(affordabilityPressure, total);
+  const supportPct = dashPct(technicalSupport, withReadings.length || total);
+  const mismatchPct = dashPct(unexplainedExperience + hiddenTechnicalRisk, withReadings.length || total);
+
+  const cards = [
+    { label: 'Reported QoS concern', value: `${qosPct}%`, note: `${qosConcern}/${total} respondents flag weak voice, data, reliability, or worsening service.`, color: qosPct >= 50 ? 'var(--red)' : qosPct >= 25 ? 'var(--amber)' : 'var(--green)' },
+    { label: 'Technically supported QoS issue', value: `${supportPct}%`, note: `${technicalSupport} record(s) combine poor experience with weak signal, poor quality, or slow speed readings.`, color: supportPct >= 40 ? 'var(--red)' : supportPct ? 'var(--amber)' : 'var(--green)' },
+    { label: 'Affordability pressure', value: `${affordPct}%`, note: `${affordabilityPressure}/${total} show unaffordability, top-up difficulty, or high spend pressure.`, color: affordPct >= 40 ? 'var(--red)' : affordPct >= 20 ? 'var(--amber)' : 'var(--green)' },
+    { label: 'Experience/reading mismatch', value: `${mismatchPct}%`, note: `${unexplainedExperience} reported poor but readings acceptable; ${hiddenTechnicalRisk} readings poor but user rating not poor.`, color: mismatchPct >= 30 ? 'var(--amber)' : 'var(--green)' },
+  ];
+
+  const interpretation = [];
+  if (technicalSupport) {
+    interpretation.push(`The strongest dissertation claim is that perceived service problems are not only subjective: ${technicalSupport} paired record(s) show both poor user experience and poor technical readings. This supports an infrastructure, radio-quality, congestion, or throughput explanation.`);
+  } else if (qosConcern) {
+    interpretation.push(`Users report QoS problems in ${qosConcern} record(s), but the available readings do not yet strongly confirm the cause. Treat this as an experience gap requiring more readings at the same place and time.`);
+  } else {
+    interpretation.push(`QoS concern is not dominant in the selected records, so this constituency currently reads as a weaker problem case than other areas unless additional field data changes the pattern.`);
+  }
+  if (unexplainedExperience || hiddenTechnicalRisk) {
+    interpretation.push(`The mismatch cases are analytically useful rather than errors: they may indicate indoor coverage, time-of-day congestion, handset/SIM differences, screenshot timing, or places where one-off measurements miss the lived experience.`);
+  }
+  if (affordabilityValueGap) {
+    interpretation.push(`${affordabilityValueGap} record(s) combine affordability pressure with poor QoS or poor readings. This is a value-for-money finding: people may be paying for connectivity that does not reliably deliver usable service.`);
+  } else if (affordabilityPressure) {
+    interpretation.push(`Affordability pressure exists, but it is not yet strongly tied to poor readings in this selected area. Discuss it as a social/access constraint rather than purely a network-performance issue.`);
+  }
+  if (marketSignal) {
+    interpretation.push(`Competition pressure is visible in ${marketSignal} response(s), through switching, perceived operator differences, or Starlink awareness/use. This helps connect technical QoS to market behaviour.`);
+  }
+  if (appDemand.length) {
+    interpretation.push(`Most mentioned app demand: ${appDemand.map(([name, count]) => `${name} (${count})`).join(', ')}. This helps explain why slow download, high latency, or unstable signal matters in everyday use.`);
+  }
+
+  const wardNames = [...new Set(records.map(record => record.ward).filter(Boolean))];
+  const wardRows = wardNames.map(ward => {
+    const wardProfiles = profiles.filter(item => item.record.ward === ward);
+    const n = wardProfiles.length;
+    const wardQos = wardProfiles.filter(item => item.survey.qosConcern).length;
+    const wardAfford = wardProfiles.filter(item => item.survey.affordabilityPressure).length;
+    const wardMeasured = wardProfiles.filter(item => item.reading.measuredPoor).length;
+    return `<tr>
+      <td><strong>${dashText(ward)}</strong></td>
+      <td>${dashPct(wardQos, n)}%</td>
+      <td>${dashPct(wardMeasured, n)}%</td>
+      <td>${dashPct(wardAfford, n)}%</td>
+      <td>${dashboardInterpretationLabel(dashPct(wardQos, n), dashPct(wardMeasured, n), dashPct(wardAfford, n))}</td>
+    </tr>`;
+  }).join('');
+
+  target.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--navy)">Dissertation interpretation: QoS, affordability and readings</div>
+        <div style="font-size:11px;color:var(--gray-600);margin-top:3px;line-height:1.45">This turns survey answers into an argument: what people experience, whether readings support it, and whether affordability turns poor service into a value-for-money problem.</div>
+      </div>
+      <span class="badge ${technicalSupport ? 'badge-warn' : 'badge-blue'}">${withReadings.length}/${total} paired with readings</span>
+    </div>
+    <div class="dash-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">
+      ${cards.map(card => `<div class="dash-card" style="min-height:0">
+        <div class="dash-card-value" style="font-size:24px;color:${card.color}">${card.value}</div>
+        <div class="dash-card-label">${card.label}</div>
+        <div class="dash-card-note">${card.note}</div>
+      </div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1.2fr .8fr;gap:12px">
+      <div>
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:8px">Dissertation-ready findings</div>
+        <div class="dash-insight-list">
+          ${interpretation.map(text => `<div class="dash-insight ${/strongest|value-for-money|Competition/.test(text) ? 'warn' : 'good'}">${text}</div>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:8px">Patterns behind the finding</div>
+        <div class="dash-insight-list">
+          <div class="dash-insight warn">${situationText('Coverage problem situations', coverageSituations)}</div>
+          <div class="dash-insight warn">${situationText('Slow-data times/situations', slowDataTimes)}</div>
+          <div class="dash-insight warn">${situationText('Voice problem times/situations', voiceProblemTimes)}</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin-bottom:8px">Ward-level interpretation</div>
+      <table class="dash-ward-table">
+        <thead><tr><th>Ward</th><th>QoS concern</th><th>Poor readings</th><th>Affordability</th><th>Interpretation</th></tr></thead>
+        <tbody>${wardRows || `<tr><td colspan="5">No ward-level responses available.</td></tr>`}</tbody>
+      </table>
+    </div>`;
+}
+
 function renderDashboard() {
   const day = selDay === 'all' ? null : selDay;
   const constituencyNames = ['West Honiara', 'Central Honiara', 'East Honiara'];
@@ -4723,9 +4941,10 @@ function renderDashboard() {
     <div class="dash-insight-list">${insights.map(item => `<div class="dash-insight ${item.cls}">${item.text}</div>`).join('')}</div>
     <div style="margin-top:12px;font-size:11px;color:var(--gray-600);line-height:1.45">
       Quality snapshot: Avg RSRQ ${dashNumber(avgRsrq,1)} dB · Avg SINR ${dashNumber(avgSinr,1)} dB. Use this with RSRP and download speed to tell whether the issue is weak coverage, interference/congestion, or throughput.
-    </div>`;
+  </div>`;
 
   renderExperienceCorrelation(surv);
+  renderDissertationInsights(surv);
   renderSpectrumConfiguration(surv);
   renderNetworkIdentityAggregation(surv);
   renderWardBars();
