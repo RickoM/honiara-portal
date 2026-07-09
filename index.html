@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-login-remember-v4">
+<meta name="portal-build" content="2026-07-09-tower-readings-v5">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -797,6 +797,7 @@
     </div>
     <div class="topbar-nav">
       <button class="tnav on" id="tnav-survey" onclick="switchView('survey', this)">Submit Survey</button>
+      <button class="tnav" id="tnav-tower" onclick="switchView('tower', this)">Tower Readings</button>
       <button class="tnav" id="tnav-map" onclick="switchView('map', this)">Live Map</button>
       <button class="tnav" id="tnav-dashboard" onclick="switchView('dashboard', this)">Dashboard</button>
       <button class="tnav" id="tnav-data" onclick="switchView('data', this)">Data Table</button>
@@ -1889,8 +1890,8 @@
       </div>
 
       <!-- STEP 7: TOWER GPS WAYPOINT -->
-      <div class="sf-sec-hdr interviewer">Step 7 — Tower GPS Waypoint</div>
-      <div class="sf-sec-body">
+      <div class="sf-sec-hdr interviewer" id="tower-step7-hdr">Step 7 — Tower GPS Waypoint</div>
+      <div class="sf-sec-body" id="tower-step7-body">
         <div style="background:var(--amber-light);border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--amber);margin-bottom:12px;line-height:1.6">
           <strong>When to complete Step 7:</strong> Only if you can walk to within 10 metres of the tower base safely and without trespassing. If the tower is behind a fence, on private land, or on a slope you cannot safely reach, select Accessible: No and explain the reason.
         </div>
@@ -2047,6 +2048,22 @@
       <button class="btn btn-primary" onclick="sfReset()">Start next survey</button>
     </div>
 
+  </div>
+</div>
+
+<div class="view-panel view-survey" id="view-tower">
+  <div class="sf-wrap">
+    <div class="sf-progress">
+      <span style="font-size:12px;font-weight:700;color:var(--navy)">Tower Readings</span>
+      <span style="font-size:11px;color:var(--gray-600)">Separate Step 7 upload for physical tower waypoints</span>
+    </div>
+    <div id="tower-form-host"></div>
+    <div class="sf-success" id="tower-success">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="margin:0 auto 10px;display:block"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <div style="font-size:16px;font-weight:600;color:var(--green);margin-bottom:6px">Tower reading submitted</div>
+      <div style="font-size:12px;color:var(--gray-600);margin-bottom:16px" id="tower-success-txt">Tower waypoint saved.</div>
+      <button class="btn btn-primary" onclick="towerReset()">Add another tower reading</button>
+    </div>
   </div>
 </div>
 
@@ -2522,6 +2539,7 @@ function switchView(id, btn) {
   document.getElementById('view-dashboard').classList.remove('on');
   document.getElementById('view-data').classList.remove('on');
   document.getElementById('view-survey').classList.remove('on');
+  document.getElementById('view-tower')?.classList.remove('on');
   const delPanel = document.getElementById('sf-deleted-panel');
   if (delPanel) delPanel.classList.remove('on');
   // Show selected view
@@ -2537,6 +2555,7 @@ function switchView(id, btn) {
   if (id === 'dashboard') { document.getElementById('view-dashboard').classList.add('on'); renderDashboard(); }
   if (id === 'data')      { document.getElementById('view-data').classList.add('on'); renderDataTable(); }
   if (id === 'survey')    { document.getElementById('view-survey').classList.add('on'); }
+  if (id === 'tower')     { document.getElementById('view-tower').classList.add('on'); }
   if (id === 'deleted')   { loadDeletedSurveys(); }
   if (id === 'admin') {
     const ap = document.getElementById('view-admin');
@@ -5151,7 +5170,7 @@ function normalizeSurveyForPoint(s) {
     constituency: s.constituency || WARDS[s.ward]?.constituency || '',
     op: s.operator || s.op || s.a3 || '',
     date: s.date,
-    type: s.type || 'survey',
+    type: s.record_type === 'tower' ? 'tower' : (s.type || 'survey'),
     lat: s.lat ?? null,
     lng: s.lng ?? null,
     gps_status: gpsStatus(s.lat, s.lng),
@@ -5591,10 +5610,10 @@ function sfGetData() {
     // Step 6 — GPS
     lat: g('sf-lat'), lng: g('sf-lon'), gps_status, fd_s6_scr: screenshotValue('fd-s6-scr'),
     // Step 7 — Tower
-    fd_s7_tlat: g('fd-s7-tlat'), fd_s7_tlon: g('fd-s7-tlon'),
-    fd_s7_top: (g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top')), fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: g('fd-s7-newenb'),
-    fd_s7_photo: g('fd-s7-photo'), fd_s7_photo_file: screenshotValue('fd-s7-photo-file'), fd_s7_gps_method: g('fd-s7-gps-method'),
-    fd_s7_access: g('fd-s7-access'), fd_s7_noaccess_reason: g('fd-s7-noaccess-reason'), fd_s7_scr: screenshotValue('fd-s7-scr'),
+    fd_s7_tlat: '', fd_s7_tlon: '',
+    fd_s7_top: '', fd_s7_ttype: '', fd_s7_enb_conf: '', fd_s7_newenb: '',
+    fd_s7_photo: '', fd_s7_photo_file: '', fd_s7_gps_method: '',
+    fd_s7_access: '', fd_s7_noaccess_reason: '', fd_s7_scr: '',
     // Survey form A-E
     name: g('sf-name'), ward, constituency,
     a2: r('sf-a2'), a3: a3val, a4: r('sf-a4'), a5: r('sf-a5'), a6: r('sf-a6'),
@@ -5606,7 +5625,7 @@ function sfGetData() {
     e2: r('sf-e2'), e3: r('sf-e3'), e4: g('sf-e4'),
     notes: g('sf-notes'),
     // Derived for map/dashboard
-    type: 'survey', op: a3val || 'Our Telekom', operator: a3val || 'Our Telekom',
+    record_type: 'survey', type: 'survey', op: a3val || 'Our Telekom', operator: a3val || 'Our Telekom',
     rsrp: g('fd-s2a-rsrp'), dl: g('fd-s1-ookla-dl'), ul: g('fd-s1-ookla-ul'),
     ping: g('fd-s1-ookla-ping'), jitter: g('fd-s1-ookla-jitter'),
     browse: g('fd-s1-nperf-browse') || g('fd-s2-nperf-browse'),
@@ -5618,6 +5637,105 @@ function sfGetData() {
 }
 
 // ── Admin Panel ─────────────────────────────────────────────────────
+function initTowerReadingsView() {
+  const host = document.getElementById('tower-form-host');
+  const hdr = document.getElementById('tower-step7-hdr');
+  const body = document.getElementById('tower-step7-body');
+  if (!host || !hdr || !body || host.dataset.ready === 'true') return;
+  const intro = document.createElement('div');
+  intro.className = 'sf-consent';
+  intro.innerHTML = '<strong>Separate tower workflow:</strong> Use this tab only when the field assistant physically reaches or verifies a tower. These tower records confirm and link to participant field readings by operator and eNB/ECI.';
+  host.appendChild(intro);
+  host.appendChild(hdr);
+  host.appendChild(body);
+  const bar = document.createElement('div');
+  bar.className = 'sf-submit-bar';
+  bar.innerHTML = `<span style="font-size:11px;color:var(--gray-600)">Tower records link to survey readings by operator + eNB/ECI.</span>
+    <div style="display:flex;gap:8px"><button class="btn" type="button" onclick="towerReset()">Clear</button><button class="btn btn-primary" id="tower-submit-btn" type="button" onclick="towerSubmit()">Submit tower reading</button></div>`;
+  host.appendChild(bar);
+  host.dataset.ready = 'true';
+}
+
+function towerGetData() {
+  const g = id => document.getElementById(id)?.value || '';
+  const today = new Date().toISOString().split('T')[0];
+  const operator = g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top');
+  const enb = g('fd-s7-newenb') || g('fd-s2a-enb') || g('fd-s2b-enb');
+  const mcc = g('fd-s2a-mcc') || g('fd-s2b-mcc');
+  const mnc = g('fd-s2a-mnc') || g('fd-s2b-mnc');
+  const eci = g('fd-s2a-eci') || g('fd-s2b-eci');
+  return {
+    record_type: 'tower', type: 'tower',
+    respondentId: `TOWER-${operator || 'OP'}-${enb || Date.now()}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
+    date: g('sf-date') || today,
+    time: new Date().toTimeString().slice(0, 5),
+    interviewer: currentUser?.fullName || currentUser?.username || '',
+    appRecorder: currentUser?.fullName || currentUser?.username || '',
+    name: 'Tower reading', ward: '', constituency: '',
+    operator, op: operator, fd_s1_op: operator,
+    fd_s2a_mcc: mcc, fd_s2a_mnc: mnc, fd_s2a_eci: eci, fd_s2a_enb: enb,
+    enb, lat: g('fd-s7-tlat'), lng: g('fd-s7-tlon'),
+    fd_s7_tlat: g('fd-s7-tlat'), fd_s7_tlon: g('fd-s7-tlon'),
+    fd_s7_top: operator, fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: enb,
+    fd_s7_photo: g('fd-s7-photo'), fd_s7_photo_file: screenshotValue('fd-s7-photo-file'), fd_s7_gps_method: g('fd-s7-gps-method'),
+    fd_s7_access: g('fd-s7-access'), fd_s7_noaccess_reason: g('fd-s7-noaccess-reason'), fd_s7_scr: screenshotValue('fd-s7-scr'),
+    notes: `Tower reading for ${operator || 'unknown operator'} eNB ${enb || 'unknown'}`.trim(),
+  };
+}
+
+async function towerSubmit() {
+  const btn = document.getElementById('tower-submit-btn');
+  const lat = document.getElementById('fd-s7-tlat')?.value;
+  const lon = document.getElementById('fd-s7-tlon')?.value;
+  const operator = document.getElementById('fd-s7-top')?.value;
+  const enb = document.getElementById('fd-s7-newenb')?.value || document.getElementById('fd-s2a-enb')?.value || document.getElementById('fd-s2b-enb')?.value;
+  if (!lat || !lon) { alert('Please enter the tower latitude and longitude.'); return; }
+  if (!operator) { alert('Please select the tower operator.'); return; }
+  if (!enb) { alert('Please record the tower eNB so participant readings can link to this tower.'); return; }
+  if (btn) { btn.textContent = 'Uploading tower evidence...'; btn.disabled = true; }
+  try { await uploadSurveyScreenshots(); }
+  catch (err) {
+    alert('Tower submission stopped: ' + err.message);
+    if (btn) { btn.textContent = 'Submit tower reading'; btn.disabled = false; }
+    return;
+  }
+  const data = towerGetData();
+  if (DEMO_MODE) {
+    towerPoints.push({ ...data, id: data.respondentId, sourceSurveyId: data.respondentId, connectedSurveys: deriveConnectedSurveysForTower(data, points) });
+    document.getElementById('tower-form-host').style.display = 'none';
+    document.getElementById('tower-success').classList.add('show');
+    document.getElementById('tower-success-txt').textContent = `[DEMO] Tower ${data.enb} saved locally and linked to matching survey readings.`;
+    refresh();
+    if (btn) { btn.textContent = 'Submit tower reading'; btn.disabled = false; }
+    return;
+  }
+  try {
+    const res = await apiCall('POST', '/api/surveys', data);
+    if (!res) return;
+    const result = await res.json();
+    if (!res.ok) { alert('Tower submission failed: ' + (result.error || result.message || 'Unknown error')); return; }
+    document.getElementById('tower-form-host').style.display = 'none';
+    document.getElementById('tower-success').classList.add('show');
+    document.getElementById('tower-success-txt').textContent = `Tower ${data.enb} saved. Matching participant readings will now show as linked on the map.`;
+    await syncSurveyViews();
+  } catch (err) {
+    alert('Tower submission failed: ' + err.message);
+  } finally {
+    if (btn) { btn.textContent = 'Submit tower reading'; btn.disabled = false; }
+  }
+}
+
+function towerReset() {
+  const host = document.getElementById('tower-form-host');
+  if (host) host.style.display = '';
+  document.getElementById('tower-success')?.classList.remove('show');
+  document.querySelectorAll('#view-tower input[type=text], #view-tower input[type=number], #view-tower select').forEach(el => { el.value = ''; });
+  document.querySelectorAll('#view-tower input[type=file]').forEach(el => { el.value = ''; });
+  const other = document.getElementById('fd-s7-top-other');
+  if (other) other.style.display = 'none';
+  checkTowerAccess();
+}
+
 function showAddUserForm() {
   document.getElementById('admin-add-form').style.display = 'block';
   document.getElementById('new-fullname').focus();
@@ -6481,6 +6599,7 @@ function transformSpeedTestsLayout() {
 
 // Auto-fill lookup fields from form data as user types
 document.addEventListener('DOMContentLoaded', () => {
+  initTowerReadingsView();
   transformSpeedTestsLayout();
   // Auto-fill Step 2A MCC/MNC from Step 1 operator selection
   document.getElementById('fd-s1-op').addEventListener('change', function() {
@@ -6824,11 +6943,31 @@ function findDuplicateRecordGroups(surveys) {
   return new Map([...groups.entries()].filter(([, records]) => records.length > 1));
 }
 
+function deriveConnectedSurveysForTower(tower, surveys) {
+  const towerEnb = String(tower.fd_s7_newenb || tower.fd_s2a_enb || tower.enb || '').trim();
+  const towerEci = String(tower.fd_s2a_eci || tower.eci || '').trim();
+  const towerOp = String(tower.fd_s7_top || tower.fd_s1_op || tower.operator || tower.op || '').trim().toLowerCase();
+  if (!towerEnb && !towerEci) return [];
+  return surveys.filter(candidate => {
+    if (candidate.record_type === 'tower' || candidate.type === 'tower') return false;
+    const candOp = String(candidate.fd_s1_op || candidate.operator || candidate.op || '').trim().toLowerCase();
+    if (towerOp && candOp && towerOp !== candOp) return false;
+    const candEnb = String(candidate.fd_s2a_enb || String(candidate.enb || '').split('-')[0] || '').trim();
+    const candEci = String(candidate.fd_s2a_eci || '').trim();
+    if (towerEnb && candEnb && towerEnb === candEnb) return true;
+    if (towerEci && candEci && towerEci === candEci) return true;
+    return false;
+  }).map(record => ({ ...record, towerLinkStatus: 'confirmed' }));
+}
+
 function deriveUniqueTowerPoints(surveys) {
   const unique = new Map();
   const surveyEnb = s => String(s.fd_s2a_enb || String(s.enb || '').split('-')[0] || '').trim();
   const surveyOperator = s => String(s.fd_s1_op || s.operator || s.op || '').trim();
+  const surveyRecords = surveys.filter(s => s.record_type !== 'tower' && s.type !== 'tower');
+  const deriveConnected = tower => deriveConnectedSurveysForTower(tower, surveyRecords);
   surveys.forEach(s => {
+    const isTowerRecord = s.record_type === 'tower' || s.type === 'tower';
     const lat = parseCoordinate(s.fd_s7_tlat);
     const lng = parseCoordinate(s.fd_s7_tlon);
     if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
@@ -6857,16 +6996,14 @@ function deriveUniqueTowerPoints(surveys) {
         towerType: s.fd_s7_ttype || '',
         towerPhoto: s.fd_s7_photo_file || '',
         towerPhotoTaken: s.fd_s7_photo || '',
-        connectedSurveys: surveys.filter(candidate => {
-          if (surveyEnb(candidate) !== enb) return false;
-          const candidateOperator = surveyOperator(candidate);
-          return !operator || !candidateOperator || candidateOperator.toLowerCase() === operator.toLowerCase();
-        }),
+        isStandaloneTowerRecord: isTowerRecord,
+        connectedSurveys: deriveConnected({ ...s, enb, operator, op: operator }),
       });
     } else {
       const existing = unique.get(key);
       if (!existing.towerPhoto && s.fd_s7_photo_file) existing.towerPhoto = s.fd_s7_photo_file;
       if (!existing.towerPhotoTaken && s.fd_s7_photo) existing.towerPhotoTaken = s.fd_s7_photo;
+      existing.connectedSurveys = deriveConnected(existing);
     }
   });
   return [...unique.values()];
@@ -6888,7 +7025,9 @@ async function loadSurveysFromAPI({ silent = false } = {}) {
     duplicateGpsGroups = findDuplicateGpsGroups(data.surveys);
     duplicateRecordGroups = findDuplicateRecordGroups(data.surveys);
     towerPoints = deriveUniqueTowerPoints(data.surveys);
-    points = data.surveys.map(normalizeSurveyForPoint);
+    points = data.surveys
+      .filter(record => record.record_type !== 'tower' && record.type !== 'tower')
+      .map(normalizeSurveyForPoint);
     refresh();
     if (!silent && activeView === 'map') setTimeout(() => fitSurveyWaypoints(false, false), 100);
     return true;
