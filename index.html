@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-speed-app-flow-v3">
+<meta name="portal-build" content="2026-07-09-login-remember-v4">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -403,6 +403,12 @@
   .login-field label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); margin-bottom: 5px; }
   .login-field input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: 'Inter',sans-serif; outline: none; }
   .login-field input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(28,53,87,0.12); }
+  .password-wrap { position: relative; }
+  .password-wrap input { padding-right: 46px; }
+  .password-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: transparent; color: var(--gray-600); width: 34px; height: 34px; border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .password-toggle:hover, .password-toggle:focus { background: var(--gray-100); color: var(--navy); outline: none; }
+  .remember-login { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--gray-600); margin: -4px 0 12px; line-height: 1.4; cursor: pointer; }
+  .remember-login input { width: 17px; height: 17px; flex: 0 0 auto; margin-top: 1px; accent-color: var(--navy); }
   .login-btn { width: 100%; padding: 11px; background: var(--navy); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: 'Inter',sans-serif; margin-top: 6px; transition: background .15s; }
   .login-btn:disabled { background: var(--gray-400); cursor: not-allowed; opacity: 0.7; pointer-events: none; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -764,8 +770,18 @@
     </div>
     <div class="login-field">
       <label>Password</label>
-      <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="password-wrap">
+        <input type="password" id="login-password" placeholder="Enter your password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        <button type="button" class="password-toggle" id="password-toggle" onclick="togglePasswordVisibility()" aria-label="Show password" title="Show password">
+          <svg id="password-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="password-eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C5 19 1 12 1 12a21.81 21.81 0 0 1 5.06-5.94"/><path d="M9.9 4.24A10.9 10.9 0 0 1 12 4c7 0 11 8 11 8a21.73 21.73 0 0 1-3.22 4.31"/><path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
     </div>
+    <label class="remember-login">
+      <input type="checkbox" id="remember-login">
+      <span>Remember this device for faster login</span>
+    </label>
     <button class="login-btn" id="login-btn" onclick="doLogin()">Sign in</button>
     <p style="text-align:center;font-size:11px;color:var(--gray-400);margin-top:14px">Access restricted to authorised field assistants only</p>
   </div>
@@ -2050,10 +2066,10 @@ const API_URL = 'https://honiara-survey-api.onrender.com';
 const DEMO_MODE = false;
 
 // ── AUTH STATE ───────────────────────────────────────────────────
-// Authentication is retained only in the current tab. Refreshing this tab
-// keeps the session; opening a new tab or reopening the browser requires login.
-let authToken = sessionStorage.getItem('honiara_token') || null;
-let currentUser = JSON.parse(sessionStorage.getItem('honiara_user') || 'null');
+// Authentication is retained in the current tab by default. If "Remember this
+// device" is selected, the verified token/user are also kept in localStorage.
+let authToken = sessionStorage.getItem('honiara_token') || localStorage.getItem('honiara_token') || null;
+let currentUser = JSON.parse(sessionStorage.getItem('honiara_user') || localStorage.getItem('honiara_user') || 'null');
 
 const WARDS = {
   'Nggossi':        {constituency:'West Honiara',    target:20, lat:-9.405, lng:160.018},
@@ -6523,6 +6539,7 @@ async function doLogin() {
   if (DEMO_MODE) { showApp(); return; }
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
+  const remember = !!document.getElementById('remember-login')?.checked;
   const btn      = document.getElementById('login-btn');
   const errEl    = document.getElementById('login-error');
   if (!username || !password) { showLoginError('Please enter your username and password.'); return; }
@@ -6544,6 +6561,14 @@ async function doLogin() {
     authToken = data.token; currentUser = data.user;
     sessionStorage.setItem('honiara_token', authToken);
     sessionStorage.setItem('honiara_user', JSON.stringify(currentUser));
+    localStorage.setItem('honiara_remember_login', remember ? 'true' : 'false');
+    if (remember) {
+      localStorage.setItem('honiara_token', authToken);
+      localStorage.setItem('honiara_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('honiara_token');
+      localStorage.removeItem('honiara_user');
+    }
     btn.innerHTML = '\u2713 Signed in';
     // Keep button disabled after success — login screen will hide
     showApp();
@@ -6562,15 +6587,29 @@ function showLoginError(msg) {
   el.textContent = msg; el.classList.add('show');
 }
 
+function togglePasswordVisibility() {
+  const input = document.getElementById('login-password');
+  const btn = document.getElementById('password-toggle');
+  const openIcon = document.getElementById('password-eye-open');
+  const closedIcon = document.getElementById('password-eye-closed');
+  if (!input || !btn) return;
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  btn.title = show ? 'Hide password' : 'Show password';
+  if (openIcon) openIcon.style.display = show ? 'none' : '';
+  if (closedIcon) closedIcon.style.display = show ? '' : 'none';
+}
+
 function doLogout() {
   stopSurveySync();
   stopInactivityLogout();
   authToken = null; currentUser = null;
   sessionStorage.removeItem('honiara_token');
   sessionStorage.removeItem('honiara_user');
-  // Remove legacy persistent sessions created by earlier portal versions.
   localStorage.removeItem('honiara_token');
   localStorage.removeItem('honiara_user');
+  localStorage.removeItem('honiara_remember_login');
   // Hide admin-only tabs and tools
   const adminTab = document.getElementById('tnav-admin');
   if (adminTab) adminTab.style.display = 'none';
@@ -6591,6 +6630,8 @@ function doLogout() {
   loginScreen.style.display = 'flex';
   document.getElementById('login-username').value = '';
   document.getElementById('login-password').value = '';
+  const rememberLogin = document.getElementById('remember-login');
+  if (rememberLogin) rememberLogin.checked = false;
   const btn = document.getElementById('login-btn');
   btn.innerHTML = 'Sign in';
   btn.disabled = false;
@@ -6931,6 +6972,10 @@ async function checkAuth() {
     const data = await res.json();
     currentUser = data.user || currentUser;
     sessionStorage.setItem('honiara_user', JSON.stringify(currentUser));
+    if (localStorage.getItem('honiara_remember_login') === 'true') {
+      localStorage.setItem('honiara_user', JSON.stringify(currentUser));
+      if (authToken) localStorage.setItem('honiara_token', authToken);
+    }
     showApp();
   } catch (err) {
     // A session cannot be trusted until the API confirms it.
@@ -6946,12 +6991,8 @@ initScreenshotInputs();
 loadWardBoundaryIndex();
 document.getElementById('view-map').style.display = 'none';
 document.getElementById('view-survey').classList.add('on');
-// Remove persistent authentication created by older portal versions.
-// Current-tab authentication remains in sessionStorage across refreshes.
-if (!DEMO_MODE) {
-  localStorage.removeItem('honiara_token');
-  localStorage.removeItem('honiara_user');
-}
+const rememberLoginInit = document.getElementById('remember-login');
+if (rememberLoginInit) rememberLoginInit.checked = localStorage.getItem('honiara_remember_login') === 'true';
 checkAuth();
 </script>
 </body>
