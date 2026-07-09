@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-mobile-speed-stack-v2">
+<meta name="portal-build" content="2026-07-09-speed-app-flow-v3">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -345,6 +345,41 @@
   .speed-test-body select[id$="-unit"] {
     flex: 0 0 54px;
     min-width: 54px;
+  }
+  .speed-app-card { border: 1px solid var(--border); border-radius: 10px; background: #fff; padding: 12px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .speed-app-title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .speed-app-step { font-size: 10px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: .05em; background: var(--teal-light); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+  .speed-app-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+  .speed-app-grid.single { grid-template-columns: 1fr; }
+  .speed-entry { border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--gray-50); }
+  .speed-entry label { font-size: 10px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: .04em; display: block; margin-bottom: 5px; }
+  .speed-value-unit { display: flex; gap: 8px; align-items: center; }
+  .speed-value-unit input { flex: 1 1 auto; min-width: 0; }
+  .speed-value-unit select { flex: 0 0 82px; min-width: 82px; }
+  .speed-app-card input[type="text"],
+  .speed-app-card input[type="number"],
+  .speed-app-card select {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-height: 40px;
+    background: #fff;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace, sans-serif;
+  }
+  .speed-app-card input[type="file"] { width: 100%; font-size: 11px; }
+  @media (max-width: 768px) {
+    .speed-app-card { padding: 10px; margin-bottom: 14px; }
+    .speed-app-title { font-size: 14px; }
+    .speed-app-grid { grid-template-columns: 1fr; }
+    .speed-app-card input[type="text"],
+    .speed-app-card input[type="number"],
+    .speed-app-card select {
+      min-height: 44px;
+      font-size: 16px;
+    }
   }
   .sf-submit-bar { position: sticky; bottom: 0; background: #fff; border-top: 1px solid var(--border); padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; z-index: 30; }
   .sf-success { text-align: center; padding: 48px 20px; background: #fff; border: 1px solid var(--border); border-radius: 8px; margin-top: 12px; display: none; }
@@ -6315,8 +6350,122 @@ function copyTowerCoords() {
     .catch(() => alert('Coordinates: ' + text));
 }
 
+function transformSpeedTestsLayout() {
+  document.querySelectorAll('.speed-test-body').forEach(body => {
+    if (!body || body.dataset.appLayout === 'true') return;
+    const sim = body.querySelector('#fd-s1-ncil-dl') ? 's1' : body.querySelector('#fd-s2-ncil-dl') ? 's2' : '';
+    if (!sim) return;
+    const simLabel = sim === 's1' ? 'SIM 1' : 'SIM 2';
+    const field = suffix => document.getElementById(`fd-${sim}-${suffix}`);
+    const allIds = [
+      'ncil-type','ncil-dl','ncil-dl-unit','ncil-ul','ncil-ul-unit','ncil-ping','ncil-jitter','ncil-scr',
+      'ookla-type','ookla-dl','ookla-dl-unit','ookla-ul','ookla-ul-unit','ookla-ping','ookla-jitter','ookla-scr',
+      'nperf-type','nperf-dl','nperf-dl-unit','nperf-dl-avg','nperf-dl-avg-unit',
+      'nperf-ul','nperf-ul-unit','nperf-ul-avg','nperf-ul-avg-unit',
+      'nperf-ping','nperf-lat-avg','nperf-jitter','nperf-browse','nperf-stream','nperf-scr',
+      'anomaly','anomaly-note'
+    ];
+    const nodes = {};
+    allIds.forEach(suffix => {
+      const el = field(suffix);
+      if (el) nodes[suffix] = el;
+    });
+
+    body.innerHTML = '';
+    body.dataset.appLayout = 'true';
+
+    if (sim === 's1') {
+      const warning = document.createElement('div');
+      warning.style.cssText = 'background:var(--red-light);border:1px solid var(--red);border-radius:6px;padding:9px 12px;font-size:12px;color:var(--red);margin-bottom:12px;line-height:1.45';
+      warning.innerHTML = '<strong>WiFi must be OFF.</strong> If result shows Type: WiFi the reading is invalid — turn WiFi off and repeat.';
+      body.appendChild(warning);
+    }
+
+    const simTitle = document.createElement('div');
+    simTitle.style.cssText = 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);margin:0 0 10px';
+    simTitle.textContent = simLabel;
+    body.appendChild(simTitle);
+
+    const create = (tag, className, text) => {
+      const el = document.createElement(tag);
+      if (className) el.className = className;
+      if (text) el.textContent = text;
+      return el;
+    };
+    const card = (title, step) => {
+      const c = create('div', 'speed-app-card');
+      const h = create('div', 'speed-app-title');
+      h.appendChild(create('span', '', title));
+      h.appendChild(create('span', 'speed-app-step', step));
+      c.appendChild(h);
+      return c;
+    };
+    const grid = (single = false) => create('div', single ? 'speed-app-grid single' : 'speed-app-grid');
+    const entry = (label, child) => {
+      const e = create('div', 'speed-entry');
+      e.appendChild(create('label', '', label));
+      if (child) e.appendChild(child);
+      return e;
+    };
+    const valueUnit = (input, unit) => {
+      const wrap = create('div', 'speed-value-unit');
+      if (input) wrap.appendChild(input);
+      if (unit) wrap.appendChild(unit);
+      return wrap;
+    };
+    const appendIf = (parent, label, child) => {
+      if (!child) return;
+      parent.appendChild(entry(label, child));
+    };
+
+    const ncil = card('NCIL Speed Test', 'Step 3');
+    const ncilGrid = grid();
+    appendIf(ncilGrid, 'Type must be Mobile', nodes['ncil-type']);
+    appendIf(ncilGrid, 'Download', valueUnit(nodes['ncil-dl'], nodes['ncil-dl-unit']));
+    appendIf(ncilGrid, 'Upload', valueUnit(nodes['ncil-ul'], nodes['ncil-ul-unit']));
+    appendIf(ncilGrid, 'Ping (ms)', nodes['ncil-ping']);
+    appendIf(ncilGrid, 'Jitter (ms)', nodes['ncil-jitter']);
+    appendIf(ncilGrid, 'Screenshot', nodes['ncil-scr']);
+    ncil.appendChild(ncilGrid);
+    body.appendChild(ncil);
+
+    const ookla = card('Ookla Speed Test', 'Step 4');
+    const ooklaGrid = grid();
+    appendIf(ooklaGrid, 'Operator / Type', nodes['ookla-type']);
+    appendIf(ooklaGrid, 'Download', valueUnit(nodes['ookla-dl'], nodes['ookla-dl-unit']));
+    appendIf(ooklaGrid, 'Upload', valueUnit(nodes['ookla-ul'], nodes['ookla-ul-unit']));
+    appendIf(ooklaGrid, 'Ping (ms)', nodes['ookla-ping']);
+    appendIf(ooklaGrid, 'Jitter (ms)', nodes['ookla-jitter']);
+    appendIf(ooklaGrid, 'Screenshot', nodes['ookla-scr']);
+    ookla.appendChild(ooklaGrid);
+    body.appendChild(ookla);
+
+    const nperf = card('nPerf Speed Test', 'Step 5');
+    const nperfGrid = grid();
+    appendIf(nperfGrid, 'Tech / Operator', nodes['nperf-type']);
+    appendIf(nperfGrid, 'Download DL', valueUnit(nodes['nperf-dl'], nodes['nperf-dl-unit']));
+    appendIf(nperfGrid, 'Download Avg', valueUnit(nodes['nperf-dl-avg'], nodes['nperf-dl-avg-unit']));
+    appendIf(nperfGrid, 'Upload UL', valueUnit(nodes['nperf-ul'], nodes['nperf-ul-unit']));
+    appendIf(nperfGrid, 'Upload Avg', valueUnit(nodes['nperf-ul-avg'], nodes['nperf-ul-avg-unit']));
+    appendIf(nperfGrid, 'Latency', nodes['nperf-ping']);
+    appendIf(nperfGrid, 'Latency Avg', nodes['nperf-lat-avg']);
+    appendIf(nperfGrid, 'Jitter (ms)', nodes['nperf-jitter']);
+    appendIf(nperfGrid, 'Browsing %', nodes['nperf-browse']);
+    appendIf(nperfGrid, 'Streaming %', nodes['nperf-stream']);
+    appendIf(nperfGrid, 'Screenshot', nodes['nperf-scr']);
+    nperf.appendChild(nperfGrid);
+    body.appendChild(nperf);
+
+    const anomaly = grid();
+    appendIf(anomaly, `Anomaly flag ${simLabel}`, nodes['anomaly']);
+    appendIf(anomaly, `Anomaly note ${simLabel}`, nodes['anomaly-note']);
+    body.appendChild(anomaly);
+  });
+}
+
 // Auto-fill lookup fields from form data as user types
 document.addEventListener('DOMContentLoaded', () => {
+  transformSpeedTestsLayout();
   // Auto-fill Step 2A MCC/MNC from Step 1 operator selection
   document.getElementById('fd-s1-op').addEventListener('change', function() {
   
