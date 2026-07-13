@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-13-required-fields-fix-v25">
+<meta name="portal-build" content="2026-07-13-specific-missing-fields-v26">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -6827,14 +6827,41 @@ const SF_REQUIRED_LABELS = {
   'sf-a1': 'ward',
   'sf-a3': 'primary mobile operator'
 };
+const SF_REQUIRED_FOCUS = {
+  'sf-a1': '#sf-a1-ng',
+  'sf-a3': '#sf-a3-ot'
+};
 
 function sfProgress() {
   let done = 0;
-  SF_REQUIRED.forEach(f => { if (document.querySelector(`input[name="${f}"]:checked`)) done++; });
+  const missing = [];
+  SF_REQUIRED.forEach(f => {
+    if (document.querySelector(`input[name="${f}"]:checked`)) done++;
+    else missing.push(f);
+  });
   const pct = Math.round(done / SF_REQUIRED.length * 100);
   document.getElementById('sf-prog-fill').style.width = pct + '%';
   document.getElementById('sf-prog-txt').textContent  = `${done} of ${SF_REQUIRED.length} required fields`;
-  document.getElementById('sf-hint').textContent      = pct === 100 ? 'Ready to submit' : `${SF_REQUIRED.length - done} required field(s) remaining`;
+  document.getElementById('sf-hint').textContent      = pct === 100
+    ? 'Ready to submit'
+    : `Missing: ${missing.map(f => SF_REQUIRED_LABELS[f] || f).join(', ')}`;
+}
+
+function sfHighlightMissingField(fieldName) {
+  const selector = SF_REQUIRED_FOCUS[fieldName];
+  const target = selector ? document.querySelector(selector) : document.querySelector(`input[name="${fieldName}"]`);
+  if (!target) return;
+  const section = target.closest('.sfq') || target.closest('.sf-sec-body') || target;
+  section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const oldOutline = section.style.outline;
+  const oldBg = section.style.backgroundColor;
+  section.style.outline = '3px solid var(--amber)';
+  section.style.outlineOffset = '4px';
+  section.style.backgroundColor = '#FFF7E6';
+  setTimeout(() => {
+    section.style.outline = oldOutline;
+    section.style.backgroundColor = oldBg;
+  }, 3500);
 }
 
 async function exportAdminCSV() {
@@ -7390,7 +7417,9 @@ async function sfSubmit() {
   }
   const missing = editingId ? [] : SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
   if (missing.length) {
-    alert('Please complete these required fields before submitting: ' + missing.map(f => SF_REQUIRED_LABELS[f] || f).join(', ') + '.');
+    sfProgress();
+    sfHighlightMissingField(missing[0]);
+    alert('Please complete these required fields before submitting:\n\n- ' + missing.map(f => SF_REQUIRED_LABELS[f] || f).join('\n- '));
     return;
   }
   const currentGpsStatus = gpsStatus(document.getElementById('sf-lat')?.value, document.getElementById('sf-lon')?.value);
