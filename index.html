@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-12-save-flow-fix-v23">
+<meta name="portal-build" content="2026-07-13-required-fields-fix-v25">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1448,7 +1448,7 @@
     <!-- PROGRESS BAR -->
     <div class="sf-progress">
       <div class="sf-prog-bar"><div class="sf-prog-fill" id="sf-prog-fill" style="width:0%"></div></div>
-      <span class="sf-prog-txt" id="sf-prog-txt">0 of 8 required fields</span>
+      <span class="sf-prog-txt" id="sf-prog-txt">0 of 2 required fields</span>
     </div>
 
     <!-- ID ROW -->
@@ -1547,8 +1547,8 @@
           <div class="sfq-lbl"><span class="qn">A3</span> What is your primary mobile network operator?</div>
           <div class="sf-opts">
             <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-ot" value="Our Telekom" onchange="sfProgress();sfToggle('sf-a3-other-box',false);toggleSim2Auto()"><label for="sf-a3-ot">Our Telekom</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-bm" value="BMobile" onchange="sfToggle('sf-a3-other-box',false);toggleSim2Auto()"><label for="sf-a3-bm">BMobile</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-bo" value="Both" onchange="sfToggle('sf-a3-other-box',false);toggleSim2Auto()"><label for="sf-a3-bo">Both</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-bm" value="BMobile" onchange="sfProgress();sfToggle('sf-a3-other-box',false);toggleSim2Auto()"><label for="sf-a3-bm">BMobile</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-bo" value="Both" onchange="sfProgress();sfToggle('sf-a3-other-box',false);toggleSim2Auto()"><label for="sf-a3-bo">Both</label></div>
             <div class="sf-opt"><input type="radio" name="sf-a3" id="sf-a3-oth" value="Other" onchange="sfProgress();sfToggle('sf-a3-other-box',true);toggleSim2Auto()"><label for="sf-a3-oth">Other (specify)</label></div>
             <div id="sf-a3-other-box" class="sf-cond" style="width:100%;margin-top:6px">
               <div class="sfq-lbl">Please specify operator:</div>
@@ -5467,9 +5467,17 @@ function renderDashboard() {
       </div>
     </div>`,
     `<div class="dash-card">
+      <div class="dash-card-value" style="color:var(--navy)">${clearBandCounts.length || '-'}</div>
+      <div class="dash-card-label">Spectrum bands picked up</div>
+      <div class="dash-card-note">${clearBandCounts.length ? 'LTE bands detected from Step 2 raw NCIL readings.' : 'No LTE band readings recorded yet.'}</div>
+      <div style="display:grid;gap:4px;margin-top:8px;font-size:11px">
+        ${clearBandCounts.length ? clearBandCounts.map(([label, count]) => `<div style="display:flex;justify-content:space-between;gap:8px"><span>${dashEscape(label)}</span><strong>${count} observation${count === 1 ? '' : 's'}</strong></div>`).join('') : '<div style="color:var(--gray-600)">Ask assistants to enter the Band field exactly as NCIL shows it.</div>'}
+      </div>
+    </div>`,
+    `<div class="dash-card">
       <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '-'}T / ${constituencyRadio.servingCellCount || 0}C</div>
-      <div class="dash-card-label">Towers, cells and bands detected</div>
-      <div class="dash-card-note">${clearBandCounts.length || '-'} LTE band type${clearBandCounts.length === 1 ? '' : 's'}: ${topCountText(clearBandCounts)}</div>
+      <div class="dash-card-label">Serving towers / cells detected</div>
+      <div class="dash-card-note">Approximate serving eNB/tower groups and LTE serving cells from field readings.</div>
       <div style="display:grid;gap:3px;margin-top:8px;font-size:10px;color:var(--gray-700)">${clearWardNetworkBreakdown}</div>
     </div>`,
   ].join('');
@@ -5559,6 +5567,8 @@ function renderSpectrumConfiguration(surveys) {
 
   const bandGroups = new Map();
   const plmnGroups = new Map();
+  const wardBandGroups = new Map();
+  const operatorBandGroups = new Map();
   let recordsWithBand = 0;
   let recordsWithPlmn = 0;
 
@@ -5580,6 +5590,18 @@ function renderSpectrumConfiguration(surveys) {
         if (observation.sim === 'SIM 1') group.sim1 += 1;
         else group.sim2 += 1;
         group.total += 1;
+
+        const wardName = clean(record.ward) || 'Ward not recorded';
+        if (!wardBandGroups.has(wardName)) wardBandGroups.set(wardName, new Map());
+        const wardBands = wardBandGroups.get(wardName);
+        wardBands.set(band, (wardBands.get(band) || 0) + 1);
+
+        const operatorLabel = mcc && mnc
+          ? `${mcc}-${String(mnc).padStart(2, '0')} ${networkName(mcc, mnc)}`
+          : (clean(record.fd_s1_op) || clean(record.operator) || clean(record.op) || 'Operator not recorded');
+        if (!operatorBandGroups.has(operatorLabel)) operatorBandGroups.set(operatorLabel, new Map());
+        const operatorBands = operatorBandGroups.get(operatorLabel);
+        operatorBands.set(band, (operatorBands.get(band) || 0) + 1);
       }
 
       if (mcc && mnc) {
@@ -5606,6 +5628,18 @@ function renderSpectrumConfiguration(surveys) {
   const missingBand = surveys.length - recordsWithBand;
   const missingPlmn = surveys.length - recordsWithPlmn;
   const emptyRow = (columns, message) => `<tr><td colspan="${columns}" style="padding:16px;text-align:center;color:var(--gray-400)">${message}</td></tr>`;
+  const formatBandMap = bandMap => [...bandMap.entries()]
+    .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
+    .map(([band, count]) => `B${escape(band)} (${count})`)
+    .join(', ');
+  const wardBandRows = [...wardBandGroups.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([ward, bandMap]) => `<tr><td><strong>${escape(ward)}</strong></td><td>${formatBandMap(bandMap)}</td><td>${[...bandMap.values()].reduce((sum, count) => sum + count, 0)}</td></tr>`)
+    .join('');
+  const operatorBandRows = [...operatorBandGroups.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([operator, bandMap]) => `<tr><td><strong>${escape(operator)}</strong></td><td>${formatBandMap(bandMap)}</td><td>${[...bandMap.values()].reduce((sum, count) => sum + count, 0)}</td></tr>`)
+    .join('');
 
   target.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">
@@ -5651,6 +5685,32 @@ function renderSpectrumConfiguration(surveys) {
                 <td>${group.sim1}</td><td>${group.sim2}</td><td><strong>${group.total}</strong></td>
               </tr>`;
             }).join('') : emptyRow(7, 'No complete MCC/MNC pairs have been recorded.')}</tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:14px">
+      <section style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <div style="padding:10px 12px;background:#F8FAFC;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--navy)">Spectrum bands by ward</div>
+          <div style="font-size:9px;color:var(--gray-600);margin-top:2px">Shows which LTE bands were picked up in each selected ward.</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;min-width:430px;font-size:10px">
+            <thead><tr><th>Ward</th><th>Bands detected</th><th>Total observations</th></tr></thead>
+            <tbody>${wardBandRows || emptyRow(3, 'No ward-level band values have been recorded.')}</tbody>
+          </table>
+        </div>
+      </section>
+      <section style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <div style="padding:10px 12px;background:#F8FAFC;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--navy)">Spectrum bands by PLMN/operator</div>
+          <div style="font-size:9px;color:var(--gray-600);margin-top:2px">Useful for comparing whether Our Telekom and BMobile readings are using different LTE bands.</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;min-width:470px;font-size:10px">
+            <thead><tr><th>PLMN / operator</th><th>Bands detected</th><th>Total observations</th></tr></thead>
+            <tbody>${operatorBandRows || emptyRow(3, 'No operator-level band values have been recorded.')}</tbody>
           </table>
         </div>
       </section>
@@ -6762,7 +6822,11 @@ function wardLabelClick(e, inputId) {
   sfProgress();
 }
 
-const SF_REQUIRED = ['sf-a1','sf-a2','sf-a3','sf-b1','sf-c1','sf-c5','sf-d1','sf-e1'];
+const SF_REQUIRED = ['sf-a1','sf-a3'];
+const SF_REQUIRED_LABELS = {
+  'sf-a1': 'ward',
+  'sf-a3': 'primary mobile operator'
+};
 
 function sfProgress() {
   let done = 0;
@@ -7325,7 +7389,10 @@ async function sfSubmit() {
     return;
   }
   const missing = editingId ? [] : SF_REQUIRED.filter(f => !document.querySelector(`input[name="${f}"]:checked`));
-  if (missing.length) { alert('Please complete all required fields before submitting.'); return; }
+  if (missing.length) {
+    alert('Please complete these required fields before submitting: ' + missing.map(f => SF_REQUIRED_LABELS[f] || f).join(', ') + '.');
+    return;
+  }
   const currentGpsStatus = gpsStatus(document.getElementById('sf-lat')?.value, document.getElementById('sf-lon')?.value);
   if (currentGpsStatus === 'Outside study area' &&
       !confirm('Warning: this GPS waypoint is outside the Honiara study area.\n\nSubmit it anyway for verification?')) return;
