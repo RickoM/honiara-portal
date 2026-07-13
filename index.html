@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-09-admin-label-clean-v22">
+<meta name="portal-build" content="2026-07-12-save-flow-fix-v23">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -5955,6 +5955,17 @@ const SCREENSHOT_FIELDS = [
   'fd-s6-scr', 'fd-s7-scr', 'fd-s7-photo-file'
 ];
 
+const SURVEY_SCREENSHOT_FIELDS = [
+  'fd-s2a-scr', 'fd-s2b-scr',
+  'fd-s1-ncil-scr', 'fd-s1-ookla-scr', 'fd-s1-nperf-scr',
+  'fd-s2-ncil-scr', 'fd-s2-ookla-scr', 'fd-s2-nperf-scr',
+  'fd-s6-scr'
+];
+
+const TOWER_SCREENSHOT_FIELDS = [
+  'fd-s7-scr', 'fd-s7-photo-file'
+];
+
 const WAYPOINT_SCREENSHOT_LABELS = {
   fd_s2a_scr: 'SIM 1 RAW readings',
   fd_s2b_scr: 'SIM 2 RAW readings',
@@ -6411,9 +6422,9 @@ function initScreenshotInputs() {
   });
 }
 
-async function uploadSurveyScreenshots() {
+async function uploadSurveyScreenshots(fieldIds = SCREENSHOT_FIELDS) {
   if (DEMO_MODE) return;
-  for (const id of SCREENSHOT_FIELDS) {
+  for (const id of fieldIds) {
     const input = document.getElementById(id);
     const file = input?.files?.[0];
     if (!file) continue;
@@ -6945,17 +6956,20 @@ function towerGetData() {
   const today = new Date().toISOString().split('T')[0];
   const operator = g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top');
   const enb = g('fd-s7-newenb') || g('fd-s2a-enb') || g('fd-s2b-enb');
+  const towerKey = `${parseCoordinate(g('fd-s7-tlat')) || 'LAT'}-${parseCoordinate(g('fd-s7-tlon')) || 'LON'}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+  const towerWard = wardContainingCoordinate(g('fd-s7-tlat'), g('fd-s7-tlon'));
+  const towerConstituency = WARDS[towerWard]?.constituency || '';
   const mcc = g('fd-s2a-mcc') || g('fd-s2b-mcc');
   const mnc = g('fd-s2a-mnc') || g('fd-s2b-mnc');
   const eci = g('fd-s2a-eci') || g('fd-s2b-eci');
   return {
     record_type: 'tower', type: 'tower',
-    respondentId: `TOWER-${operator || 'OP'}-${enb || Date.now()}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
+    respondentId: `TOWER-${operator || 'OP'}-${enb || towerKey || Date.now()}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
     date: g('sf-date') || today,
     time: new Date().toTimeString().slice(0, 5),
     interviewer: currentUser?.fullName || currentUser?.username || '',
     appRecorder: currentUser?.fullName || currentUser?.username || '',
-    name: 'Tower reading', ward: '', constituency: '',
+    name: 'Tower reading', ward: towerWard, constituency: towerConstituency,
     operator, op: operator, fd_s1_op: operator,
     fd_s2a_mcc: mcc, fd_s2a_mnc: mnc, fd_s2a_eci: eci, fd_s2a_enb: enb,
     enb, lat: g('fd-s7-tlat'), lng: g('fd-s7-tlon'),
@@ -6963,7 +6977,8 @@ function towerGetData() {
     fd_s7_top: operator, fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: enb,
     fd_s7_photo: g('fd-s7-photo'), fd_s7_photo_file: screenshotValue('fd-s7-photo-file'), fd_s7_gps_method: g('fd-s7-gps-method'),
     fd_s7_access: g('fd-s7-access'), fd_s7_noaccess_reason: g('fd-s7-noaccess-reason'), fd_s7_scr: screenshotValue('fd-s7-scr'),
-    notes: `Tower reading for ${operator || 'unknown operator'} eNB ${enb || 'unknown'}`.trim(),
+    link_status: enb ? 'linked_by_enb_when_matching_readings_exist' : 'saved_unlinked_missing_enb',
+    notes: `Tower reading for ${operator || 'unknown operator'}${enb ? ' eNB ' + enb : ' - eNB not recorded yet'}`.trim(),
   };
 }
 
@@ -6975,11 +6990,12 @@ async function towerSubmit() {
   const enb = document.getElementById('fd-s7-newenb')?.value || document.getElementById('fd-s2a-enb')?.value || document.getElementById('fd-s2b-enb')?.value;
   if (!lat || !lon) { alert('Please enter the tower latitude and longitude.'); return; }
   if (!operator) { alert('Please select the tower operator.'); return; }
-  if (!enb) { alert('Please record the tower eNB so participant readings can link to this tower.'); return; }
+  if (!enb && !confirm('No tower eNB has been entered. Save this tower reading anyway as an unlinked tower record? You can add the eNB later when known.')) return;
   if (btn) { btn.textContent = 'Uploading tower evidence...'; btn.disabled = true; }
-  try { await uploadSurveyScreenshots(); }
+  await loadWardBoundaryIndex();
+  try { await uploadSurveyScreenshots(TOWER_SCREENSHOT_FIELDS); }
   catch (err) {
-    alert('Tower submission stopped: ' + err.message);
+    alert('Tower submission stopped while uploading Step 7 evidence: ' + err.message);
     if (btn) { btn.textContent = 'Submit tower reading'; btn.disabled = false; }
     return;
   }
@@ -7332,9 +7348,9 @@ async function sfSubmit() {
   }
   if (btn) { btn.textContent = 'Uploading screenshots...'; btn.disabled = true; }
   try {
-    await uploadSurveyScreenshots();
+    await uploadSurveyScreenshots(SURVEY_SCREENSHOT_FIELDS);
   } catch (err) {
-    alert('Submission stopped: ' + err.message);
+    alert('Submission stopped while uploading Step 1-6 evidence: ' + err.message);
     if (btn) { btn.textContent = editingId ? 'Save changes' : 'Submit survey'; btn.disabled = false; }
     return;
   }
