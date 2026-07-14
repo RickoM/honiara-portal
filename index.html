@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-readonly-ward-lock-v30">
+<meta name="portal-build" content="2026-07-14-independent-step7-ncil-v31">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2182,7 +2182,7 @@
           <strong>When to complete Step 7:</strong> Only if you can walk to within 10 metres of the tower base safely and without trespassing. If the tower is behind a fence, on private land, or on a slope you cannot safely reach, select Accessible: No and explain the reason.
         </div>
         <div class="step7-instructions">
-          GPS method: stand at the base of the tower before recording coordinates. While standing at the tower, open NCIL RAW and confirm the eNB number matches Step 2A or 2B. Record a different eNB below, and note the operator name and tower type from the tower sign or plate.
+          GPS method: stand at the base of the tower before recording coordinates. While standing at or near the tower, open NCIL RAW and record the tower/cell values below directly from the phone. Do not rely on values remembered from an earlier participant survey.
         </div>
 
         <div id="tower-fields" style="opacity:1;pointer-events:auto;transition:all 0.3s">
@@ -2213,16 +2213,44 @@
             </div>
           </div>
 
+          <div style="margin:14px 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:3px">NCIL tower/cell identity at tower site</div>
+            <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Enter these directly from NCIL RAW while standing at or near the tower. Do not rely on values remembered from participant survey readings.</div>
+          </div>
+
+          <div class="sf-fgrid">
+            <div class="sf-fcell"><label>MCC</label><input type="text" id="fd-s7-mcc" placeholder="e.g. 540" inputmode="numeric"></div>
+            <div class="sf-fcell"><label>MNC</label><input type="text" id="fd-s7-mnc" placeholder="e.g. 1 or 2" inputmode="numeric"></div>
+            <div class="sf-fcell"><label>eNB ID</label><input type="text" id="fd-s7-enb" placeholder="e.g. 13042" inputmode="numeric"></div>
+            <div class="sf-fcell"><label>ECI / Cell ID</label><input type="text" id="fd-s7-eci" placeholder="e.g. 3338754" inputmode="numeric"></div>
+            <div class="sf-fcell"><label>LCID / Local cell ID</label><input type="text" id="fd-s7-lcid" placeholder="e.g. 1, 2, 3" inputmode="numeric"></div>
+            <div class="sf-fcell"><label>PCI</label><input type="text" id="fd-s7-pci" placeholder="e.g. 76" inputmode="numeric"></div>
+            <div class="sf-fcell"><label>TAC</label><input type="text" id="fd-s7-tac" placeholder="e.g. 4100" inputmode="numeric"></div>
+            <div class="sf-fcell"><label>LTE Band</label><input type="text" id="fd-s7-band" placeholder="e.g. B3, B41, 3, 41"></div>
+            <div class="sf-fcell"><label>Connection type</label><input type="text" id="fd-s7-conn-type" placeholder="Must show Mobile, not WiFi"></div>
+          </div>
+
+          <div style="margin:14px 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:3px">NCIL signal values at tower site</div>
+            <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Record the signal values shown by NCIL at the tower location. These help distinguish tower identity from signal quality.</div>
+          </div>
+
+          <div class="sf-fgrid">
+            <div class="sf-fcell"><label>RSRP (dBm)</label><input type="number" step="any" id="fd-s7-rsrp" placeholder="e.g. -78"></div>
+            <div class="sf-fcell"><label>RSRQ (dB)</label><input type="number" step="any" id="fd-s7-rsrq" placeholder="e.g. -8"></div>
+            <div class="sf-fcell"><label>RSSNR / SINR (dB)</label><input type="number" step="any" id="fd-s7-rssnr" placeholder="e.g. 12"></div>
+          </div>
+
           <div class="step7-secondary-grid">
             <div class="step7-group">
               <div class="sf-fcell"><label>eNB confirmed</label>
                 <select id="fd-s7-enb-conf" style="width:100%;margin-top:2px">
                   <option value="">- select -</option>
-                  <option value="yes">Yes - matches Step 2A / 2B</option>
-                  <option value="no">No - new eNB (record below)</option>
+                  <option value="yes">Yes - verified from NCIL at tower</option>
+                  <option value="no">No - uncertain / needs verification</option>
                 </select>
               </div>
-              <div class="sf-fcell"><label>New eNB (if different)</label><input type="text" id="fd-s7-newenb" placeholder="Record the new eNB"></div>
+              <div class="sf-fcell"><label>Verification note</label><input type="text" id="fd-s7-newenb" placeholder="Optional note, e.g. eNB changed from previous survey"></div>
             </div>
 
             <div class="step7-group">
@@ -7131,13 +7159,20 @@ function towerGetData() {
   const g = id => document.getElementById(id)?.value || '';
   const today = new Date().toISOString().split('T')[0];
   const operator = g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top');
-  const enb = g('fd-s7-newenb') || g('fd-s2a-enb') || g('fd-s2b-enb');
+  const mcc = g('fd-s7-mcc');
+  const mnc = g('fd-s7-mnc');
+  const enb = g('fd-s7-enb');
+  const eci = g('fd-s7-eci');
+  const lcid = g('fd-s7-lcid');
+  const pci = g('fd-s7-pci');
+  const tac = g('fd-s7-tac');
+  const band = normaliseRadioBand(g('fd-s7-band'));
+  const rsrp = g('fd-s7-rsrp');
+  const rsrq = g('fd-s7-rsrq');
+  const rssnr = g('fd-s7-rssnr');
   const towerKey = `${parseCoordinate(g('fd-s7-tlat')) || 'LAT'}-${parseCoordinate(g('fd-s7-tlon')) || 'LON'}`.replace(/[^a-zA-Z0-9_-]/g, '-');
   const towerWard = wardContainingCoordinate(g('fd-s7-tlat'), g('fd-s7-tlon'));
   const towerConstituency = WARDS[towerWard]?.constituency || '';
-  const mcc = g('fd-s2a-mcc') || g('fd-s2b-mcc');
-  const mnc = g('fd-s2a-mnc') || g('fd-s2b-mnc');
-  const eci = g('fd-s2a-eci') || g('fd-s2b-eci');
   return {
     record_type: 'tower', type: 'tower',
     respondentId: `TOWER-${operator || 'OP'}-${enb || towerKey || Date.now()}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
@@ -7148,9 +7183,15 @@ function towerGetData() {
     name: 'Tower reading', ward: towerWard, constituency: towerConstituency,
     operator, op: operator, fd_s1_op: operator,
     fd_s2a_mcc: mcc, fd_s2a_mnc: mnc, fd_s2a_eci: eci, fd_s2a_enb: enb,
-    enb, lat: g('fd-s7-tlat'), lng: g('fd-s7-tlon'),
+    fd_s2a_lcid: lcid, fd_s2a_pci: pci, fd_s2a_tac: tac, fd_s2a_band: band,
+    fd_s2a_rsrp: rsrp, fd_s2a_rsrq: rsrq, fd_s2a_rssnr: rssnr,
+    enb, taceci: tac && eci ? `${tac}-${eci}` : eci, band, rsrp,
+    lat: g('fd-s7-tlat'), lng: g('fd-s7-tlon'),
     fd_s7_tlat: g('fd-s7-tlat'), fd_s7_tlon: g('fd-s7-tlon'),
-    fd_s7_top: operator, fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: enb,
+    fd_s7_top: operator, fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: g('fd-s7-newenb'),
+    fd_s7_mcc: mcc, fd_s7_mnc: mnc, fd_s7_enb: enb, fd_s7_eci: eci, fd_s7_lcid: lcid,
+    fd_s7_pci: pci, fd_s7_tac: tac, fd_s7_band: band, fd_s7_conn_type: g('fd-s7-conn-type'),
+    fd_s7_rsrp: rsrp, fd_s7_rsrq: rsrq, fd_s7_rssnr: rssnr,
     fd_s7_photo: g('fd-s7-photo'), fd_s7_photo_file: screenshotValue('fd-s7-photo-file'), fd_s7_gps_method: g('fd-s7-gps-method'),
     fd_s7_access: g('fd-s7-access'), fd_s7_noaccess_reason: g('fd-s7-noaccess-reason'), fd_s7_scr: screenshotValue('fd-s7-scr'),
     link_status: enb ? 'linked_by_enb_when_matching_readings_exist' : 'saved_unlinked_missing_enb',
@@ -7163,10 +7204,22 @@ async function towerSubmit() {
   const lat = document.getElementById('fd-s7-tlat')?.value;
   const lon = document.getElementById('fd-s7-tlon')?.value;
   const operator = document.getElementById('fd-s7-top')?.value;
-  const enb = document.getElementById('fd-s7-newenb')?.value || document.getElementById('fd-s2a-enb')?.value || document.getElementById('fd-s2b-enb')?.value;
-  if (!lat || !lon) { alert('Please enter the tower latitude and longitude.'); return; }
-  if (!operator) { alert('Please select the tower operator.'); return; }
-  if (!enb && !confirm('No tower eNB has been entered. Save this tower reading anyway as an unlinked tower record? You can add the eNB later when known.')) return;
+  const mcc = document.getElementById('fd-s7-mcc')?.value;
+  const mnc = document.getElementById('fd-s7-mnc')?.value;
+  const enb = document.getElementById('fd-s7-enb')?.value;
+  const missingRequired = [];
+  if (!lat) missingRequired.push('tower latitude');
+  if (!lon) missingRequired.push('tower longitude');
+  if (!operator) missingRequired.push('operator');
+  if (!mcc) missingRequired.push('MCC from NCIL');
+  if (!mnc) missingRequired.push('MNC from NCIL');
+  if (!enb) missingRequired.push('eNB ID from NCIL');
+  if (missingRequired.length) {
+    alert('Please complete these Step 7 tower fields before submitting:\n\n- ' + missingRequired.join('\n- '));
+    return;
+  }
+  const eci = document.getElementById('fd-s7-eci')?.value;
+  if (!eci && !confirm('No ECI / Cell ID has been entered. Save this tower reading anyway? It may be harder to link to exact serving cells without ECI.')) return;
   if (btn) { btn.textContent = 'Uploading tower evidence...'; btn.disabled = true; }
   await loadWardBoundaryIndex();
   try { await uploadSurveyScreenshots(TOWER_SCREENSHOT_FIELDS); }
@@ -7461,6 +7514,27 @@ function s7OpChange() {
   const sel = document.getElementById('fd-s7-top').value;
   const txt = document.getElementById('fd-s7-top-other');
   txt.style.display = sel === 'Other' ? 'block' : 'none';
+  const mccEl = document.getElementById('fd-s7-mcc');
+  const mncEl = document.getElementById('fd-s7-mnc');
+  if (mccEl && !mccEl.value && (sel === 'Our Telekom' || sel === 'BMobile')) mccEl.value = '540';
+  if (mncEl && !mncEl.value) {
+    if (sel === 'Our Telekom') mncEl.value = '1';
+    if (sel === 'BMobile') mncEl.value = '2';
+  }
+  syncStep7LookupFields();
+}
+
+function syncStep7LookupFields() {
+  const mappings = [
+    ['fd-s7-mcc', 'ocid-mcc'],
+    ['fd-s7-mnc', 'ocid-mnc'],
+    ['fd-s7-enb', 'ocid-enb'],
+  ];
+  mappings.forEach(([sourceId, targetId]) => {
+    const source = document.getElementById(sourceId);
+    const target = document.getElementById(targetId);
+    if (source && target && source.value) target.value = source.value;
+  });
 }
 
 // -- SIM 2 toggle --------------------------------------------------
@@ -7709,6 +7783,10 @@ function sfRestoreDraft() {
       fd_s7_tlat: 'fd-s7-tlat', fd_s7_tlon: 'fd-s7-tlon',
       fd_s7_top: 'fd-s7-top', fd_s7_ttype: 'fd-s7-ttype',
       fd_s7_enb_conf: 'fd-s7-enb-conf', fd_s7_newenb: 'fd-s7-newenb',
+      fd_s7_mcc: 'fd-s7-mcc', fd_s7_mnc: 'fd-s7-mnc', fd_s7_enb: 'fd-s7-enb',
+      fd_s7_eci: 'fd-s7-eci', fd_s7_lcid: 'fd-s7-lcid', fd_s7_pci: 'fd-s7-pci',
+      fd_s7_tac: 'fd-s7-tac', fd_s7_band: 'fd-s7-band', fd_s7_conn_type: 'fd-s7-conn-type',
+      fd_s7_rsrp: 'fd-s7-rsrp', fd_s7_rsrq: 'fd-s7-rsrq', fd_s7_rssnr: 'fd-s7-rssnr',
       fd_s7_access: 'fd-s7-access', fd_s7_photo: 'fd-s7-photo',
       fd_s7_gps_method: 'fd-s7-gps-method',
       // Survey sections
@@ -8105,6 +8183,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ocidEnb && !ocidEnb.value) ocidEnb.value = enbEl.value;
     });
   }
+  ['fd-s7-mcc', 'fd-s7-mnc', 'fd-s7-enb'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', syncStep7LookupFields);
+  });
   // Auto-fill MCC/MNC in lookup from Step 2A
   const mccEl = document.getElementById('fd-s2a-mccmnc');
   if (mccEl) {
