@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-independent-step7-ncil-v31">
+<meta name="portal-build" content="2026-07-14-remove-tower-lookup-v32">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -426,26 +426,6 @@
   /* -- DEMO BANNER -- */
   .demo-banner { background: #BA7517; color: #fff; text-align: center; font-size: 12px; font-weight: 500; padding: 6px 16px; letter-spacing: .01em; flex-shrink: 0; }
   .demo-banner a { color: #fff; text-decoration: underline; cursor: pointer; }
-  /* -- OPENCELLID LOOKUP -- */
-  .tower-lookup { background: var(--gray-50); border: 1px solid var(--border); border-left: 3px solid #BA7517; border-radius: 0 6px 6px 0; padding: 10px 12px; margin-top: 8px; }
-  .tower-lookup-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #BA7517; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
-  .tower-lookup-row { display: flex; gap: 6px; align-items: flex-end; margin-bottom: 8px; }
-  .tower-lookup-row .sf-fcell { flex: 1; margin: 0; border: none; padding: 0; }
-  .tower-lookup-row .sf-fcell input { border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
-  .lookup-btn { padding: 6px 14px; background: #BA7517; color: #fff; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; flex-shrink: 0; }
-  .lookup-btn:hover { background: #9a6010; }
-  .lookup-btn:disabled { background: var(--gray-400); cursor: not-allowed; }
-  .tower-result { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-size: 12px; display: none; }
-  .tower-result.show { display: block; }
-  .tower-result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
-  .tower-result-cell { background: var(--gray-50); border-radius: 4px; padding: 6px 8px; }
-  .tower-result-cell label { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); font-weight: 600; display: block; margin-bottom: 2px; }
-  .tower-result-cell span { font-size: 12px; font-weight: 600; font-family: 'JetBrains Mono', monospace; color: var(--text); }
-  .tower-result-actions { display: flex; gap: 6px; margin-top: 8px; }
-  .lookup-error { background: var(--red-light); color: var(--red); border-radius: 6px; padding: 7px 10px; font-size: 11px; display: none; margin-top: 6px; }
-  .lookup-error.show { display: block; }
-  .lookup-loading { color: var(--gray-600); font-size: 11px; font-style: italic; margin-top: 6px; display: none; }
-  .lookup-loading.show { display: block; }
   .step7-instructions { background: var(--gray-50); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; font-size: 11px; color: var(--gray-700); margin-bottom: 12px; line-height: 1.55; font-style: italic; }
   .step7-primary-grid, .step7-secondary-grid, .step7-footer-grid { display: grid; gap: 8px; margin-bottom: 8px; }
   .step7-primary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -2297,46 +2277,6 @@
                 <label>Upload tower GPS screenshot</label>
                 <input type="file" id="fd-s7-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- OPENCELLID TOWER LOOKUP -->
-        <div class="tower-lookup">
-          <div class="tower-lookup-title">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3-8.59A2 2 0 0 1 3.62 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6 6l.94-1.01a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            Cell Tower Lookup - OpenCelliD
-          </div>
-          <p style="font-size:11px;color:var(--gray-600);margin-bottom:8px;line-height:1.5">
-            Enter MCC, MNC, and eNB from NCIL RAW tab to look up tower GPS coordinates from OpenCelliD. Requires a free API key from <strong>opencellid.org</strong>.
-          </p>
-          <div class="tower-lookup-row">
-            <div class="sf-fcell"><label style="font-size:10px;color:var(--gray-600);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px">API Key</label><input type="text" id="ocid-key" placeholder="Your OpenCelliD key" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;font-family:'JetBrains Mono',monospace"></div>
-          </div>
-          <div class="tower-lookup-row">
-            <div class="sf-fcell"><label style="font-size:10px;color:var(--gray-600);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px">MCC</label><input type="text" id="ocid-mcc" placeholder="e.g. 540" maxlength="3" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:'JetBrains Mono',monospace"></div>
-            <div class="sf-fcell"><label style="font-size:10px;color:var(--gray-600);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px">MNC</label><input type="text" id="ocid-mnc" placeholder="e.g. 1" maxlength="2" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:'JetBrains Mono',monospace"></div>
-            <div class="sf-fcell"><label style="font-size:10px;color:var(--gray-600);font-weight:600;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:3px">eNB ID</label><input type="text" id="ocid-enb" placeholder="e.g. 13042" style="width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:'JetBrains Mono',monospace"></div>
-            <button class="lookup-btn" id="lookup-btn" onclick="lookupTower()">Look up tower</button>
-          </div>
-          <div class="lookup-loading" id="lookup-loading">Querying OpenCelliD database...</div>
-          <div class="lookup-error" id="lookup-error"></div>
-          <div class="tower-result" id="tower-result">
-            <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px;display:flex;align-items:center;gap:5px">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              Tower found in OpenCelliD database
-            </div>
-            <div class="tower-result-grid">
-              <div class="tower-result-cell"><label>Tower Latitude</label><span id="tr-lat">-</span></div>
-              <div class="tower-result-cell"><label>Tower Longitude</label><span id="tr-lon">-</span></div>
-              <div class="tower-result-cell"><label>Radio type</label><span id="tr-radio">-</span></div>
-              <div class="tower-result-cell"><label>Cell ID (CID)</label><span id="tr-cid">-</span></div>
-              <div class="tower-result-cell"><label>Range estimate</label><span id="tr-range">-</span></div>
-              <div class="tower-result-cell"><label>Samples in DB</label><span id="tr-samples">-</span></div>
-            </div>
-            <div class="tower-result-actions">
-              <button class="btn btn-primary" style="font-size:11px;padding:5px 12px" onclick="addTowerToMap()">Add tower to map</button>
-              <button class="btn" style="font-size:11px;padding:5px 12px" onclick="copyTowerCoords()">Copy coordinates</button>
             </div>
           </div>
         </div>
@@ -7487,14 +7427,6 @@ function s1OpChange() {
   const sel = document.getElementById('fd-s1-op').value;
   const txt = document.getElementById('fd-s1-op-other');
   txt.style.display = sel === 'Other' ? 'block' : 'none';
-  // Auto-fill MNC in lookup
-  const mncEl = document.getElementById('ocid-mnc');
-  const mccEl = document.getElementById('ocid-mcc');
-  if (mccEl && !mccEl.value) mccEl.value = '540';
-  if (mncEl && !mncEl.value) {
-    if (sel === 'Our Telekom') mncEl.value = '1';
-    if (sel === 'BMobile') mncEl.value = '2';
-  }
 }
 
 // -- Step 7: accessible gate -------------------------------------------
@@ -7521,20 +7453,6 @@ function s7OpChange() {
     if (sel === 'Our Telekom') mncEl.value = '1';
     if (sel === 'BMobile') mncEl.value = '2';
   }
-  syncStep7LookupFields();
-}
-
-function syncStep7LookupFields() {
-  const mappings = [
-    ['fd-s7-mcc', 'ocid-mcc'],
-    ['fd-s7-mnc', 'ocid-mnc'],
-    ['fd-s7-enb', 'ocid-enb'],
-  ];
-  mappings.forEach(([sourceId, targetId]) => {
-    const source = document.getElementById(sourceId);
-    const target = document.getElementById(targetId);
-    if (source && target && source.value) target.value = source.value;
-  });
 }
 
 // -- SIM 2 toggle --------------------------------------------------
@@ -7937,113 +7855,6 @@ function sfReset(keepEditingId) {
   sfProgress();
 }
 
-// ======================================================
-//  OPENCELLID TOWER LOOKUP
-// ======================================================
-
-let lastTowerResult = null;
-
-async function lookupTower() {
-  const key     = document.getElementById('ocid-key').value.trim();
-  const mcc     = document.getElementById('ocid-mcc').value.trim();
-  const mnc     = document.getElementById('ocid-mnc').value.trim();
-  const enb     = document.getElementById('ocid-enb').value.trim();
-  const btn     = document.getElementById('lookup-btn');
-  const loading = document.getElementById('lookup-loading');
-  const errEl   = document.getElementById('lookup-error');
-  const result  = document.getElementById('tower-result');
-
-  errEl.classList.remove('show');
-  result.classList.remove('show');
-  if (!key) { showLookupError('Please enter your OpenCelliD API key.'); return; }
-  if (!mcc) { showLookupError('Please enter the MCC (540 for Solomon Islands).'); return; }
-  if (!mnc) { showLookupError('Please enter the MNC (1 = Our Telekom, 2 = BMobile).'); return; }
-  if (!enb) { showLookupError('Please enter the eNB number from NCIL RAW tab.'); return; }
-
-  sessionStorage.setItem('ocid_key', key);
-  btn.disabled = true;
-  loading.classList.add('show');
-
-  try {
-    // CID = eNB * 256 + sector (use 0 for basic lookup)
-    const cid = parseInt(enb) * 256;
-    const tryFetch = async (cellid) => {
-      const url = `https://opencellid.org/cell/get?key=${key}&mcc=${mcc}&mnc=${mnc}&lac=0&cellid=${cellid}&format=json&radio=LTE`;
-      const res  = await fetch(url);
-      return res.json();
-    };
-
-    let data = await tryFetch(cid);
-    if (!data.lat) data = await tryFetch(enb); // fallback: use raw eNB as CID
-    if (!data.lat) {
-      showLookupError('Tower not found in OpenCelliD. This eNB may not yet be in the database. Record the GPS waypoint manually at the tower instead.');
-      return;
-    }
-    displayTowerResult(data);
-  } catch (err) {
-    showLookupError('Could not reach OpenCelliD. Check internet connection and API key.');
-  } finally {
-    btn.disabled = false;
-    loading.classList.remove('show');
-  }
-}
-
-function displayTowerResult(data) {
-  lastTowerResult = data;
-  document.getElementById('tr-lat').textContent     = parseFloat(data.lat).toFixed(6);
-  document.getElementById('tr-lon').textContent     = parseFloat(data.lon).toFixed(6);
-  document.getElementById('tr-radio').textContent   = data.radio || 'LTE';
-  document.getElementById('tr-cid').textContent     = data.cellid || '-';
-  document.getElementById('tr-range').textContent   = data.range ? data.range + ' m' : '-';
-  document.getElementById('tr-samples').textContent = data.samples || '-';
-  document.getElementById('tower-result').classList.add('show');
-}
-
-function showLookupError(msg) {
-  const el = document.getElementById('lookup-error');
-  el.textContent = msg; el.classList.add('show');
-}
-
-function addTowerToMap() {
-  if (!lastTowerResult) return;
-  const mcc  = document.getElementById('ocid-mcc').value.trim();
-  const mnc  = document.getElementById('ocid-mnc').value.trim();
-  const enb  = document.getElementById('ocid-enb').value.trim();
-  const ward = document.querySelector('input[name="sf-a1"]:checked')?.value || 'Unknown';
-  const op   = mcc === '540' && mnc === '1' ? 'Our Telekom' :
-               mcc === '540' && mnc === '2' ? 'BMobile' : 'Unknown';
-  // Auto-fill tower coordinates into Step 7 fields
-  const tlatEl = document.getElementById('fd-s7-tlat');
-  const tlonEl = document.getElementById('fd-s7-tlon');
-  if (tlatEl && !tlatEl.value) tlatEl.value = parseFloat(lastTowerResult.lat).toFixed(6);
-  if (tlonEl && !tlonEl.value) tlonEl.value = parseFloat(lastTowerResult.lon).toFixed(6);
-  towerPoints.push({
-    id: 'CS-' + enb, ward,
-    constituency: WARDS[ward]?.constituency || '', op, type: 'cell',
-    date: document.getElementById('sf-date').value || new Date().toISOString().split('T')[0],
-    lat: parseFloat(lastTowerResult.lat),
-    lng: parseFloat(lastTowerResult.lon),
-    r: -90, rsrp: -90, dl: 0,
-    enb: enb + '-0',
-    taceci: (document.getElementById('fd-s2a-tac')?.value || '') + '-' + (document.getElementById('fd-s2a-eci')?.value || ''),
-  });
-  const mapBtn = document.querySelector('.tnav[onclick*="\'map\'"]');
-  if (mapBtn) switchView('map', mapBtn);
-  refresh();
-  alert(`Tower CS-${enb} added to Live Map at ${displayCoordinate(lastTowerResult.lat)}, ${displayCoordinate(lastTowerResult.lon)}`);
-}
-
-function copyTowerCoords() {
-  if (!lastTowerResult) return;
-  const text = `${parseFloat(lastTowerResult.lat).toFixed(6)}, ${parseFloat(lastTowerResult.lon).toFixed(6)}`;
-  navigator.clipboard.writeText(text)
-    .then(() => {
-      const btn = document.querySelector('.tower-result-actions .btn:last-child');
-      if (btn) { const o = btn.textContent; btn.textContent = 'Copied check'; setTimeout(() => btn.textContent = o, 1500); }
-    })
-    .catch(() => alert('Coordinates: ' + text));
-}
-
 function transformSpeedTestsLayout() {
   document.querySelectorAll('.speed-test-body').forEach(body => {
     if (!body || body.dataset.appLayout === 'true') return;
@@ -8171,48 +7982,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (this.value === 'BMobile') mncEl2a.value = '2';
   });
 
-  const savedKey = sessionStorage.getItem('ocid_key');
-  const keyEl    = document.getElementById('ocid-key');
-  if (savedKey && keyEl) keyEl.value = savedKey;
-
-  // Auto-fill OpenCelliD lookup from Step 2A eNB field
-  const enbEl = document.getElementById('fd-s2a-enb');
-  if (enbEl) {
-    enbEl.addEventListener('input', () => {
-      const ocidEnb = document.getElementById('ocid-enb');
-      if (ocidEnb && !ocidEnb.value) ocidEnb.value = enbEl.value;
-    });
-  }
-  ['fd-s7-mcc', 'fd-s7-mnc', 'fd-s7-enb'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('input', syncStep7LookupFields);
-  });
-  // Auto-fill MCC/MNC in lookup from Step 2A
-  const mccEl = document.getElementById('fd-s2a-mccmnc');
-  if (mccEl) {
-    mccEl.addEventListener('input', () => {
-      const val = mccEl.value;
-      const ocidMcc = document.getElementById('ocid-mcc');
-      const ocidMnc = document.getElementById('ocid-mnc');
-      if (val.includes('/')) {
-        const parts = val.split('/').map(s => s.trim());
-        if (ocidMcc && !ocidMcc.value) ocidMcc.value = parts[0];
-        if (ocidMnc && !ocidMnc.value) ocidMnc.value = parts[1];
-      }
-    });
-  }
-  document.querySelectorAll('input[name="sf-a3"]').forEach(r => {
-    r.addEventListener('change', () => {
-      const mncEl = document.getElementById('ocid-mnc');
-      const mccEl = document.getElementById('ocid-mcc');
-      if (!mncEl) return;
-      if (mccEl && !mccEl.value) mccEl.value = '540';
-      if (!mncEl.value) {
-        if (r.value === 'Our Telekom') mncEl.value = '1';
-        if (r.value === 'BMobile')    mncEl.value = '2';
-      }
-    });
-  });
 });
 
 // ======================================================
