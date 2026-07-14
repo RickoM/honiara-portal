@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-13-android-ward-tick-v27">
+<meta name="portal-build" content="2026-07-14-ward-tick-css-fix-v29">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -317,9 +317,9 @@
   .sf-ward-table td { padding: 6px 8px; border: 1px solid var(--border); vertical-align: middle; }
   .sf-ward-table .zone-r td { background: var(--gray-50); font-weight: 600; color: var(--navy); font-size: 10px; }
   .wrad input[type=radio] { display: none; }
-  .wrad label { display: block; width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 3px; cursor: pointer; margin: 0 auto; }
+  .wrad label { display: block; width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 3px; cursor: pointer; margin: 0 auto; position: relative; }
   .wrad input:checked + label { background: var(--navy); border-color: var(--navy); }
-  .wrad input:checked + label::after { content: '\\2713'; display: block; text-align: center; color: #fff; font-size: 13px; line-height: 18px; font-weight: 800; }
+  .wrad input:checked + label::after { content: ''; position: absolute; left: 5px; top: 2px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
   .sf-fgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   .sf-fcell { border: 1px solid var(--border); border-radius: 6px; padding: 9px; }
   .sf-fcell label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--gray-600); display: block; margin-bottom: 4px; }
@@ -916,7 +916,7 @@
     .sf-ward-table .wrad { display: flex; align-items: center; justify-content: center; background: var(--gray-50); padding: 8px; }
     .sf-ward-table .wrad label { width: 34px; height: 34px; border-radius: 9px; border-width: 2px; background: #fff; box-shadow: inset 0 0 0 1px rgba(28,53,87,.04); }
     .sf-ward-table .wrad input:checked + label { background: var(--green); border-color: var(--green); }
-    .sf-ward-table .wrad input:checked + label::after { font-size: 24px; line-height: 32px; }
+    .sf-ward-table .wrad input:checked + label::after { left: 11px; top: 5px; width: 9px; height: 17px; border-width: 0 3px 3px 0; }
     .sf-ward-table tr.ward-selected { border-color: var(--green); box-shadow: 0 0 0 2px rgba(46,125,91,.16); }
     .sf-ward-table tr.ward-selected td:nth-child(2) { background: #E8F5EE; }
   }
@@ -5037,6 +5037,42 @@ function normaliseRadioBand(value) {
     .trim();
 }
 
+function radioBandInfo(bandValue) {
+  const band = normaliseRadioBand(bandValue);
+  const info = {
+    '1': {
+      label: 'B1',
+      frequency: '2100 MHz LTE FDD',
+      detail: 'Uplink 1920-1980 MHz, downlink 2110-2170 MHz.',
+      caution: ''
+    },
+    '3': {
+      label: 'B3',
+      frequency: '1800 MHz LTE FDD',
+      detail: 'Uplink 1710-1785 MHz, downlink 1805-1880 MHz.',
+      caution: ''
+    },
+    '41': {
+      label: 'B41',
+      frequency: '2500 MHz LTE TDD',
+      detail: '2496-2690 MHz time-division LTE band.',
+      caution: ''
+    },
+    '43': {
+      label: 'B43',
+      frequency: '3600 MHz LTE TDD',
+      detail: '3600-3800 MHz time-division LTE band.',
+      caution: 'Verify this reading against the NCIL screenshot. It may be valid only if the device/network really reported Band 43; otherwise it may be a data-entry or app-reading issue.'
+    }
+  };
+  return info[band] || {
+    label: band ? `B${band}` : 'Band not recorded',
+    frequency: 'Frequency not mapped in portal',
+    detail: 'Check the NCIL screenshot or standards reference before interpreting this band.',
+    caution: band ? 'Unmapped band in this dashboard.' : ''
+  };
+}
+
 function countValues(values) {
   const counts = new Map();
   values.map(value => String(value || '').trim()).filter(Boolean).forEach(value => {
@@ -5451,9 +5487,19 @@ function renderDashboard() {
       .filter(Boolean)
       .map(band => `B${band}`)
   );
+  const bandCardRows = clearBandCounts.length ? clearBandCounts.map(([label, count]) => {
+    const band = label.replace(/^B/i, '');
+    const info = radioBandInfo(band);
+    const caution = info.caution ? `<div style="font-size:9px;color:var(--amber);line-height:1.25;margin-top:2px">${dashEscape(info.caution)}</div>` : '';
+    return `<div style="border-top:1px solid var(--border);padding-top:6px;margin-top:6px">
+      <div style="display:flex;justify-content:space-between;gap:8px"><span><strong>${dashEscape(info.label)}</strong> - ${dashEscape(info.frequency)}</span><strong>${count}</strong></div>
+      <div style="font-size:9px;color:var(--gray-600);line-height:1.25;margin-top:2px">${dashEscape(info.detail)}</div>
+      ${caution}
+    </div>`;
+  }).join('') : '<div style="color:var(--gray-600);font-size:11px">Ask assistants to enter the Band field exactly as NCIL shows it.</div>';
   const clearWardNetworkBreakdown = selectedWards.map(ward => {
     const tech = wardRadioTechnicalSummary(surv.filter(p => p.ward === ward));
-    return `<div style="display:flex;justify-content:space-between;gap:8px"><span>${dashEscape(ward)}</span><strong>${tech.servingTowerCount || 0}T / ${tech.servingCellCount || 0}C / ${tech.bandText}</strong></div>`;
+    return `<div style="display:grid;grid-template-columns:1fr auto;gap:8px"><span>${dashEscape(ward)}</span><strong>${tech.servingTowerCount || 0} tower group${tech.servingTowerCount === 1 ? '' : 's'} / ${tech.servingCellCount || 0} cell${tech.servingCellCount === 1 ? '' : 's'}</strong><span style="grid-column:1 / -1;color:var(--gray-600)">Bands: ${tech.bandText}</span></div>`;
   }).join('');
   document.getElementById('dash-metrics').innerHTML = [
     `<div class="dash-card">
@@ -5481,15 +5527,13 @@ function renderDashboard() {
     `<div class="dash-card">
       <div class="dash-card-value" style="color:var(--navy)">${clearBandCounts.length || '-'}</div>
       <div class="dash-card-label">Spectrum bands picked up</div>
-      <div class="dash-card-note">${clearBandCounts.length ? 'LTE bands detected from Step 2 raw NCIL readings.' : 'No LTE band readings recorded yet.'}</div>
-      <div style="display:grid;gap:4px;margin-top:8px;font-size:11px">
-        ${clearBandCounts.length ? clearBandCounts.map(([label, count]) => `<div style="display:flex;justify-content:space-between;gap:8px"><span>${dashEscape(label)}</span><strong>${count} observation${count === 1 ? '' : 's'}</strong></div>`).join('') : '<div style="color:var(--gray-600)">Ask assistants to enter the Band field exactly as NCIL shows it.</div>'}
-      </div>
+      <div class="dash-card-note">LTE bands detected from Step 2 raw NCIL readings. Counts are SIM observations.</div>
+      <div style="display:grid;gap:2px;margin-top:8px;font-size:11px">${bandCardRows}</div>
     </div>`,
     `<div class="dash-card">
-      <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '-'}T / ${constituencyRadio.servingCellCount || 0}C</div>
-      <div class="dash-card-label">Serving towers / cells detected</div>
-      <div class="dash-card-note">Approximate serving eNB/tower groups and LTE serving cells from field readings.</div>
+      <div class="dash-card-value" style="font-size:22px;color:var(--navy)">${constituencyRadio.servingTowerCount || '-'} tower group${constituencyRadio.servingTowerCount === 1 ? '' : 's'}</div>
+      <div class="dash-card-label">Serving tower groups and cells</div>
+      <div class="dash-card-note">${constituencyRadio.servingCellCount || 0} serving LTE cell${constituencyRadio.servingCellCount === 1 ? '' : 's'} detected from eNB/ECI/LCID/PCI readings. A tower group is an inferred eNB/site group, not necessarily a physically verified tower.</div>
       <div style="display:grid;gap:3px;margin-top:8px;font-size:10px;color:var(--gray-700)">${clearWardNetworkBreakdown}</div>
     </div>`,
   ].join('');
@@ -5508,7 +5552,7 @@ function renderDashboard() {
       <td>${tech.gps.insideBoundary}/${count || 0}<div style="font-size:9px;color:${tech.gps.outsideBoundary ? 'var(--red)' : 'var(--gray-600)'}">${tech.gps.outsideBoundary} outside - ${tech.gps.wardMismatch} mismatch</div></td>
       <td>${tech.plmnText}</td>
       <td>${tech.bandText}</td>
-      <td><strong>${tech.servingTowerCount || '-'}</strong> eNB/tower<div style="font-size:9px;color:var(--gray-600)">${tech.servingCellCount || 0} serving cell${tech.servingCellCount === 1 ? '' : 's'}</div></td>
+      <td><strong>${tech.servingTowerCount || '-'}</strong> tower group${tech.servingTowerCount === 1 ? '' : 's'}<div style="font-size:9px;color:var(--gray-600)">${tech.servingCellCount || 0} serving LTE cell${tech.servingCellCount === 1 ? '' : 's'}</div></td>
       <td><span style="color:${tech.rsrpClass.color};font-weight:700">${dashNumber(tech.avgRsrp,0)} dBm</span><div style="font-size:9px">${tech.rsrpClass.label}</div></td>
       <td><span style="color:${tech.rsrqClass.color};font-weight:700">${dashNumber(tech.avgRsrq,1)} dB</span><div style="font-size:9px">${tech.rsrqClass.label}</div></td>
       <td><span style="color:${tech.rssnrClass.color};font-weight:700">${dashNumber(tech.avgRssnr,1)} dB</span><div style="font-size:9px">${tech.rssnrClass.label}</div></td>
@@ -5520,7 +5564,7 @@ function renderDashboard() {
     <div style="font-size:10px;color:var(--gray-600);line-height:1.4;margin-bottom:10px">Ward-level analysis is more accurate than constituency averages because radio conditions vary by local terrain, buildings, serving cell, band and operator PLMN. Operator identity is inferred from MCC/MNC where recorded: 540-01 = Our Telekom, 540-02 = BMobile.<br>Ward radio thresholds: RSRP >=-80 Excellent - -80 to -90 Good - -90 to -100 Fair - -100 to -110 Poor - below -110 Very Poor. RSRQ below -15 dB = degraded quality. RSSNR/SINR low or 0 dB = noisy signal environment.</div>
     <div style="overflow:auto">
       <table class="dash-ward-table" style="min-width:1280px">
-        <thead><tr><th>Ward</th><th>GPS boundary</th><th>MCC/MNC operator</th><th>Band</th><th>Serving towers/cells</th><th>RSRP</th><th>RSRQ</th><th>RSSNR</th><th>Speed</th><th>Interpretation</th></tr></thead>
+        <thead><tr><th>Ward</th><th>GPS boundary</th><th>MCC/MNC operator</th><th>LTE band</th><th>Serving tower groups / LTE cells</th><th>RSRP</th><th>RSRQ</th><th>RSSNR</th><th>Speed</th><th>Interpretation</th></tr></thead>
         <tbody>${wardRows}</tbody>
       </table>
     </div>`;
@@ -5572,9 +5616,8 @@ function renderSpectrumConfiguration(surveys) {
     return 'Not identified in portal mapping';
   };
   const bandDescription = band => {
-    if (band === '3') return 'LTE Band 3 - FDD - 1800 MHz range';
-    if (band === '41') return 'LTE Band 41 - TDD - 2500 MHz range';
-    return 'Recorded LTE band';
+    const info = radioBandInfo(band);
+    return `${info.frequency}. ${info.detail}${info.caution ? ' Verify against screenshot/source reading.' : ''}`;
   };
 
   const bandGroups = new Map();
@@ -5727,7 +5770,10 @@ function renderSpectrumConfiguration(surveys) {
         </div>
       </section>
     </div>
-    <div style="font-size:9px;color:var(--gray-600);margin-top:8px">Counts in the tables are SIM observations. A dual-SIM survey can contribute two observations, while the completeness figures above count survey records only. PLMN is displayed with a two-digit MNC where numeric (for example, recorded 540-1 is shown as 540-01).</div>`;
+    <div style="font-size:9px;color:var(--gray-600);margin-top:8px;line-height:1.45">Counts in the tables are SIM observations. A dual-SIM survey can contribute two observations, while the completeness figures above count survey records only. PLMN is displayed with a two-digit MNC where numeric (for example, recorded 540-1 is shown as 540-01).</div>
+    <div style="font-size:10px;color:var(--gray-700);background:#F8FAFC;border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.45">
+      <strong>How to read this:</strong> B1 means LTE Band 1 around 2100 MHz, B3 means LTE Band 3 around 1800 MHz, B41 means LTE Band 41 around 2500 MHz TDD, and B43 means LTE Band 43 around 3600 MHz TDD. If B43 appears, check the original NCIL screenshot before treating it as a confirmed finding, because it may be unusual in this survey context or could be a data-entry/app-reading issue.
+    </div>`;
 }
 
 function renderNetworkIdentityAggregation(surveys) {
