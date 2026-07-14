@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-interview-docx-pdf-questions-v39">
+<meta name="portal-build" content="2026-07-14-interview-transcript-upload-fix-v40">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1375,6 +1375,7 @@
             <label>Interview questions prepared / asked</label>
             <input class="ia-input" id="ia-questions-file" type="file" accept=".txt,.csv,.md,.docx,.pdf" onchange="iaReadQuestionsFile(this)" style="margin-bottom:8px">
             <textarea class="ia-textarea" id="ia-questions" style="min-height:150px" placeholder="Paste the interview guide/questions here, or upload .txt/.csv/.md/.docx/.pdf. Put each question on a new line."></textarea>
+            <button class="btn btn-sm" style="margin-top:8px" onclick="iaClearQuestionsUpload()">Clear questions upload</button>
           </div>
           <div class="ia-field">
             <label>Question coverage check</label>
@@ -1387,8 +1388,9 @@
         <div class="ia-grid">
           <div class="ia-field">
             <label>Raw Teams transcript</label>
-            <input class="ia-input" id="ia-file" type="file" accept=".txt,.vtt,.srt,.csv" onchange="iaReadTranscriptFile(this)" style="margin-bottom:8px">
-            <textarea class="ia-textarea" id="ia-raw" placeholder="Paste Teams transcript here, or upload .txt/.vtt/.srt transcript file..."></textarea>
+            <input class="ia-input" id="ia-file" type="file" accept=".txt,.vtt,.srt,.csv,.docx,.pdf" onchange="iaReadTranscriptFile(this)" style="margin-bottom:8px">
+            <textarea class="ia-textarea" id="ia-raw" placeholder="Paste Teams transcript here, or upload .txt/.vtt/.srt/.docx/.pdf transcript file..."></textarea>
+            <button class="btn btn-sm" style="margin-top:8px" onclick="iaClearTranscriptUpload()">Clear transcript upload</button>
           </div>
           <div class="ia-field">
             <label>Cleaned transcript</label>
@@ -3048,15 +3050,56 @@ function iaResetResearchQuestions() {
   if (rqs) rqs.value = IA_DEFAULT_RQS;
 }
 
-function iaReadTranscriptFile(input) {
+async function iaReadTranscriptFile(input) {
   const file = input?.files?.[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const raw = document.getElementById('ia-raw');
-    if (raw) raw.value = String(reader.result || '');
-  };
-  reader.readAsText(file);
+  const raw = document.getElementById('ia-raw');
+  const clean = document.getElementById('ia-clean');
+  const summary = document.getElementById('ia-summary');
+  const name = (file.name || '').toLowerCase();
+  try {
+    if (summary) summary.textContent = 'Reading transcript file...';
+    let text = '';
+    if (name.endsWith('.docx')) {
+      text = await iaExtractDocxText(file);
+    } else if (name.endsWith('.pdf')) {
+      text = await iaExtractPdfText(file);
+    } else {
+      text = await iaReadFileAsText(file);
+    }
+    if (raw) raw.value = text.trim();
+    if (clean) clean.value = '';
+    if (summary) summary.textContent = 'Loaded transcript from ' + file.name;
+  } catch (err) {
+    if (summary) summary.textContent = 'Could not extract transcript file';
+    alert('Could not read this transcript file: ' + err.message + '\n\nIf this happens, open the DOCX/PDF and copy-paste the transcript text into the box.');
+  } finally {
+    if (input) input.value = '';
+  }
+}
+
+function iaClearQuestionsUpload() {
+  const input = document.getElementById('ia-questions-file');
+  const questions = document.getElementById('ia-questions');
+  const coverage = document.getElementById('ia-question-coverage');
+  if (input) input.value = '';
+  if (questions) questions.value = '';
+  if (coverage) coverage.innerHTML = 'Run analysis to see whether the transcript appears to answer each interview question.';
+  const summary = document.getElementById('ia-summary');
+  if (summary) summary.textContent = 'Interview questions cleared';
+}
+
+function iaClearTranscriptUpload() {
+  const input = document.getElementById('ia-file');
+  const raw = document.getElementById('ia-raw');
+  const clean = document.getElementById('ia-clean');
+  const results = document.getElementById('ia-results');
+  if (input) input.value = '';
+  if (raw) raw.value = '';
+  if (clean) clean.value = '';
+  if (results) results.innerHTML = '<div class="ia-note">No analysis yet.</div>';
+  const summary = document.getElementById('ia-summary');
+  if (summary) summary.textContent = 'Transcript cleared';
 }
 
 async function iaReadQuestionsFile(input) {
