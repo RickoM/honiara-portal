@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-interview-analysis-v37">
+<meta name="portal-build" content="2026-07-14-interview-metadata-questions-v38">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1345,15 +1345,19 @@
     <div class="ia-wrap">
       <div class="ia-card">
         <div class="ia-title">Interview analysis workspace</div>
-        <div class="ia-subtitle">Paste a OneDrive or Teams video link, upload or paste the transcript, clean it, then analyse the interview against your research questions. This first version stores data in this browser only and does not upload video files.</div>
+        <div class="ia-subtitle">Register the interview, link the OneDrive/Teams recording, upload the interview questions and transcript, clean the transcript for dissertation use, then compare answers against both the interview questions and your research questions.</div>
       </div>
 
       <div class="ia-card">
         <div class="ia-grid">
-          <div class="ia-field"><label>Interview ID</label><input class="ia-input" id="ia-id" placeholder="e.g. INT-001"></div>
-          <div class="ia-field"><label>Interview date</label><input class="ia-input" id="ia-date" type="date"></div>
-          <div class="ia-field"><label>Ward / location</label><input class="ia-input" id="ia-location" placeholder="e.g. Vura, East Honiara"></div>
-          <div class="ia-field"><label>Participant / stakeholder type</label><input class="ia-input" id="ia-participant" placeholder="e.g. resident, field assistant, operator staff"></div>
+          <div class="ia-field"><label>Interview ID - auto generated</label><input class="ia-input" id="ia-id" placeholder="Generated when saved" readonly style="background:var(--gray-50)"></div>
+          <div class="ia-field"><label>Meeting date</label><input class="ia-input" id="ia-date" type="date" onchange="iaUpdateDuration()"></div>
+          <div class="ia-field"><label>Start time</label><input class="ia-input" id="ia-start" type="time" onchange="iaUpdateDuration()"></div>
+          <div class="ia-field"><label>End time</label><input class="ia-input" id="ia-end" type="time" onchange="iaUpdateDuration()"></div>
+          <div class="ia-field"><label>Duration</label><input class="ia-input" id="ia-duration" placeholder="Calculated automatically" readonly style="background:var(--gray-50)"></div>
+          <div class="ia-field"><label>Organisation</label><input class="ia-input" id="ia-organisation" placeholder="e.g. Our Telekom, BMobile, regulator, community group"></div>
+          <div class="ia-field"><label>Participant name</label><input class="ia-input" id="ia-participant-name" placeholder="Participant full name"></div>
+          <div class="ia-field"><label>Participant title / role</label><input class="ia-input" id="ia-participant-title" placeholder="e.g. Network engineer, manager, resident leader"></div>
           <div class="ia-field" style="grid-column:1/-1"><label>OneDrive / Teams video link</label><input class="ia-input" id="ia-video-link" placeholder="Paste secure OneDrive or Teams recording link"></div>
         </div>
         <div class="ia-actions" style="margin-top:12px">
@@ -1362,7 +1366,21 @@
           <button class="btn" onclick="iaClearForm()">Clear form</button>
           <select class="ia-select" id="ia-saved-list" style="max-width:320px" onchange="iaLoadSelected()"></select>
         </div>
-        <div class="ia-note" style="margin-top:8px">Privacy note: keep the video in OneDrive/Teams. The portal stores only the link, transcript, cleaned transcript, and analysis in browser local storage for this test version.</div>
+        <div class="ia-note" style="margin-top:8px">Access-rights note: the portal only stores the OneDrive/Teams link. Anyone opening the link must still have permission in OneDrive/Teams. If permission is removed later, the link remains as evidence metadata but the video cannot be viewed until access is restored. Transcript cleaning and analysis still work because they use the pasted/uploaded transcript text, not the video file.</div>
+      </div>
+
+      <div class="ia-card">
+        <div class="ia-grid">
+          <div class="ia-field">
+            <label>Interview questions prepared / asked</label>
+            <input class="ia-input" id="ia-questions-file" type="file" accept=".txt,.csv,.md" onchange="iaReadQuestionsFile(this)" style="margin-bottom:8px">
+            <textarea class="ia-textarea" id="ia-questions" style="min-height:150px" placeholder="Paste the interview guide/questions here, or upload .txt/.csv/.md. Put each question on a new line."></textarea>
+          </div>
+          <div class="ia-field">
+            <label>Question coverage check</label>
+            <div id="ia-question-coverage" class="ia-note" style="border:1px solid var(--border);border-radius:8px;padding:10px;min-height:150px;background:var(--gray-50)">Run analysis to see whether the transcript appears to answer each interview question.</div>
+          </div>
+        </div>
       </div>
 
       <div class="ia-card">
@@ -1379,9 +1397,11 @@
         </div>
         <div class="ia-actions" style="margin-top:12px">
           <button class="btn btn-primary" onclick="iaCleanTranscript()">Clean transcript</button>
+          <button class="btn" onclick="iaFormatForDissertation()">Format for dissertation</button>
           <button class="btn" onclick="iaCopyClean()">Copy clean transcript</button>
           <button class="btn" onclick="iaDownloadClean()">Download clean transcript</button>
         </div>
+        <div class="ia-note" style="margin-top:8px">Cleaning removes Teams/WebVTT timestamps and spacing noise. Formatting for dissertation keeps speaker turns readable, removes repeated blank lines, and prepares a clean text file that you can review before quoting.</div>
       </div>
 
       <div class="ia-card">
@@ -2895,6 +2915,7 @@ const IA_KEYWORDS = {
 function iaInit() {
   const rqs = document.getElementById('ia-rqs');
   if (rqs && !rqs.value.trim()) rqs.value = IA_DEFAULT_RQS;
+  iaUpdateDuration();
   iaRefreshSavedList();
 }
 
@@ -2911,9 +2932,14 @@ function iaGetFormData() {
   return {
     id: document.getElementById('ia-id')?.value.trim() || '',
     date: document.getElementById('ia-date')?.value || '',
-    location: document.getElementById('ia-location')?.value.trim() || '',
-    participant: document.getElementById('ia-participant')?.value.trim() || '',
+    start: document.getElementById('ia-start')?.value || '',
+    end: document.getElementById('ia-end')?.value || '',
+    duration: document.getElementById('ia-duration')?.value || '',
+    organisation: document.getElementById('ia-organisation')?.value.trim() || '',
+    participantName: document.getElementById('ia-participant-name')?.value.trim() || '',
+    participantTitle: document.getElementById('ia-participant-title')?.value.trim() || '',
     videoLink: document.getElementById('ia-video-link')?.value.trim() || '',
+    questions: document.getElementById('ia-questions')?.value || '',
     raw: document.getElementById('ia-raw')?.value || '',
     clean: document.getElementById('ia-clean')?.value || '',
     rqs: document.getElementById('ia-rqs')?.value || IA_DEFAULT_RQS,
@@ -2927,9 +2953,14 @@ function iaSetFormData(item) {
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
   set('ia-id', item.id);
   set('ia-date', item.date);
-  set('ia-location', item.location);
-  set('ia-participant', item.participant);
+  set('ia-start', item.start);
+  set('ia-end', item.end);
+  set('ia-duration', item.duration);
+  set('ia-organisation', item.organisation || item.location);
+  set('ia-participant-name', item.participantName || item.participant);
+  set('ia-participant-title', item.participantTitle);
   set('ia-video-link', item.videoLink);
+  set('ia-questions', item.questions);
   set('ia-raw', item.raw);
   set('ia-clean', item.clean);
   set('ia-rqs', item.rqs || IA_DEFAULT_RQS);
@@ -2944,7 +2975,7 @@ function iaRefreshSavedList() {
   if (!sel) return;
   const items = iaGetStore();
   sel.innerHTML = '<option value="">Saved interviews...</option>' + items.map(item => {
-    const label = (item.id || 'Untitled') + (item.location ? ' - ' + item.location : '') + (item.date ? ' - ' + item.date : '');
+    const label = (item.id || 'Untitled') + (item.organisation ? ' - ' + item.organisation : '') + (item.participantName ? ' - ' + item.participantName : '') + (item.date ? ' - ' + item.date : '');
     return '<option value="' + iaEsc(item.id || '') + '">' + iaEsc(label) + '</option>';
   }).join('');
 }
@@ -2952,7 +2983,7 @@ function iaRefreshSavedList() {
 function iaSave() {
   const item = iaGetFormData();
   if (!item.id) {
-    item.id = 'INT-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Date.now().toString().slice(-4);
+    item.id = iaGenerateInterviewId(item);
     const idEl = document.getElementById('ia-id');
     if (idEl) idEl.value = item.id;
   }
@@ -2974,7 +3005,7 @@ function iaLoadSelected() {
 }
 
 function iaClearForm() {
-  ['ia-id','ia-date','ia-location','ia-participant','ia-video-link','ia-raw','ia-clean'].forEach(id => {
+  ['ia-id','ia-date','ia-start','ia-end','ia-duration','ia-organisation','ia-participant-name','ia-participant-title','ia-video-link','ia-questions','ia-raw','ia-clean'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -2983,6 +3014,33 @@ function iaClearForm() {
   if (results) results.innerHTML = '<div class="ia-note">No analysis yet.</div>';
   const summary = document.getElementById('ia-summary');
   if (summary) summary.textContent = '';
+  const coverage = document.getElementById('ia-question-coverage');
+  if (coverage) coverage.innerHTML = 'Run analysis to see whether the transcript appears to answer each interview question.';
+}
+
+function iaGenerateInterviewId(item) {
+  const datePart = (item.date || new Date().toISOString().slice(0,10)).replace(/-/g, '');
+  const orgPart = (item.organisation || 'ORG').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase() || 'ORG';
+  const existing = iaGetStore().filter(x => String(x.id || '').startsWith('INT-' + datePart + '-' + orgPart)).length + 1;
+  return 'INT-' + datePart + '-' + orgPart + '-' + String(existing).padStart(2, '0');
+}
+
+function iaUpdateDuration() {
+  const start = document.getElementById('ia-start')?.value || '';
+  const end = document.getElementById('ia-end')?.value || '';
+  const out = document.getElementById('ia-duration');
+  if (!out) return;
+  if (!start || !end) { out.value = ''; return; }
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  if ([sh, sm, eh, em].some(Number.isNaN)) { out.value = ''; return; }
+  let startMin = sh * 60 + sm;
+  let endMin = eh * 60 + em;
+  if (endMin < startMin) endMin += 24 * 60;
+  const mins = endMin - startMin;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  out.value = (h ? h + 'h ' : '') + m + 'm';
 }
 
 function iaResetResearchQuestions() {
@@ -2997,6 +3055,17 @@ function iaReadTranscriptFile(input) {
   reader.onload = () => {
     const raw = document.getElementById('ia-raw');
     if (raw) raw.value = String(reader.result || '');
+  };
+  reader.readAsText(file);
+}
+
+function iaReadQuestionsFile(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const questions = document.getElementById('ia-questions');
+    if (questions) questions.value = String(reader.result || '');
   };
   reader.readAsText(file);
 }
@@ -3020,11 +3089,41 @@ function iaCleanText(text) {
     .replace(/^\s*\d+\s*$/gm, '')
     .replace(/\d{1,2}:\d{2}:\d{2}[.,]\d{3}\s*-->\s*\d{1,2}:\d{2}:\d{2}[.,]\d{3}.*$/gm, '')
     .replace(/\d{1,2}:\d{2}(?::\d{2})?\s*$/gm, '')
+    .replace(/^\s*\d{1,2}\/\d{1,2}\/\d{2,4},?\s*\d{1,2}:\d{2}(?::\d{2})?\s*(AM|PM)?\s*$/gim, '')
     .replace(/^\s*\[[^\]]{1,60}\]\s*$/gm, '')
-    .replace(/^\s*(Speaker\s*\d+|Participant|Interviewer|Respondent|Richard|Maree)\s*:\s*/gim, '$1: ')
+    .replace(/^\s*(Speaker\s*\d+|Participant|Interviewer|Respondent|Richard|Maree|Unknown speaker)\s*:\s*/gim, '$1: ')
+    .replace(/\b(um+|uh+|erm+|ah+)\b[,\s]*/gi, '')
+    .replace(/\s+([,.!?;:])/g, '$1')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+function iaFormatForDissertation() {
+  const cleanEl = document.getElementById('ia-clean');
+  const rawEl = document.getElementById('ia-raw');
+  if (!cleanEl) return;
+  const base = cleanEl.value.trim() || iaCleanText(rawEl?.value || '');
+  if (!base) { alert('No transcript text to format.'); return; }
+  const meta = iaGetFormData();
+  const header = [
+    'Interview transcript',
+    meta.id ? 'Interview ID: ' + meta.id : '',
+    meta.date ? 'Date: ' + meta.date : '',
+    meta.duration ? 'Duration: ' + meta.duration : '',
+    meta.organisation ? 'Organisation: ' + meta.organisation : '',
+    meta.participantName ? 'Participant: ' + meta.participantName : '',
+    meta.participantTitle ? 'Title/role: ' + meta.participantTitle : '',
+    meta.videoLink ? 'Recording link: ' + meta.videoLink : ''
+  ].filter(Boolean).join('\n');
+  const body = base
+    .replace(/\n{2,}/g, '\n\n')
+    .replace(/^(Speaker\s*\d+|Participant|Interviewer|Respondent|Richard|Maree|Unknown speaker):/gim, '\n$1:')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  cleanEl.value = header + '\n\nCleaned transcript:\n\n' + body;
+  const summary = document.getElementById('ia-summary');
+  if (summary) summary.textContent = 'Formatted for dissertation review';
 }
 
 function iaCopyClean() {
@@ -3050,14 +3149,24 @@ function iaAnalyse() {
 
   const rqText = document.getElementById('ia-rqs')?.value || IA_DEFAULT_RQS;
   const questions = rqText.split(/\n+/).map(x => x.trim()).filter(Boolean);
+  const interviewQuestions = iaParseQuestions(document.getElementById('ia-questions')?.value || '');
   const sentences = transcript
     .replace(/\n+/g, ' ')
     .split(/(?<=[.!?])\s+/)
     .map(s => s.trim())
     .filter(s => s.length > 20);
   const rows = questions.map(q => iaAnalyseQuestion(q, sentences));
+  const coverageRows = interviewQuestions.map(q => iaAnalyseQuestion(q, sentences));
+  iaRenderQuestionCoverage(coverageRows);
   iaRenderAnalysis(rows, transcript);
   iaSave();
+}
+
+function iaParseQuestions(text) {
+  return String(text || '')
+    .split(/\n+/)
+    .map(line => line.replace(/^\s*(Q\d+[\).:-]?|\d+[\).:-]|[-*])\s*/i, '').trim())
+    .filter(line => line.length > 8 && /\?|\b(how|what|why|when|where|which|can|could|would|do|does|did|is|are)\b/i.test(line));
 }
 
 function iaAnalyseQuestion(question, sentences) {
@@ -3105,14 +3214,31 @@ function iaRenderAnalysis(rows, transcript) {
   }).join('');
 }
 
+function iaRenderQuestionCoverage(rows) {
+  const box = document.getElementById('ia-question-coverage');
+  if (!box) return;
+  if (!rows.length) {
+    box.innerHTML = 'Upload or paste the interview questions to check whether the transcript answered them.';
+    return;
+  }
+  const answered = rows.filter(r => r.score > 0).length;
+  box.innerHTML = '<div style="font-weight:800;color:var(--navy);margin-bottom:8px">' + answered + ' of ' + rows.length + ' interview questions have likely transcript evidence</div>' +
+    '<table class="ia-table"><thead><tr><th>Question</th><th>Status</th><th>Best evidence</th></tr></thead><tbody>' +
+    rows.map(row => {
+      const status = row.score > 0 ? 'Likely answered' : 'Needs manual check';
+      const evidence = row.quotes[0]?.sentence || 'No direct extract found';
+      return '<tr><td>' + iaEsc(row.question) + '</td><td>' + iaEsc(status) + '</td><td>' + iaEsc(evidence) + '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+
 function iaExportAnalysis() {
   const item = iaGetFormData();
   const cards = Array.from(document.querySelectorAll('#ia-results .ia-rq'));
   if (!cards.length) { alert('Run analysis first.'); return; }
-  const rows = [['Interview ID','Date','Location','Participant','Video link','Research question','Themes/score/extracts']];
+  const rows = [['Interview ID','Date','Start','End','Duration','Organisation','Participant name','Participant title','Video link','Research question','Themes/score/extracts']];
   cards.forEach(card => {
     rows.push([
-      item.id, item.date, item.location, item.participant, item.videoLink,
+      item.id, item.date, item.start, item.end, item.duration, item.organisation, item.participantName, item.participantTitle, item.videoLink,
       card.dataset.question || '',
       card.innerText.replace(/\s+/g, ' ').trim()
     ]);
