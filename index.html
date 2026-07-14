@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-interview-metadata-questions-v38">
+<meta name="portal-build" content="2026-07-14-interview-docx-pdf-questions-v39">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1373,8 +1373,8 @@
         <div class="ia-grid">
           <div class="ia-field">
             <label>Interview questions prepared / asked</label>
-            <input class="ia-input" id="ia-questions-file" type="file" accept=".txt,.csv,.md" onchange="iaReadQuestionsFile(this)" style="margin-bottom:8px">
-            <textarea class="ia-textarea" id="ia-questions" style="min-height:150px" placeholder="Paste the interview guide/questions here, or upload .txt/.csv/.md. Put each question on a new line."></textarea>
+            <input class="ia-input" id="ia-questions-file" type="file" accept=".txt,.csv,.md,.docx,.pdf" onchange="iaReadQuestionsFile(this)" style="margin-bottom:8px">
+            <textarea class="ia-textarea" id="ia-questions" style="min-height:150px" placeholder="Paste the interview guide/questions here, or upload .txt/.csv/.md/.docx/.pdf. Put each question on a new line."></textarea>
           </div>
           <div class="ia-field">
             <label>Question coverage check</label>
@@ -3059,15 +3059,89 @@ function iaReadTranscriptFile(input) {
   reader.readAsText(file);
 }
 
-function iaReadQuestionsFile(input) {
+async function iaReadQuestionsFile(input) {
   const file = input?.files?.[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const questions = document.getElementById('ia-questions');
-    if (questions) questions.value = String(reader.result || '');
-  };
-  reader.readAsText(file);
+  const questions = document.getElementById('ia-questions');
+  const summary = document.getElementById('ia-summary');
+  const name = (file.name || '').toLowerCase();
+  try {
+    if (summary) summary.textContent = 'Reading interview questions file...';
+    let text = '';
+    if (name.endsWith('.docx')) {
+      text = await iaExtractDocxText(file);
+    } else if (name.endsWith('.pdf')) {
+      text = await iaExtractPdfText(file);
+    } else {
+      text = await iaReadFileAsText(file);
+    }
+    if (questions) questions.value = text.trim();
+    if (summary) summary.textContent = 'Loaded interview questions from ' + file.name;
+  } catch (err) {
+    if (summary) summary.textContent = 'Could not extract questions file';
+    alert('Could not read this questions file: ' + err.message + '\n\nIf this happens, open the DOCX/PDF and copy/paste the questions into the box.');
+  } finally {
+    if (input) input.value = '';
+  }
+}
+
+function iaReadFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('File read failed'));
+    reader.readAsText(file);
+  });
+}
+
+function iaReadFileAsArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('File read failed'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function iaLoadScriptOnce(src, globalName) {
+  return new Promise((resolve, reject) => {
+    if (globalName && window[globalName]) { resolve(window[globalName]); return; }
+    const existing = document.querySelector('script[data-ia-src="' + src + '"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(globalName ? window[globalName] : true), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Library failed to load')), { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.dataset.iaSrc = src;
+    script.onload = () => resolve(globalName ? window[globalName] : true);
+    script.onerror = () => reject(new Error('Library failed to load. Check internet access or paste the text manually.'));
+    document.head.appendChild(script);
+  });
+}
+
+async function iaExtractDocxText(file) {
+  await iaLoadScriptOnce('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js', 'mammoth');
+  if (!window.mammoth?.extractRawText) throw new Error('DOCX reader is unavailable');
+  const arrayBuffer = await iaReadFileAsArrayBuffer(file);
+  const result = await window.mammoth.extractRawText({ arrayBuffer });
+  return result.value || '';
+}
+
+async function iaExtractPdfText(file) {
+  await iaLoadScriptOnce('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', 'pdfjsLib');
+  if (!window.pdfjsLib?.getDocument) throw new Error('PDF reader is unavailable');
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  const arrayBuffer = await iaReadFileAsArrayBuffer(file);
+  const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    pages.push(content.items.map(item => item.str || '').join(' '));
+  }
+  return pages.join('\n\n');
 }
 
 function iaCleanTranscript() {
