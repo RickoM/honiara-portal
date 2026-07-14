@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-interview-transcript-upload-fix-v40">
+<meta name="portal-build" content="2026-07-14-teams-vtt-cleaner-v41">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -3204,13 +3204,22 @@ function iaCleanText(text) {
     .replace(/Kind:\s*[^\n]+/gi, '')
     .replace(/Language:\s*[^\n]+/gi, '')
     .replace(/^\s*\d+\s*$/gm, '')
-    .replace(/\d{1,2}:\d{2}:\d{2}[.,]\d{3}\s*-->\s*\d{1,2}:\d{2}:\d{2}[.,]\d{3}.*$/gm, '')
+    .replace(/^\s*[0-9a-f]{6,}-[0-9a-f-]+\/\d+-\d+\s*$/gim, '')
+    .replace(/^\s*(?:[0-9a-f]{6,}-[0-9a-f-]+\/\d+-\d+\s*)?\d{1,2}:\d{2}:\d{2}[.,]\d{3}\s*[^0-9\n]+\s*\d{1,2}:\d{2}:\d{2}[.,]\d{3}.*$/gm, '')
     .replace(/\d{1,2}:\d{2}(?::\d{2})?\s*$/gm, '')
     .replace(/^\s*\d{1,2}\/\d{1,2}\/\d{2,4},?\s*\d{1,2}:\d{2}(?::\d{2})?\s*(AM|PM)?\s*$/gim, '')
     .replace(/^\s*\[[^\]]{1,60}\]\s*$/gm, '')
+    .replace(/<v\s+([^>]+)>/gi, '\n$1: ')
+    .replace(/<\/v>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
     .replace(/^\s*(Speaker\s*\d+|Participant|Interviewer|Respondent|Richard|Maree|Unknown speaker)\s*:\s*/gim, '$1: ')
     .replace(/\b(um+|uh+|erm+|ah+)\b[,\s]*/gi, '')
     .replace(/\s+([,.!?;:])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
