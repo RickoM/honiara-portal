@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-remove-tower-lookup-v32">
+<meta name="portal-build" content="2026-07-14-step7-final-review-v34">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2195,7 +2195,7 @@
 
           <div style="margin:14px 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
             <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:3px">NCIL tower/cell identity at tower site</div>
-            <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Enter these directly from NCIL RAW while standing at or near the tower. Do not rely on values remembered from participant survey readings.</div>
+            <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Enter only the essential NCIL RAW values needed to link survey points to the serving tower/cell and explain findings: operator/PLMN, spectrum band, serving cell/sector, coverage strength and QoS signal quality.</div>
           </div>
 
           <div class="sf-fgrid">
@@ -2203,11 +2203,9 @@
             <div class="sf-fcell"><label>MNC</label><input type="text" id="fd-s7-mnc" placeholder="e.g. 1 or 2" inputmode="numeric"></div>
             <div class="sf-fcell"><label>eNB ID</label><input type="text" id="fd-s7-enb" placeholder="e.g. 13042" inputmode="numeric"></div>
             <div class="sf-fcell"><label>ECI / Cell ID</label><input type="text" id="fd-s7-eci" placeholder="e.g. 3338754" inputmode="numeric"></div>
-            <div class="sf-fcell"><label>LCID / Local cell ID</label><input type="text" id="fd-s7-lcid" placeholder="e.g. 1, 2, 3" inputmode="numeric"></div>
             <div class="sf-fcell"><label>PCI</label><input type="text" id="fd-s7-pci" placeholder="e.g. 76" inputmode="numeric"></div>
             <div class="sf-fcell"><label>TAC</label><input type="text" id="fd-s7-tac" placeholder="e.g. 4100" inputmode="numeric"></div>
             <div class="sf-fcell"><label>LTE Band</label><input type="text" id="fd-s7-band" placeholder="e.g. B3, B41, 3, 41"></div>
-            <div class="sf-fcell"><label>Connection type</label><input type="text" id="fd-s7-conn-type" placeholder="Must show Mobile, not WiFi"></div>
           </div>
 
           <div style="margin:14px 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
@@ -2222,17 +2220,6 @@
           </div>
 
           <div class="step7-secondary-grid">
-            <div class="step7-group">
-              <div class="sf-fcell"><label>eNB confirmed</label>
-                <select id="fd-s7-enb-conf" style="width:100%;margin-top:2px">
-                  <option value="">- select -</option>
-                  <option value="yes">Yes - verified from NCIL at tower</option>
-                  <option value="no">No - uncertain / needs verification</option>
-                </select>
-              </div>
-              <div class="sf-fcell"><label>Verification note</label><input type="text" id="fd-s7-newenb" placeholder="Optional note, e.g. eNB changed from previous survey"></div>
-            </div>
-
             <div class="step7-group">
               <div class="sf-fcell"><label>Photo taken?</label>
                 <select id="fd-s7-photo" style="width:100%;margin-top:2px">
@@ -7103,7 +7090,6 @@ function towerGetData() {
   const mnc = g('fd-s7-mnc');
   const enb = g('fd-s7-enb');
   const eci = g('fd-s7-eci');
-  const lcid = g('fd-s7-lcid');
   const pci = g('fd-s7-pci');
   const tac = g('fd-s7-tac');
   const band = normaliseRadioBand(g('fd-s7-band'));
@@ -7123,14 +7109,14 @@ function towerGetData() {
     name: 'Tower reading', ward: towerWard, constituency: towerConstituency,
     operator, op: operator, fd_s1_op: operator,
     fd_s2a_mcc: mcc, fd_s2a_mnc: mnc, fd_s2a_eci: eci, fd_s2a_enb: enb,
-    fd_s2a_lcid: lcid, fd_s2a_pci: pci, fd_s2a_tac: tac, fd_s2a_band: band,
+    fd_s2a_pci: pci, fd_s2a_tac: tac, fd_s2a_band: band,
     fd_s2a_rsrp: rsrp, fd_s2a_rsrq: rsrq, fd_s2a_rssnr: rssnr,
     enb, taceci: tac && eci ? `${tac}-${eci}` : eci, band, rsrp,
     lat: g('fd-s7-tlat'), lng: g('fd-s7-tlon'),
     fd_s7_tlat: g('fd-s7-tlat'), fd_s7_tlon: g('fd-s7-tlon'),
-    fd_s7_top: operator, fd_s7_ttype: g('fd-s7-ttype'), fd_s7_enb_conf: g('fd-s7-enb-conf'), fd_s7_newenb: g('fd-s7-newenb'),
-    fd_s7_mcc: mcc, fd_s7_mnc: mnc, fd_s7_enb: enb, fd_s7_eci: eci, fd_s7_lcid: lcid,
-    fd_s7_pci: pci, fd_s7_tac: tac, fd_s7_band: band, fd_s7_conn_type: g('fd-s7-conn-type'),
+    fd_s7_top: operator, fd_s7_ttype: g('fd-s7-ttype'),
+    fd_s7_mcc: mcc, fd_s7_mnc: mnc, fd_s7_enb: enb, fd_s7_eci: eci,
+    fd_s7_pci: pci, fd_s7_tac: tac, fd_s7_band: band,
     fd_s7_rsrp: rsrp, fd_s7_rsrq: rsrq, fd_s7_rssnr: rssnr,
     fd_s7_photo: g('fd-s7-photo'), fd_s7_photo_file: screenshotValue('fd-s7-photo-file'), fd_s7_gps_method: g('fd-s7-gps-method'),
     fd_s7_access: g('fd-s7-access'), fd_s7_noaccess_reason: g('fd-s7-noaccess-reason'), fd_s7_scr: screenshotValue('fd-s7-scr'),
@@ -7147,6 +7133,13 @@ async function towerSubmit() {
   const mcc = document.getElementById('fd-s7-mcc')?.value;
   const mnc = document.getElementById('fd-s7-mnc')?.value;
   const enb = document.getElementById('fd-s7-enb')?.value;
+  const eci = document.getElementById('fd-s7-eci')?.value;
+  const pci = document.getElementById('fd-s7-pci')?.value;
+  const tac = document.getElementById('fd-s7-tac')?.value;
+  const band = document.getElementById('fd-s7-band')?.value;
+  const rsrp = document.getElementById('fd-s7-rsrp')?.value;
+  const rsrq = document.getElementById('fd-s7-rsrq')?.value;
+  const rssnr = document.getElementById('fd-s7-rssnr')?.value;
   const missingRequired = [];
   if (!lat) missingRequired.push('tower latitude');
   if (!lon) missingRequired.push('tower longitude');
@@ -7154,12 +7147,17 @@ async function towerSubmit() {
   if (!mcc) missingRequired.push('MCC from NCIL');
   if (!mnc) missingRequired.push('MNC from NCIL');
   if (!enb) missingRequired.push('eNB ID from NCIL');
+  if (!eci) missingRequired.push('ECI / Cell ID from NCIL');
+  if (!pci) missingRequired.push('PCI from NCIL');
+  if (!tac) missingRequired.push('TAC from NCIL');
+  if (!band) missingRequired.push('LTE Band from NCIL');
+  if (!rsrp) missingRequired.push('RSRP from NCIL');
+  if (!rsrq) missingRequired.push('RSRQ from NCIL');
+  if (!rssnr) missingRequired.push('RSSNR / SINR from NCIL');
   if (missingRequired.length) {
     alert('Please complete these Step 7 tower fields before submitting:\n\n- ' + missingRequired.join('\n- '));
     return;
   }
-  const eci = document.getElementById('fd-s7-eci')?.value;
-  if (!eci && !confirm('No ECI / Cell ID has been entered. Save this tower reading anyway? It may be harder to link to exact serving cells without ECI.')) return;
   if (btn) { btn.textContent = 'Uploading tower evidence...'; btn.disabled = true; }
   await loadWardBoundaryIndex();
   try { await uploadSurveyScreenshots(TOWER_SCREENSHOT_FIELDS); }
@@ -7700,10 +7698,9 @@ function sfRestoreDraft() {
       // Tower
       fd_s7_tlat: 'fd-s7-tlat', fd_s7_tlon: 'fd-s7-tlon',
       fd_s7_top: 'fd-s7-top', fd_s7_ttype: 'fd-s7-ttype',
-      fd_s7_enb_conf: 'fd-s7-enb-conf', fd_s7_newenb: 'fd-s7-newenb',
       fd_s7_mcc: 'fd-s7-mcc', fd_s7_mnc: 'fd-s7-mnc', fd_s7_enb: 'fd-s7-enb',
-      fd_s7_eci: 'fd-s7-eci', fd_s7_lcid: 'fd-s7-lcid', fd_s7_pci: 'fd-s7-pci',
-      fd_s7_tac: 'fd-s7-tac', fd_s7_band: 'fd-s7-band', fd_s7_conn_type: 'fd-s7-conn-type',
+      fd_s7_eci: 'fd-s7-eci', fd_s7_pci: 'fd-s7-pci',
+      fd_s7_tac: 'fd-s7-tac', fd_s7_band: 'fd-s7-band',
       fd_s7_rsrp: 'fd-s7-rsrp', fd_s7_rsrq: 'fd-s7-rsrq', fd_s7_rssnr: 'fd-s7-rssnr',
       fd_s7_access: 'fd-s7-access', fd_s7_photo: 'fd-s7-photo',
       fd_s7_gps_method: 'fd-s7-gps-method',
@@ -7968,7 +7965,7 @@ function transformSpeedTestsLayout() {
   });
 }
 
-// Auto-fill lookup fields from form data as user types
+// Initialise form helpers and auto-fill common NCIL fields where appropriate
 document.addEventListener('DOMContentLoaded', () => {
   initTowerReadingsView();
   transformSpeedTestsLayout();
