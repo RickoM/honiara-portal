@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-step7-final-review-v34">
+<meta name="portal-build" content="2026-07-14-interview-analysis-v37">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -153,9 +153,36 @@
   th { text-align: left; padding: 8px 12px; background: var(--gray-50); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-600); border-bottom: 1px solid var(--border); white-space: nowrap; }
   td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
-#view-data { min-height: 0; overflow: hidden; }
-#view-data .data-card { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-#view-data .data-toolbar { flex: 0 0 auto; }
+  #view-data { min-height: 0; overflow: hidden; }
+  #view-data .data-card { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  #view-data .data-toolbar { flex: 0 0 auto; }
+  #view-interviews { overflow-y: auto; background: var(--gray-100); padding: 20px; }
+  .ia-wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+  .ia-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-sm); padding: 16px; }
+  .ia-title { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+  .ia-subtitle { font-size: 13px; color: var(--gray-600); line-height: 1.45; }
+  .ia-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .ia-field label { display: block; font-size: 11px; font-weight: 800; color: var(--gray-600); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
+  .ia-input, .ia-textarea, .ia-select { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; font-size: 13px; box-sizing: border-box; background: #fff; color: var(--navy); font-family: inherit; }
+  .ia-textarea { min-height: 190px; resize: vertical; line-height: 1.45; }
+  .ia-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ia-note { font-size: 12px; color: var(--gray-600); line-height: 1.45; }
+  .ia-pill { display: inline-flex; align-items: center; border-radius: 999px; background: #EAF7F2; color: #205C43; padding: 4px 9px; font-size: 11px; font-weight: 700; margin: 2px 4px 2px 0; }
+  .ia-results { display: grid; gap: 10px; }
+  .ia-rq { border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: #fff; }
+  .ia-rq-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+  .ia-rq-title { font-weight: 800; color: var(--navy); font-size: 13px; line-height: 1.35; }
+  .ia-score { font-size: 11px; font-weight: 800; color: #205C43; background: #EAF7F2; border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+  .ia-quote { border-left: 3px solid var(--teal); padding: 7px 9px; background: var(--gray-50); margin-top: 6px; font-size: 12px; color: var(--gray-700); line-height: 1.45; }
+  .ia-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .ia-table th, .ia-table td { border-bottom: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; }
+  .ia-table th { background: var(--gray-50); font-size: 11px; text-transform: uppercase; color: var(--gray-600); letter-spacing: .04em; }
+  @media (max-width: 760px) {
+    #view-interviews { padding: 12px; }
+    .ia-grid { grid-template-columns: 1fr; }
+    .ia-title { font-size: 18px; }
+    .ia-card { padding: 12px; }
+  }
 .data-table-scroll {
   flex: 1;
   min-height: 260px;
@@ -1048,6 +1075,7 @@
       <button class="tnav" id="tnav-tower" onclick="switchView('tower', this)">Tower Readings</button>
       <button class="tnav" id="tnav-map" onclick="switchView('map', this)">Live Map</button>
       <button class="tnav" id="tnav-dashboard" onclick="switchView('dashboard', this)">Dashboard</button>
+      <button class="tnav" id="tnav-interviews" onclick="switchView('interviews', this)">Interviews</button>
       <button class="tnav" id="tnav-data" onclick="switchView('data', this)">Data Table</button>
       <button class="tnav" id="tnav-admin" onclick="switchView('admin', this)" style="display:none">Admin</button>
     </div>
@@ -1309,6 +1337,75 @@
       <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-questionnaire-results"></div>
       <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-spectrum-config"></div>
       <div class="data-card" style="padding:16px" id="dash-ward-detail"></div>
+    </div>
+  </div>
+
+  <!-- INTERVIEW ANALYSIS VIEW -->
+  <div class="view-panel" id="view-interviews">
+    <div class="ia-wrap">
+      <div class="ia-card">
+        <div class="ia-title">Interview analysis workspace</div>
+        <div class="ia-subtitle">Paste a OneDrive or Teams video link, upload or paste the transcript, clean it, then analyse the interview against your research questions. This first version stores data in this browser only and does not upload video files.</div>
+      </div>
+
+      <div class="ia-card">
+        <div class="ia-grid">
+          <div class="ia-field"><label>Interview ID</label><input class="ia-input" id="ia-id" placeholder="e.g. INT-001"></div>
+          <div class="ia-field"><label>Interview date</label><input class="ia-input" id="ia-date" type="date"></div>
+          <div class="ia-field"><label>Ward / location</label><input class="ia-input" id="ia-location" placeholder="e.g. Vura, East Honiara"></div>
+          <div class="ia-field"><label>Participant / stakeholder type</label><input class="ia-input" id="ia-participant" placeholder="e.g. resident, field assistant, operator staff"></div>
+          <div class="ia-field" style="grid-column:1/-1"><label>OneDrive / Teams video link</label><input class="ia-input" id="ia-video-link" placeholder="Paste secure OneDrive or Teams recording link"></div>
+        </div>
+        <div class="ia-actions" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="iaSave()">Save interview locally</button>
+          <button class="btn" onclick="iaLoadSelected()">Load selected</button>
+          <button class="btn" onclick="iaClearForm()">Clear form</button>
+          <select class="ia-select" id="ia-saved-list" style="max-width:320px" onchange="iaLoadSelected()"></select>
+        </div>
+        <div class="ia-note" style="margin-top:8px">Privacy note: keep the video in OneDrive/Teams. The portal stores only the link, transcript, cleaned transcript, and analysis in browser local storage for this test version.</div>
+      </div>
+
+      <div class="ia-card">
+        <div class="ia-grid">
+          <div class="ia-field">
+            <label>Raw Teams transcript</label>
+            <input class="ia-input" id="ia-file" type="file" accept=".txt,.vtt,.srt,.csv" onchange="iaReadTranscriptFile(this)" style="margin-bottom:8px">
+            <textarea class="ia-textarea" id="ia-raw" placeholder="Paste Teams transcript here, or upload .txt/.vtt/.srt transcript file..."></textarea>
+          </div>
+          <div class="ia-field">
+            <label>Cleaned transcript</label>
+            <textarea class="ia-textarea" id="ia-clean" placeholder="Cleaned transcript appears here..."></textarea>
+          </div>
+        </div>
+        <div class="ia-actions" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="iaCleanTranscript()">Clean transcript</button>
+          <button class="btn" onclick="iaCopyClean()">Copy clean transcript</button>
+          <button class="btn" onclick="iaDownloadClean()">Download clean transcript</button>
+        </div>
+      </div>
+
+      <div class="ia-card">
+        <div class="ia-field">
+          <label>Research questions / coding framework</label>
+          <textarea class="ia-textarea" id="ia-rqs" style="min-height:130px"></textarea>
+        </div>
+        <div class="ia-actions" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="iaAnalyse()">Analyse against research questions</button>
+          <button class="btn" onclick="iaResetResearchQuestions()">Reset default questions</button>
+          <button class="btn" onclick="iaExportAnalysis()">Export analysis CSV</button>
+        </div>
+      </div>
+
+      <div class="ia-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <div>
+            <div style="font-weight:800;color:var(--navy);font-size:15px">Analysis output</div>
+            <div class="ia-note">Use this as a starting coding table. Always review the quotes manually before putting them in the dissertation.</div>
+          </div>
+          <div id="ia-summary" class="ia-note"></div>
+        </div>
+        <div id="ia-results" class="ia-results"><div class="ia-note">No analysis yet.</div></div>
+      </div>
     </div>
   </div>
 
@@ -1784,8 +1881,8 @@
         <div class="sfq">
           <div class="sfq-lbl"><span class="qn">E1</span> Have you ever switched between Our Telekom and BMobile?</div>
           <div class="sf-yesno">
-            <div class="sf-opt"><input type="radio" name="sf-e1" id="sf-e1-y" value="Yes" onchange="sfToggle('sf-e1yc',true);sfToggle('sf-e1nc',false);sfProgress()"><label for="sf-e1-y">Yes</label></div>
-            <div class="sf-opt"><input type="radio" name="sf-e1" id="sf-e1-n" value="No" onchange="sfToggle('sf-e1yc',false);sfToggle('sf-e1nc',true)"><label for="sf-e1-n">No</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e1" id="sf-e1-y" value="Yes" onchange="sfE1Change('Yes');sfProgress()"><label for="sf-e1-y">Yes</label></div>
+            <div class="sf-opt"><input type="radio" name="sf-e1" id="sf-e1-n" value="No" onchange="sfE1Change('No');sfProgress()"><label for="sf-e1-n">No</label></div>
           </div>
           <div id="sf-e1yc" class="sf-cond"><div class="sfq-lbl">If yes - what was the main reason for switching?</div><textarea class="sf-tinput" rows="2" id="sf-e1-yr" placeholder="Describe reason for switching..."></textarea></div>
           <div id="sf-e1nc" class="sf-cond">
@@ -2776,6 +2873,270 @@ function applyRolePermissions() {
   }
 }
 
+const IA_STORAGE_KEY = 'honiara_interviews_v1';
+const IA_DEFAULT_RQS = [
+  'RQ1: How do mobile users describe coverage, signal strength, and network availability in their ward?',
+  'RQ2: How do users describe quality of service, including call reliability, internet speed, latency, and service interruptions?',
+  'RQ3: How do affordability, top-up cost, data-plan value, and income constraints affect mobile use?',
+  'RQ4: How do users compare Our Telekom and BMobile, and what influences switching or not switching?',
+  'RQ5: How do interview experiences agree or disagree with measured field readings such as RSRP, RSRQ, SINR, speed tests, bands, and serving cells?',
+  'RQ6: What improvements do participants recommend for mobile services in Honiara?'
+].join('\n');
+
+const IA_KEYWORDS = {
+  coverage: ['coverage','signal','reception','network','bar','weak','strong','no service','out of range','dead zone','inside','outside','tower','cell','rsrp'],
+  qos: ['speed','slow','fast','download','upload','latency','ping','jitter','buffer','drop','dropped','call','internet','quality','reliable','unreliable','rsrq','sinr','rssnr'],
+  affordability: ['cost','price','expensive','cheap','afford','top up','top-up','data plan','bundle','credit','money','income','value'],
+  competition: ['our telekom','bmobile','switch','switched','operator','provider','choice','competition','starlink'],
+  evidence: ['rsrp','rsrq','sinr','rssnr','speed test','ookla','nperf','ncil','band','cell','tower','mnc','mcc','pci','eci','enb'],
+  improvement: ['improve','improvement','better','recommend','need','should','upgrade','more tower','coverage expansion','cheaper','affordable']
+};
+
+function iaInit() {
+  const rqs = document.getElementById('ia-rqs');
+  if (rqs && !rqs.value.trim()) rqs.value = IA_DEFAULT_RQS;
+  iaRefreshSavedList();
+}
+
+function iaGetStore() {
+  try { return JSON.parse(localStorage.getItem(IA_STORAGE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+function iaSetStore(items) {
+  localStorage.setItem(IA_STORAGE_KEY, JSON.stringify(items || []));
+}
+
+function iaGetFormData() {
+  return {
+    id: document.getElementById('ia-id')?.value.trim() || '',
+    date: document.getElementById('ia-date')?.value || '',
+    location: document.getElementById('ia-location')?.value.trim() || '',
+    participant: document.getElementById('ia-participant')?.value.trim() || '',
+    videoLink: document.getElementById('ia-video-link')?.value.trim() || '',
+    raw: document.getElementById('ia-raw')?.value || '',
+    clean: document.getElementById('ia-clean')?.value || '',
+    rqs: document.getElementById('ia-rqs')?.value || IA_DEFAULT_RQS,
+    analysisHtml: document.getElementById('ia-results')?.innerHTML || '',
+    savedAt: new Date().toISOString()
+  };
+}
+
+function iaSetFormData(item) {
+  if (!item) return;
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('ia-id', item.id);
+  set('ia-date', item.date);
+  set('ia-location', item.location);
+  set('ia-participant', item.participant);
+  set('ia-video-link', item.videoLink);
+  set('ia-raw', item.raw);
+  set('ia-clean', item.clean);
+  set('ia-rqs', item.rqs || IA_DEFAULT_RQS);
+  const results = document.getElementById('ia-results');
+  if (results) results.innerHTML = item.analysisHtml || '<div class="ia-note">No analysis yet.</div>';
+  const summary = document.getElementById('ia-summary');
+  if (summary) summary.textContent = item.id ? 'Loaded ' + item.id : '';
+}
+
+function iaRefreshSavedList() {
+  const sel = document.getElementById('ia-saved-list');
+  if (!sel) return;
+  const items = iaGetStore();
+  sel.innerHTML = '<option value="">Saved interviews...</option>' + items.map(item => {
+    const label = (item.id || 'Untitled') + (item.location ? ' - ' + item.location : '') + (item.date ? ' - ' + item.date : '');
+    return '<option value="' + iaEsc(item.id || '') + '">' + iaEsc(label) + '</option>';
+  }).join('');
+}
+
+function iaSave() {
+  const item = iaGetFormData();
+  if (!item.id) {
+    item.id = 'INT-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Date.now().toString().slice(-4);
+    const idEl = document.getElementById('ia-id');
+    if (idEl) idEl.value = item.id;
+  }
+  const items = iaGetStore().filter(x => x.id !== item.id);
+  items.unshift(item);
+  iaSetStore(items);
+  iaRefreshSavedList();
+  const sel = document.getElementById('ia-saved-list');
+  if (sel) sel.value = item.id;
+  alert('Interview saved locally: ' + item.id);
+}
+
+function iaLoadSelected() {
+  const sel = document.getElementById('ia-saved-list');
+  const id = sel?.value || '';
+  if (!id) return;
+  const item = iaGetStore().find(x => x.id === id);
+  iaSetFormData(item);
+}
+
+function iaClearForm() {
+  ['ia-id','ia-date','ia-location','ia-participant','ia-video-link','ia-raw','ia-clean'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  iaResetResearchQuestions();
+  const results = document.getElementById('ia-results');
+  if (results) results.innerHTML = '<div class="ia-note">No analysis yet.</div>';
+  const summary = document.getElementById('ia-summary');
+  if (summary) summary.textContent = '';
+}
+
+function iaResetResearchQuestions() {
+  const rqs = document.getElementById('ia-rqs');
+  if (rqs) rqs.value = IA_DEFAULT_RQS;
+}
+
+function iaReadTranscriptFile(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const raw = document.getElementById('ia-raw');
+    if (raw) raw.value = String(reader.result || '');
+  };
+  reader.readAsText(file);
+}
+
+function iaCleanTranscript() {
+  const rawEl = document.getElementById('ia-raw');
+  const cleanEl = document.getElementById('ia-clean');
+  if (!rawEl || !cleanEl) return;
+  const cleaned = iaCleanText(rawEl.value || '');
+  cleanEl.value = cleaned;
+  const summary = document.getElementById('ia-summary');
+  if (summary) summary.textContent = cleaned ? ('Cleaned transcript: ' + cleaned.split(/\s+/).filter(Boolean).length + ' words') : 'No transcript text found';
+}
+
+function iaCleanText(text) {
+  return String(text || '')
+    .replace(/\r/g, '\n')
+    .replace(/WEBVTT[^\n]*/gi, '')
+    .replace(/Kind:\s*[^\n]+/gi, '')
+    .replace(/Language:\s*[^\n]+/gi, '')
+    .replace(/^\s*\d+\s*$/gm, '')
+    .replace(/\d{1,2}:\d{2}:\d{2}[.,]\d{3}\s*-->\s*\d{1,2}:\d{2}:\d{2}[.,]\d{3}.*$/gm, '')
+    .replace(/\d{1,2}:\d{2}(?::\d{2})?\s*$/gm, '')
+    .replace(/^\s*\[[^\]]{1,60}\]\s*$/gm, '')
+    .replace(/^\s*(Speaker\s*\d+|Participant|Interviewer|Respondent|Richard|Maree)\s*:\s*/gim, '$1: ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function iaCopyClean() {
+  const text = document.getElementById('ia-clean')?.value || '';
+  if (!text) { alert('No cleaned transcript to copy.'); return; }
+  navigator.clipboard?.writeText(text);
+  alert('Clean transcript copied.');
+}
+
+function iaDownloadClean() {
+  const item = iaGetFormData();
+  const text = item.clean || iaCleanText(item.raw);
+  if (!text) { alert('No transcript text to download.'); return; }
+  iaDownloadText((item.id || 'interview') + '_clean_transcript.txt', text);
+}
+
+function iaAnalyse() {
+  const cleanEl = document.getElementById('ia-clean');
+  const rawEl = document.getElementById('ia-raw');
+  const transcript = (cleanEl?.value || '').trim() || iaCleanText(rawEl?.value || '');
+  if (cleanEl && !cleanEl.value.trim()) cleanEl.value = transcript;
+  if (!transcript) { alert('Paste or upload a transcript first.'); return; }
+
+  const rqText = document.getElementById('ia-rqs')?.value || IA_DEFAULT_RQS;
+  const questions = rqText.split(/\n+/).map(x => x.trim()).filter(Boolean);
+  const sentences = transcript
+    .replace(/\n+/g, ' ')
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 20);
+  const rows = questions.map(q => iaAnalyseQuestion(q, sentences));
+  iaRenderAnalysis(rows, transcript);
+  iaSave();
+}
+
+function iaAnalyseQuestion(question, sentences) {
+  const q = question.toLowerCase();
+  const terms = new Set();
+  Object.entries(IA_KEYWORDS).forEach(([group, words]) => {
+    if (words.some(w => q.includes(w)) || q.includes(group)) words.forEach(w => terms.add(w));
+  });
+  q.split(/[^a-z0-9]+/).filter(w => w.length > 4).forEach(w => terms.add(w));
+  const termList = [...terms];
+  const scored = sentences.map(sentence => {
+    const lower = sentence.toLowerCase();
+    const hits = termList.filter(t => lower.includes(t));
+    return { sentence, hits, score: hits.length };
+  }).filter(x => x.score > 0).sort((a,b) => b.score - a.score).slice(0, 4);
+  const themes = iaInferThemes(scored.map(x => x.sentence).join(' '));
+  return { question, score: scored.reduce((sum, x) => sum + x.score, 0), quotes: scored, themes };
+}
+
+function iaInferThemes(text) {
+  const lower = String(text || '').toLowerCase();
+  return Object.entries(IA_KEYWORDS).filter(([group, words]) =>
+    words.some(w => lower.includes(w))
+  ).map(([group]) => group);
+}
+
+function iaRenderAnalysis(rows, transcript) {
+  const results = document.getElementById('ia-results');
+  const summary = document.getElementById('ia-summary');
+  if (!results) return;
+  const wordCount = transcript.split(/\s+/).filter(Boolean).length;
+  const evidenceCount = rows.reduce((sum, row) => sum + row.quotes.length, 0);
+  if (summary) summary.textContent = wordCount + ' words; ' + evidenceCount + ' evidence extracts found';
+  results.innerHTML = rows.map(row => {
+    const quoteHtml = row.quotes.length
+      ? row.quotes.map(q => '<div class="ia-quote">' + iaEsc(q.sentence) + '<div style="margin-top:4px;color:var(--gray-500);font-size:11px">Matched: ' + iaEsc(q.hits.join(', ')) + '</div></div>').join('')
+      : '<div class="ia-note">No strong extract found. Review manually.</div>';
+    const themes = row.themes.length ? row.themes.map(t => '<span class="ia-pill">' + iaEsc(t) + '</span>').join('') : '<span class="ia-note">No theme automatically detected</span>';
+    return '<div class="ia-rq" data-question="' + iaEsc(row.question) + '">' +
+      '<div class="ia-rq-head"><div class="ia-rq-title">' + iaEsc(row.question) + '</div><div class="ia-score">score ' + row.score + '</div></div>' +
+      '<div style="margin-bottom:6px">' + themes + '</div>' +
+      quoteHtml +
+      '<div class="ia-note" style="margin-top:8px">Interpretation prompt: compare these extracts with survey responses, affordability answers, operator choice, and field readings for the same ward or operator.</div>' +
+    '</div>';
+  }).join('');
+}
+
+function iaExportAnalysis() {
+  const item = iaGetFormData();
+  const cards = Array.from(document.querySelectorAll('#ia-results .ia-rq'));
+  if (!cards.length) { alert('Run analysis first.'); return; }
+  const rows = [['Interview ID','Date','Location','Participant','Video link','Research question','Themes/score/extracts']];
+  cards.forEach(card => {
+    rows.push([
+      item.id, item.date, item.location, item.participant, item.videoLink,
+      card.dataset.question || '',
+      card.innerText.replace(/\s+/g, ' ').trim()
+    ]);
+  });
+  const csv = rows.map(r => r.map(v => '"' + String(v || '').replace(/"/g, '""') + '"').join(',')).join('\n');
+  iaDownloadText((item.id || 'interview') + '_analysis.csv', csv);
+}
+
+function iaDownloadText(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function iaEsc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
 function switchView(id, btn) {
   applyRolePermissions();
   if (activeView === 'survey' && id !== 'survey' && surveyReadOnlyMode) sfReset();
@@ -2786,6 +3147,7 @@ function switchView(id, btn) {
   document.getElementById('view-map').style.display = 'none';
   document.getElementById('view-dashboard').classList.remove('on');
   document.getElementById('view-data').classList.remove('on');
+  document.getElementById('view-interviews')?.classList.remove('on');
   document.getElementById('view-survey').classList.remove('on');
   document.getElementById('view-tower')?.classList.remove('on');
   const delPanel = document.getElementById('sf-deleted-panel');
@@ -2804,6 +3166,7 @@ function switchView(id, btn) {
   }
   if (id === 'dashboard') { document.getElementById('view-dashboard').classList.add('on'); renderDashboard(); }
   if (id === 'data')      { document.getElementById('view-data').classList.add('on'); renderDataTable(); }
+  if (id === 'interviews') { document.getElementById('view-interviews')?.classList.add('on'); iaInit(); }
   if (id === 'survey')    { document.getElementById('view-survey').classList.add('on'); }
   if (id === 'tower')     { document.getElementById('view-tower').classList.add('on'); }
   if (id === 'deleted')   { loadDeletedSurveys(); }
@@ -6723,10 +7086,12 @@ async function dtEdit(btn) {
 
   // -- Section E -------------------------------
   setRadio('sf-e1', survey.e1);
+  s('sf-e1-yr', survey.e1_yes_reason);
   setRadio('sf-e1n', survey.e1_no);
   setRadio('sf-e2', survey.e2);
   setRadio('sf-e3', survey.e3);
   s('sf-e4', survey.e4);
+  sfE1Change(survey.e1);
 
   // -- GPS -------------------------------------
   s('sf-lat', survey.lat);
@@ -6939,6 +7304,28 @@ async function exportAdminCSV() {
 function sfToggle(id, show) {
   const el = document.getElementById(id);
   if (el) el.classList.toggle('show', show);
+}
+
+function sfE1Change(value) {
+  const selected = value || document.querySelector('input[name="sf-e1"]:checked')?.value || '';
+  sfToggle('sf-e1yc', selected === 'Yes');
+  sfToggle('sf-e1nc', selected === 'No');
+}
+
+function sfHighlightElement(id) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  const section = target.closest('.sfq') || target;
+  section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const oldOutline = section.style.outline;
+  const oldBg = section.style.backgroundColor;
+  section.style.outline = '3px solid var(--amber)';
+  section.style.outlineOffset = '4px';
+  section.style.backgroundColor = '#FFF7E6';
+  setTimeout(() => {
+    section.style.outline = oldOutline;
+    section.style.backgroundColor = oldBg;
+  }, 3500);
 }
 
 function syncAppRecorder() {
@@ -7761,8 +8148,8 @@ function sfRestoreDraft() {
     // Restore radio buttons
     ['sf-a1','sf-a2','sf-a3','sf-a4','sf-a5','sf-a6',
      'sf-b1','sf-b2','sf-b3','sf-c1','sf-c2','sf-c3','sf-c5','sf-c7',
-     'sf-d1','sf-d2','sf-d3','sf-d4','sf-e1','sf-e2','sf-e3'].forEach(name => {
-      const key = name.replace('sf-','').replace(/-/g,'');
+     'sf-d1','sf-d2','sf-d3','sf-d4','sf-e1','sf-e1n','sf-e2','sf-e3'].forEach(name => {
+      const key = name === 'sf-e1n' ? 'e1_no' : name.replace('sf-','').replace(/-/g,'');
       const val = data[key];
       if (!val) return;
       const el = document.querySelector(`input[name="${name}"][value="${val}"]`);
