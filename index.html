@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-ward-tick-css-fix-v29">
+<meta name="portal-build" content="2026-07-14-readonly-ward-lock-v30">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -320,6 +320,8 @@
   .wrad label { display: block; width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 3px; cursor: pointer; margin: 0 auto; position: relative; }
   .wrad input:checked + label { background: var(--navy); border-color: var(--navy); }
   .wrad input:checked + label::after { content: ''; position: absolute; left: 5px; top: 2px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  #view-survey.survey-readonly .sf-ward-table tr { cursor: default !important; }
+  #view-survey.survey-readonly .wrad label { cursor: default; opacity: .82; }
   .sf-fgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   .sf-fcell { border: 1px solid var(--border); border-radius: 6px; padding: 9px; }
   .sf-fcell label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--gray-600); display: block; margin-bottom: 4px; }
@@ -6562,6 +6564,7 @@ async function uploadSurveyScreenshots(fieldIds = SCREENSHOT_FIELDS) {
 
 function setSurveyReadOnly(readOnly) {
   surveyReadOnlyMode = readOnly;
+  document.getElementById('view-survey')?.classList.toggle('survey-readonly', readOnly);
   document.querySelectorAll('#view-survey input, #view-survey select, #view-survey textarea, #view-survey button').forEach(el => {
     el.disabled = readOnly;
   });
@@ -6870,6 +6873,7 @@ function sfCancelEdit() {
 function wardLabelClick(e, inputId) {
   e.preventDefault();
   const input = document.getElementById(inputId);
+  if (surveyReadOnlyMode || openRecordReadOnly || input?.disabled) return;
   if (input.checked) {
     input.checked = false;
     generateRespondentId('');
@@ -6897,6 +6901,7 @@ function enableWardRowTapTargets() {
     row.style.cursor = 'pointer';
     row.addEventListener('click', event => {
       if (event.target.closest('input, label')) return;
+      if (surveyReadOnlyMode || openRecordReadOnly || input.disabled) return;
       wardLabelClick(event, input.id);
     });
   });
