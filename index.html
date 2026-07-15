@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-14-interview-media-player-v42">
+<meta name="portal-build" content="2026-07-15-step7-ncil-screenshot-v44">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -83,6 +83,22 @@
   .boundary-key-swatch { width: 18px; height: 9px; border: 2px solid; border-radius: 2px; flex-shrink: 0; }
   .boundary-source { border-top: 1px solid var(--border); margin-top: 7px; padding-top: 7px; max-width: 230px; font-size: 9px; line-height: 1.35; color: var(--gray-600); }
   .boundary-source a { color: var(--blue-mid); text-decoration: none; }
+  .ward-snapshot { border-top: 1px solid var(--border); margin-top: 9px; padding-top: 9px; }
+  .ward-snapshot-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--navy); margin-bottom: 7px; }
+  .ward-snapshot-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .ward-snapshot-buttons button { border: 1px solid var(--border); background: #fff; color: var(--navy); border-radius: 7px; padding: 7px 6px; font-size: 11px; font-weight: 700; cursor: pointer; }
+  .ward-snapshot-buttons button.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .ward-snapshot-list { margin-top: 8px; padding: 8px; border-radius: 8px; background: var(--gray-50); font-size: 11px; color: var(--gray-700); line-height: 1.45; }
+  .ward-snapshot-list strong { color: var(--navy); }
+  .ward-snapshot-list .ward-chip { display: inline-flex; margin: 3px 3px 0 0; padding: 3px 7px; border-radius: 999px; background: #fff; border: 1px solid var(--border); font-weight: 700; color: var(--navy); }
+  @media print {
+    body * { visibility: hidden !important; }
+    #view-map, #view-map * { visibility: visible !important; }
+    #view-map { position: fixed !important; inset: 0 !important; display: flex !important; background: #fff !important; }
+    .topbar, .sidebar, .layer-ctrl label, .boundary-source, .btn, .map-toggle-btn { display: none !important; }
+    .layer-ctrl { display: block !important; top: 12px !important; right: 12px !important; max-width: 280px !important; box-shadow: none !important; border: 1px solid #ccc !important; }
+    #map { width: 100% !important; height: 100vh !important; }
+  }
   
   /* -- MAP STATS -- */
   .map-stats { background: #fff; border-radius: 8px; box-shadow: var(--shadow-sm); padding: 10px 12px; width: 100%; }
@@ -1273,6 +1289,19 @@
           <span class="layer-toggle-label">Constituency boundaries</span>
         </label>
         <button class="btn btn-sm" onclick="fitSurveyWaypoints()" style="width:100%;margin-top:8px">Fit survey waypoints</button>
+        <div class="ward-snapshot">
+          <div class="ward-snapshot-title">Ward snapshot guide</div>
+          <div class="ward-snapshot-buttons">
+            <button type="button" data-snapshot="West Honiara" onclick="selectWardSnapshot('West Honiara')">West</button>
+            <button type="button" data-snapshot="Central Honiara" onclick="selectWardSnapshot('Central Honiara')">Central</button>
+            <button type="button" data-snapshot="East Honiara" onclick="selectWardSnapshot('East Honiara')">East</button>
+            <button type="button" data-snapshot="" onclick="selectWardSnapshot('')">All</button>
+          </div>
+          <div class="ward-snapshot-list" id="ward-snapshot-list">
+            Select West, Central, or East to highlight its wards for field briefing.
+          </div>
+          <button class="btn btn-sm" onclick="printWardSnapshot()" style="width:100%;margin-top:8px">Print / save snapshot</button>
+        </div>
         <div class="boundary-key">
           <div class="boundary-key-title">Constituency colours</div>
           <div class="boundary-key-row"><span class="boundary-key-swatch" style="border-color:#2563EB;background:#3B82F655"></span>West Honiara</div>
@@ -2353,6 +2382,14 @@
             <div class="sf-fcell"><label>RSSNR / SINR (dB)</label><input type="number" step="any" id="fd-s7-rssnr" placeholder="e.g. 12"></div>
           </div>
 
+          <div class="sf-fcell" style="margin:8px 0 12px">
+            <label>Upload NCIL RAW readings screenshot</label>
+            <input type="file" id="fd-s7-ncil-scr" accept="image/*" capture="environment" style="width:100%;margin-top:4px;font-size:11px">
+            <div style="font-size:10px;color:var(--gray-600);margin-top:4px;line-height:1.35">
+              Required for cross-checking MCC/MNC, eNB, ECI, PCI, TAC, LTE band, RSRP, RSRQ and RSSNR/SINR entered above.
+            </div>
+          </div>
+
           <div class="step7-secondary-grid">
             <div class="step7-group">
               <div class="sf-fcell"><label>Photo taken?</label>
@@ -2732,6 +2769,7 @@ let boundaryHighlightLayer = null;
 let boundaryInfoWindow = null;
 let selectedWardBoundary = null;
 let selectedConstituencyBoundary = null;
+let selectedWardSnapshotConstituency = '';
 let wardBoundaryGeoFeatures = [];
 let wardBoundaryIndexPromise = null;
 let wardBoundaryIndexStatus = 'idle';
@@ -3949,6 +3987,7 @@ function initializeBoundaryLayers() {
 
 function refreshBoundaryLayers() {
   if (!gmap) return;
+  updateWardSnapshotGuide();
   const showWards = document.getElementById('layer-wards')?.checked ?? true;
   const showConstituencies = document.getElementById('layer-constituencies')?.checked ?? false;
 
@@ -3961,13 +4000,15 @@ function refreshBoundaryLayers() {
       const constituencyStyle = CONSTITUENCY_BOUNDARY_STYLES[constituency];
       const constituencyWards = Object.keys(WARDS).filter(name => WARDS[name].constituency === constituency);
       const shadeIndex = Math.max(0, constituencyWards.indexOf(wardName)) % constituencyStyle.wards.length;
+      const snapshotActive = !!selectedWardSnapshotConstituency;
+      const snapshotMatch = selectedWardSnapshotConstituency === constituency;
       return {
         fillColor: constituencyStyle.wards[shadeIndex],
-        fillOpacity: mobileMap ? 0.10 : 0.22,
+        fillOpacity: snapshotActive ? (snapshotMatch ? 0.46 : 0.025) : (mobileMap ? 0.10 : 0.22),
         strokeColor: constituencyStyle.stroke,
-        strokeOpacity: mobileMap ? 0.95 : 0.88,
-        strokeWeight: mobileMap ? 1 : 1.4,
-        zIndex: 1,
+        strokeOpacity: snapshotActive ? (snapshotMatch ? 1 : 0.18) : (mobileMap ? 0.95 : 0.88),
+        strokeWeight: snapshotActive ? (snapshotMatch ? 3.4 : 0.8) : (mobileMap ? 1 : 1.4),
+        zIndex: snapshotMatch ? 6 : 1,
         clickable: true,
       };
     });
@@ -3995,6 +4036,60 @@ function clearBoundarySelection() {
   selectedWardBoundary = null;
   selectedConstituencyBoundary = null;
   clearBoundaryHighlightLayer();
+}
+
+function snapshotWardsForConstituency(constituency) {
+  return Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
+}
+
+function updateWardSnapshotGuide() {
+  document.querySelectorAll('[data-snapshot]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.snapshot === selectedWardSnapshotConstituency);
+  });
+  const list = document.getElementById('ward-snapshot-list');
+  if (!list) return;
+  if (!selectedWardSnapshotConstituency) {
+    list.innerHTML = 'All ward boundaries are visible. Select a constituency to prepare a field snapshot.';
+    return;
+  }
+  const wards = snapshotWardsForConstituency(selectedWardSnapshotConstituency);
+  const colour = CONSTITUENCY_BOUNDARY_STYLES[selectedWardSnapshotConstituency]?.stroke || '#172033';
+  list.innerHTML = `<strong style="color:${colour}">${selectedWardSnapshotConstituency}</strong><br>` +
+    wards.map(ward => `<span class="ward-chip">${ward}</span>`).join('') +
+    `<div style="margin-top:7px;font-size:10px;color:var(--gray-600)">Use this snapshot to brief assistants before field collection.</div>`;
+}
+
+function selectWardSnapshot(constituency) {
+  selectedWardSnapshotConstituency = constituency || '';
+  const wardToggle = document.getElementById('layer-wards');
+  if (wardToggle) wardToggle.checked = true;
+  const constToggle = document.getElementById('layer-constituencies');
+  if (constToggle) constToggle.checked = false;
+  updateWardSnapshotGuide();
+  refreshBoundaryLayers();
+  if (selectedWardSnapshotConstituency) fitWardSnapshot(selectedWardSnapshotConstituency);
+}
+
+function fitWardSnapshot(constituency) {
+  if (!gmap || !window.google || !wardBoundaryLayer || !constituency) return;
+  const bounds = new google.maps.LatLngBounds();
+  const wanted = new Set(snapshotWardsForConstituency(constituency));
+  wardBoundaryLayer.forEach(feature => {
+    const wardName = feature.getProperty('name');
+    if (!wanted.has(wardName)) return;
+    const geometry = feature.getGeometry?.();
+    if (geometry) geometry.forEachLatLng(latLng => bounds.extend(latLng));
+  });
+  if (!bounds.isEmpty()) gmap.fitBounds(bounds, { top: 120, right: 330, bottom: 120, left: 120 });
+}
+
+function printWardSnapshot() {
+  if (!selectedWardSnapshotConstituency) {
+    alert('Select West, Central, or East first, then print/save the snapshot.');
+    return;
+  }
+  fitWardSnapshot(selectedWardSnapshotConstituency);
+  setTimeout(() => window.print(), 350);
 }
 
 function frameBoundaryFeature(feature) {
@@ -6715,7 +6810,7 @@ const SCREENSHOT_FIELDS = [
   'fd-s2a-scr', 'fd-s2b-scr',
   'fd-s1-ncil-scr', 'fd-s1-ookla-scr', 'fd-s1-nperf-scr',
   'fd-s2-ncil-scr', 'fd-s2-ookla-scr', 'fd-s2-nperf-scr',
-  'fd-s6-scr', 'fd-s7-scr', 'fd-s7-photo-file'
+  'fd-s6-scr', 'fd-s7-ncil-scr', 'fd-s7-scr', 'fd-s7-photo-file'
 ];
 
 const SURVEY_SCREENSHOT_FIELDS = [
@@ -6726,7 +6821,7 @@ const SURVEY_SCREENSHOT_FIELDS = [
 ];
 
 const TOWER_SCREENSHOT_FIELDS = [
-  'fd-s7-scr', 'fd-s7-photo-file'
+  'fd-s7-ncil-scr', 'fd-s7-scr', 'fd-s7-photo-file'
 ];
 
 const WAYPOINT_SCREENSHOT_LABELS = {
@@ -6739,6 +6834,7 @@ const WAYPOINT_SCREENSHOT_LABELS = {
   fd_s2_ookla_scr: 'SIM 2 Ookla performance',
   fd_s2_nperf_scr: 'SIM 2 nPerf performance',
   fd_s6_scr: 'Survey GPS waypoint',
+  fd_s7_ncil_scr: 'Tower NCIL RAW readings',
   fd_s7_scr: 'Tower GPS waypoint',
   fd_s7_photo_file: 'Tower photo',
 };
@@ -7831,7 +7927,8 @@ function towerGetData() {
     fd_s7_pci: pci, fd_s7_tac: tac, fd_s7_band: band,
     fd_s7_rsrp: rsrp, fd_s7_rsrq: rsrq, fd_s7_rssnr: rssnr,
     fd_s7_photo: g('fd-s7-photo'), fd_s7_photo_file: screenshotValue('fd-s7-photo-file'), fd_s7_gps_method: g('fd-s7-gps-method'),
-    fd_s7_access: g('fd-s7-access'), fd_s7_noaccess_reason: g('fd-s7-noaccess-reason'), fd_s7_scr: screenshotValue('fd-s7-scr'),
+    fd_s7_access: g('fd-s7-access'), fd_s7_noaccess_reason: g('fd-s7-noaccess-reason'),
+    fd_s7_ncil_scr: screenshotValue('fd-s7-ncil-scr'), fd_s7_scr: screenshotValue('fd-s7-scr'),
     link_status: enb ? 'linked_by_enb_when_matching_readings_exist' : 'saved_unlinked_missing_enb',
     notes: `Tower reading for ${operator || 'unknown operator'}${enb ? ' eNB ' + enb : ' - eNB not recorded yet'}`.trim(),
   };
@@ -7909,7 +8006,12 @@ function towerReset() {
   if (host) host.style.display = '';
   document.getElementById('tower-success')?.classList.remove('show');
   document.querySelectorAll('#view-tower input[type=text], #view-tower input[type=number], #view-tower select').forEach(el => { el.value = ''; });
-  document.querySelectorAll('#view-tower input[type=file]').forEach(el => { el.value = ''; });
+  document.querySelectorAll('#view-tower input[type=file]').forEach(el => {
+    el.value = '';
+    delete el.dataset.uploadId;
+    const preview = document.getElementById(el.id + '-preview');
+    if (preview) { preview.innerHTML = ''; preview.classList.remove('show'); }
+  });
   const other = document.getElementById('fd-s7-top-other');
   if (other) other.style.display = 'none';
   checkTowerAccess();
