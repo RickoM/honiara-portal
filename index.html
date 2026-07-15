@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-15-step7-ncil-screenshot-v44">
+<meta name="portal-build" content="2026-07-15-step7-raw-map-photo-order-v45">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2319,19 +2319,22 @@
       </div>
 
       <!-- STEP 7: TOWER GPS WAYPOINT -->
-      <div class="sf-sec-hdr interviewer" id="tower-step7-hdr">Step 7 - Tower GPS Waypoint</div>
+      <div class="sf-sec-hdr interviewer" id="tower-step7-hdr">Step 7 - Tower NCIL Readings, GPS and Photo Evidence</div>
       <div class="sf-sec-body" id="tower-step7-body">
         <div style="background:var(--amber-light);border:1px solid var(--amber);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--amber);margin-bottom:12px;line-height:1.6">
           <strong>When to complete Step 7:</strong> Only if you can walk to within 10 metres of the tower base safely and without trespassing. If the tower is behind a fence, on private land, or on a slope you cannot safely reach, select Accessible: No and explain the reason.
         </div>
         <div class="step7-instructions">
-          GPS method: stand at the base of the tower before recording coordinates. While standing at or near the tower, open NCIL RAW and record the tower/cell values below directly from the phone. Do not rely on values remembered from an earlier participant survey.
+          Complete this in the same order used in the field: first record the NCIL RAW tab readings and screenshot, then record the NCIL MAP/GPS coordinates and screenshot, then upload photos of the tower structure.
         </div>
 
         <div id="tower-fields" style="opacity:1;pointer-events:auto;transition:all 0.3s">
-          <div class="step7-primary-grid">
-            <div class="sf-fcell"><label>Tower Latitude (separate from survey point)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s7-tlat',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s7-tlat',1)">+</button><input type="number" step="any" id="fd-s7-tlat" placeholder="e.g. -9.4305123" style="flex:1;min-width:0"></div></div>
-            <div class="sf-fcell"><label>Tower Longitude (separate from survey point)</label><input type="number" step="any" id="fd-s7-tlon" placeholder="e.g. 160.0498456"></div>
+          <div style="margin:0 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:3px">1. NCIL RAW tab readings</div>
+            <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Open NCIL RAW tab at or near the tower. Record the serving LTE block values exactly as shown, then upload the RAW screenshot for verification.</div>
+          </div>
+
+          <div class="sf-fgrid">
             <div class="sf-fcell">
               <label>Operator</label>
               <select id="fd-s7-top" style="width:100%;margin-top:2px" onchange="s7OpChange()">
@@ -2342,26 +2345,6 @@
               </select>
               <input type="text" id="fd-s7-top-other" placeholder="Enter operator name" style="display:none;width:100%;margin-top:4px">
             </div>
-            <div class="sf-fcell">
-              <label>Tower type</label>
-              <select id="fd-s7-ttype" style="width:100%;margin-top:2px">
-                <option value="">- select -</option>
-                <option value="Monopole">Monopole</option>
-                <option value="Lattice / Self-supporting">Lattice / Self-supporting</option>
-                <option value="Guyed mast">Guyed mast</option>
-                <option value="Rooftop">Rooftop</option>
-                <option value="Water tower mounted">Water tower mounted</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-          </div>
-
-          <div style="margin:14px 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
-            <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:3px">NCIL tower/cell identity at tower site</div>
-            <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Enter only the essential NCIL RAW values needed to link survey points to the serving tower/cell and explain findings: operator/PLMN, spectrum band, serving cell/sector, coverage strength and QoS signal quality.</div>
-          </div>
-
-          <div class="sf-fgrid">
             <div class="sf-fcell"><label>MCC</label><input type="text" id="fd-s7-mcc" placeholder="e.g. 540" inputmode="numeric"></div>
             <div class="sf-fcell"><label>MNC</label><input type="text" id="fd-s7-mnc" placeholder="e.g. 1 or 2" inputmode="numeric"></div>
             <div class="sf-fcell"><label>eNB ID</label><input type="text" id="fd-s7-enb" placeholder="e.g. 13042" inputmode="numeric"></div>
@@ -2369,14 +2352,6 @@
             <div class="sf-fcell"><label>PCI</label><input type="text" id="fd-s7-pci" placeholder="e.g. 76" inputmode="numeric"></div>
             <div class="sf-fcell"><label>TAC</label><input type="text" id="fd-s7-tac" placeholder="e.g. 4100" inputmode="numeric"></div>
             <div class="sf-fcell"><label>LTE Band</label><input type="text" id="fd-s7-band" placeholder="e.g. B3, B41, 3, 41"></div>
-          </div>
-
-          <div style="margin:14px 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
-            <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:3px">NCIL signal values at tower site</div>
-            <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Record the signal values shown by NCIL at the tower location. These help distinguish tower identity from signal quality.</div>
-          </div>
-
-          <div class="sf-fgrid">
             <div class="sf-fcell"><label>RSRP (dBm)</label><input type="number" step="any" id="fd-s7-rsrp" placeholder="e.g. -78"></div>
             <div class="sf-fcell"><label>RSRQ (dB)</label><input type="number" step="any" id="fd-s7-rsrq" placeholder="e.g. -8"></div>
             <div class="sf-fcell"><label>RSSNR / SINR (dB)</label><input type="number" step="any" id="fd-s7-rssnr" placeholder="e.g. 12"></div>
@@ -2390,36 +2365,15 @@
             </div>
           </div>
 
-          <div class="step7-secondary-grid">
-            <div class="step7-group">
-              <div class="sf-fcell"><label>Photo taken?</label>
-                <select id="fd-s7-photo" style="width:100%;margin-top:2px">
-                  <option value="">- select -</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
-              <div class="sf-fcell">
-                <label>Upload tower photo</label>
-                <input type="file" id="fd-s7-photo-file" accept="image/*" capture="environment" style="width:100%;margin-top:4px;font-size:11px">
-              </div>
-            </div>
-
-            <div class="step7-group">
-              <div class="sf-fcell">
-                <label>Accessible?</label>
-                <select id="fd-s7-access" style="width:100%;margin-top:2px" onchange="checkTowerAccess()">
-                  <option value="">- select -</option>
-                  <option value="yes">Yes - tower accessible</option>
-                  <option value="no">No - cannot safely access</option>
-                </select>
-              </div>
-              <div class="sf-fcell"><label>If No, give reason</label><input type="text" id="fd-s7-noaccess-reason" placeholder="e.g. fenced compound, private land, steep slope..." style="opacity:0.4"></div>
-            </div>
+          <div style="margin:14px 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:3px">2. NCIL MAP tab GPS coordinates</div>
+            <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Open NCIL MAP tab or Google Maps at the tower base. Record the GPS coordinates separately from participant survey points, then upload the GPS/map screenshot.</div>
           </div>
 
           <div class="step7-footer-grid">
             <div class="step7-group">
+              <div class="sf-fcell"><label>Tower Latitude (separate from survey point)</label><div style="display:flex;gap:4px"><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s7-tlat',-1)">-</button><button type="button" class="btn btn-sm" onclick="setSignedField('fd-s7-tlat',1)">+</button><input type="number" step="any" id="fd-s7-tlat" placeholder="e.g. -9.4305123" style="flex:1;min-width:0"></div></div>
+              <div class="sf-fcell"><label>Tower Longitude (separate from survey point)</label><input type="number" step="any" id="fd-s7-tlon" placeholder="e.g. 160.0498456"></div>
               <div class="sf-fcell">
                 <label>GPS method used</label>
                 <select id="fd-s7-gps-method" style="width:100%;margin-top:2px">
@@ -2432,8 +2386,52 @@
             </div>
             <div class="step7-group">
               <div class="sf-fcell">
-                <label>Upload tower GPS screenshot</label>
+                <label>Upload tower GPS / NCIL MAP screenshot</label>
                 <input type="file" id="fd-s7-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
+              </div>
+            </div>
+          </div>
+
+          <div style="margin:14px 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
+            <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:3px">3. Tower structure photo and access notes</div>
+            <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Record the physical tower type, whether the structure was safely accessible, and upload a photo of the tower structure for evidence.</div>
+          </div>
+
+          <div class="step7-secondary-grid">
+            <div class="step7-group">
+              <div class="sf-fcell">
+                <label>Tower type</label>
+                <select id="fd-s7-ttype" style="width:100%;margin-top:2px">
+                  <option value="">- select -</option>
+                  <option value="Monopole">Monopole</option>
+                  <option value="Lattice / Self-supporting">Lattice / Self-supporting</option>
+                  <option value="Guyed mast">Guyed mast</option>
+                  <option value="Rooftop">Rooftop</option>
+                  <option value="Water tower mounted">Water tower mounted</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="sf-fcell">
+                <label>Accessible?</label>
+                <select id="fd-s7-access" style="width:100%;margin-top:2px" onchange="checkTowerAccess()">
+                  <option value="">- select -</option>
+                  <option value="yes">Yes - tower accessible</option>
+                  <option value="no">No - cannot safely access</option>
+                </select>
+              </div>
+              <div class="sf-fcell"><label>If No, give reason</label><input type="text" id="fd-s7-noaccess-reason" placeholder="e.g. fenced compound, private land, steep slope..." style="opacity:0.4"></div>
+            </div>
+            <div class="step7-group">
+              <div class="sf-fcell"><label>Photo taken?</label>
+                <select id="fd-s7-photo" style="width:100%;margin-top:2px">
+                  <option value="">- select -</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              <div class="sf-fcell">
+                <label>Upload tower structure photo</label>
+                <input type="file" id="fd-s7-photo-file" accept="image/*" capture="environment" style="width:100%;margin-top:4px;font-size:11px">
               </div>
             </div>
           </div>
