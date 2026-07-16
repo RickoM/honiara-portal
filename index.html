@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-analytics-category-cards-v77">
+<meta name="portal-build" content="2026-07-16-participant-question-stats-v80">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -943,6 +943,31 @@
   .analytics-pill.good { color:var(--green);background:var(--green-light);border-color:#b7d8a4; }
   .analytics-pill.warn { color:var(--amber);background:var(--amber-light);border-color:#efc77b; }
   .analytics-pill.bad { color:var(--red);background:var(--red-light);border-color:#e7a5a5; }
+  .analytics-stat-list { display:grid;gap:5px;min-width:170px; }
+  .analytics-stat-row { display:flex;align-items:flex-start;justify-content:space-between;gap:10px;border-bottom:1px dashed rgba(15,35,60,.12);padding-bottom:4px;font-size:11px;line-height:1.25; }
+  .analytics-stat-row:last-child { border-bottom:0;padding-bottom:0; }
+  .analytics-stat-label { color:var(--gray-600);font-weight:700; }
+  .analytics-stat-value { color:var(--navy);font-weight:900;white-space:nowrap;text-align:right; }
+  .rq-tree { padding:16px;background:#fff; }
+  .rq-tree-root { border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#f8fafc; }
+  .rq-node { border-bottom:1px solid var(--border);background:#fff; }
+  .rq-node:last-child { border-bottom:0; }
+  .rq-node-btn { width:100%;border:0;background:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;text-align:left;color:var(--navy);font-weight:900;font-size:13px; }
+  .rq-node-btn:hover { background:#f8fafc; }
+  .rq-node-title { display:flex;align-items:center;gap:8px; }
+  .rq-toggle { width:20px;height:20px;border-radius:999px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:12px;background:#fff;color:var(--navy); }
+  .rq-node-meta { font-size:10px;color:var(--gray-600);font-weight:700; }
+  .rq-branches { display:none;padding:0 14px 14px 43px;background:#fff; }
+  .rq-node.open .rq-branches { display:grid;gap:8px; }
+  .rq-node.open .rq-toggle { background:var(--navy);color:#fff;border-color:var(--navy); }
+  .rq-node.open .rq-toggle::before { content:'-'; }
+  .rq-node:not(.open) .rq-toggle::before { content:'+'; }
+  .rq-toggle { font-size:0; }
+  .rq-branch { border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:#fcfcfd;display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:start; }
+  .rq-branch strong { color:var(--navy);font-size:12px; }
+  .rq-branch span { color:var(--gray-600);font-size:11px;line-height:1.35; }
+  .rq-branch button { border:1px solid #c9d8ea;background:#edf3fb;color:var(--navy);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap; }
+  .rq-branch button:hover { filter:brightness(.97); }
   .constituency-dashboard { margin-bottom:14px; }
   .constituency-summary-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden; }
   .constituency-summary-title { font-size:18px;font-weight:900;color:#fff;letter-spacing:-.02em;margin:0;text-align:left; }
@@ -1422,11 +1447,13 @@
       <div class="dash-selector" id="dash-constituency-selector"></div>
       <div class="analytics-nav">
         <button type="button" onclick="document.getElementById('dash-constituency-overview')?.scrollIntoView({behavior:'smooth',block:'start'})">Overview</button>
+        <button type="button" onclick="document.getElementById('dash-research-tree')?.scrollIntoView({behavior:'smooth',block:'start'})">Research Evidence Tree</button>
         <button type="button" onclick="document.getElementById('dash-participant-results')?.scrollIntoView({behavior:'smooth',block:'start'})">Participant Survey Results</button>
         <button type="button" onclick="document.getElementById('dash-data-reading-results')?.scrollIntoView({behavior:'smooth',block:'start'})">Data Reading Results</button>
         <button type="button" onclick="document.getElementById('dash-experience-correlation')?.scrollIntoView({behavior:'smooth',block:'start'})">Survey vs Readings</button>
       </div>
       <div id="dash-constituency-overview"></div>
+      <div id="dash-research-tree"></div>
       <div id="dash-participant-results"></div>
       <div id="dash-data-reading-results"></div>
       <div class="dash-export-bar">
@@ -7034,33 +7061,91 @@ function concernCell(count, total) {
   return `<span class="analytics-pill ${cls}">${count}/${total} (${pct}%)</span>`;
 }
 
+function surveyStatText(count, total) {
+  const base = Number.isFinite(total) && total > 0 ? total : 0;
+  return `${count}/${base} (${base ? dashPct(count, base) : 0}%)`;
+}
+
+function surveyStatList(items, total) {
+  return `<div class="analytics-stat-list">${items.map(([label, count]) => `
+    <div class="analytics-stat-row">
+      <span class="analytics-stat-label">${dashEscape(label)}</span>
+      <span class="analytics-stat-value">${surveyStatText(count, total)}</span>
+    </div>`).join('')}</div>`;
+}
+
+function surveyRatingAtOrBelow(record, field, threshold) {
+  const value = dashScore(record, field);
+  return Number.isFinite(value) && value <= threshold;
+}
+
+function surveyMentions(record, field, terms) {
+  const text = dashText(record[field]);
+  if (!text) return false;
+  return terms.some(term => text.toLowerCase().includes(String(term).toLowerCase()));
+}
+
+function dashboardWardRows() {
+  return Object.entries(WARDS).map(([ward, meta]) => ({ ward, constituency: meta.constituency }));
+}
+
 function renderParticipantSurveyResults(allSurveys) {
   const target = document.getElementById('dash-participant-results');
   if (!target) return;
-  const rows = ['West Honiara', 'Central Honiara', 'East Honiara'].map(constituency => {
-    const records = dashboardConstituencyRecords(allSurveys, constituency);
-    const profiles = records.map(dashboardSurveyProfile);
-    const coverage = profiles.filter(profile => profile.coverageConcern).length;
-    const qos = profiles.filter(profile => profile.qosConcern).length;
-    const afford = profiles.filter(profile => profile.affordabilityPressure).length;
-    const market = profiles.filter(profile => profile.marketSignal).length;
+  const rows = dashboardWardRows().map(({ ward, constituency }) => {
+    const records = allSurveys.filter(record => record.ward === ward);
+    const total = records.length;
+    const count = test => records.filter(test).length;
+    const b1WeakSignal = count(record => surveyRatingAtOrBelow(record, 'b1', 2));
+    const b2DroppedOften = count(record => surveyMentions(record, 'b2', ['Often', 'Very often']));
+    const b3SignalLoss = count(record => surveyMentions(record, 'b3', ['Yes']));
+    const b4PlaceNoted = count(record => dashSplitOptions(record.b4).filter(item => !/no problem/i.test(item)).length > 0 || dashText(record.b3_detail));
+    const c1c3PoorVoice = count(record => surveyRatingAtOrBelow(record, 'c1', 2) || surveyRatingAtOrBelow(record, 'c3', 2));
+    const c5SlowData = count(record => surveyRatingAtOrBelow(record, 'c5', 2));
+    const c7DataWorse = count(record => surveyMentions(record, 'c7', ['Yes']));
+    const c8AppIssue = count(record => dashSplitOptions(record.c8).length > 0);
+    const d2Unaffordable = count(record => surveyRatingAtOrBelow(record, 'd2', 2));
+    const d3TopupDifficulty = count(record => surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']));
+    const d4NoHomeWifi = count(record => surveyMentions(record, 'd4', ['No WiFi']));
+    const e1Switched = count(record => surveyMentions(record, 'e1', ['Yes']));
+    const e2QualityDifference = count(record => dashText(record.e2) && !surveyMentions(record, 'e2', ['About the same']));
+    const e3StarlinkAware = count(record => surveyMentions(record, 'e3', ['Yes']));
     const improvements = records.filter(record => dashText(record.e4)).length;
     const topOperator = dashTopOptions(records, 'a3', 2).map(([name, n]) => `${dashEscape(name)} (${n})`).join(', ') || '-';
     return `<tr>
-      <td><strong>${dashEscape(constituency)}</strong></td>
-      <td><div class="analytics-metric">${records.length}</div><span class="analytics-note">participant survey responses</span></td>
-      <td>${concernCell(coverage, records.length)}<span class="analytics-note">coverage availability concern</span></td>
-      <td>${concernCell(qos, records.length)}<span class="analytics-note">call/data QoS concern</span></td>
-      <td>${concernCell(afford, records.length)}<span class="analytics-note">cost or top-up pressure</span></td>
-      <td>${concernCell(market, records.length)}<span class="analytics-note">switching, quality difference or Starlink awareness</span></td>
-      <td><strong>${topOperator}</strong><span class="analytics-note">${improvements} written improvement response${improvements === 1 ? '' : 's'}</span></td>
+      <td><strong>${dashEscape(ward)}</strong><span class="analytics-note">${dashEscape(constituency)}</span></td>
+      <td><div class="analytics-metric">${total}</div><span class="analytics-note">responses in ward</span></td>
+      <td>${surveyStatList([
+        ['B1 rated weak signal', b1WeakSignal],
+        ['B2 dropped calls often', b2DroppedOften],
+        ['B3 signal loss reported', b3SignalLoss],
+        ['B4 problem place noted', b4PlaceNoted]
+      ], total)}</td>
+      <td>${surveyStatList([
+        ['C1/C3 poor call rating', c1c3PoorVoice],
+        ['C5 slow data rating', c5SlowData],
+        ['C7 data worse reported', c7DataWorse],
+        ['C8 app issue selected', c8AppIssue]
+      ], total)}</td>
+      <td>${surveyStatList([
+        ['D2 unaffordable rating', d2Unaffordable],
+        ['D3 top-up difficulty', d3TopupDifficulty],
+        ['D4 no home WiFi', d4NoHomeWifi]
+      ], total)}</td>
+      <td>${surveyStatList([
+        ['E1 switched provider', e1Switched],
+        ['E2 quality difference', e2QualityDifference],
+        ['E3 Starlink aware/use', e3StarlinkAware],
+        ['E4 improvement written', improvements]
+      ], total)}</td>
+      <td><strong>${topOperator}</strong><span class="analytics-note">A3 primary operator response</span></td>
     </tr>`;
   }).join('');
   target.innerHTML = `<div class="analytics-card">
     <div class="analytics-card-head">
       <div>
         <div class="analytics-card-title">Participant Survey Results</div>
-        <div class="analytics-card-sub">Reported mobile service experience from participant questionnaire responses</div>
+        <div class="analytics-card-sub">Ward-level counts and percentages from participant questionnaire responses</div>
       </div>
       <div class="constituency-summary-actions">
         <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-participant-results','honiara-participant-survey-results')" title="Export" aria-label="Export">
@@ -7069,8 +7154,8 @@ function renderParticipantSurveyResults(allSurveys) {
       </div>
     </div>
     <div style="overflow:auto">
-      <table class="analytics-table" style="min-width:980px">
-        <thead><tr><th>Constituency</th><th>Responses</th><th>Coverage</th><th>QoS</th><th>Affordability</th><th>Market / switching</th><th>Operator / improvement</th></tr></thead>
+      <table class="analytics-table" style="min-width:1280px">
+        <thead><tr><th>Ward</th><th>Responses</th><th>Coverage B1-B4</th><th>QoS C1-C8</th><th>Affordability D1-D4</th><th>Competition E1-E4</th><th>Operator A3</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -7080,14 +7165,14 @@ function renderParticipantSurveyResults(allSurveys) {
 function renderDataReadingResults(allSurveys) {
   const target = document.getElementById('dash-data-reading-results');
   if (!target) return;
-  const rows = ['West Honiara', 'Central Honiara', 'East Honiara'].map(constituency => {
-    const records = dashboardConstituencyRecords(allSurveys, constituency);
+  const rows = dashboardWardRows().map(({ ward, constituency }) => {
+    const records = allSurveys.filter(record => record.ward === ward);
     const tech = wardRadioTechnicalSummary(records);
     const gpsOk = tech.gps.boundaryReady ? Math.max(0, tech.gps.insideBoundary - tech.gps.wardMismatch) : tech.gps.insideBoundary;
     const gpsAttention = tech.gps.outsideBoundary + tech.gps.wardMismatch + tech.gps.missingOrInvalid;
     return `<tr>
-      <td><strong>${dashEscape(constituency)}</strong></td>
-      <td><div class="analytics-metric">${records.length}</div><span class="analytics-note">survey data reading records</span></td>
+      <td><strong>${dashEscape(ward)}</strong><span class="analytics-note">${dashEscape(constituency)}</span></td>
+      <td><div class="analytics-metric">${records.length}</div><span class="analytics-note">reading records in ward</span></td>
       <td><span class="analytics-pill ${gpsAttention ? 'warn' : 'good'}">${gpsOk} OK / ${gpsAttention} check</span><span class="analytics-note">GPS ward/boundary status</span></td>
       <td><strong style="color:${tech.rsrpClass.color}">${dashNumber(tech.avgRsrp,0)} dBm</strong><span class="analytics-note">${dashEscape(tech.rsrpClass.label)} RSRP</span></td>
       <td><strong style="color:${tech.rsrqClass.color}">${dashNumber(tech.avgRsrq,1)} dB</strong><span class="analytics-note">${dashEscape(tech.rsrqClass.label)} RSRQ</span></td>
@@ -7111,10 +7196,105 @@ function renderDataReadingResults(allSurveys) {
     </div>
     <div style="overflow:auto">
       <table class="analytics-table" style="min-width:1180px">
-        <thead><tr><th>Constituency</th><th>Records</th><th>GPS</th><th>RSRP</th><th>RSRQ</th><th>RSSNR/SINR</th><th>Speed</th><th>Band / PLMN</th><th>Serving cells</th></tr></thead>
+        <thead><tr><th>Ward</th><th>Records</th><th>GPS</th><th>RSRP</th><th>RSRQ</th><th>RSSNR/SINR</th><th>Speed</th><th>Band / PLMN</th><th>Serving cells</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
+  </div>`;
+}
+
+const RESEARCH_EVIDENCE_TREE = [
+  {
+    id: 'rq1',
+    title: 'RQ1 Coverage and availability',
+    meta: 'Coverage experience, weak signal locations and mapped signal evidence',
+    survey: 'Survey: B1-B4 coverage rating, dropped calls, dead zones and problem locations.',
+    data: 'Data readings: GPS status, RSRP, ward clusters, bands and tower/cell context.',
+    interview: 'Interview: coverage gaps, terrain, tower placement and rollout constraints.'
+  },
+  {
+    id: 'rq2',
+    title: 'RQ2 QoS and service performance',
+    meta: 'Voice reliability, data speed, latency and service quality',
+    survey: 'Survey: C1-C8 call quality, reliability, internet speed, usage times and app demand.',
+    data: 'Data readings: RSRQ, RSSNR/SINR, download, upload, ping and jitter.',
+    interview: 'Interview: congestion, backhaul, spectrum capacity and operational limits.'
+  },
+  {
+    id: 'rq3',
+    title: 'RQ3 Affordability and value',
+    meta: 'Cost, top-up pressure and value-for-money experience',
+    survey: 'Survey: D1-D4 monthly spend, affordability, top-up difficulty and WiFi alternative.',
+    data: 'Data readings: used for comparison where high cost overlaps with poor measured service.',
+    interview: 'Interview: pricing, packages, affordability policy and market constraints.'
+  },
+  {
+    id: 'rq4',
+    title: 'RQ4 Competition and choice',
+    meta: 'Operator switching, perceived quality difference and substitutes',
+    survey: 'Survey: E1-E3 switching, operator quality comparison and Starlink awareness/use.',
+    data: 'Data readings: MCC/MNC operator, PLMN, band distribution and serving-cell evidence.',
+    interview: 'Interview: competition, market structure, operator strategy and regulatory context.'
+  },
+  {
+    id: 'rq5',
+    title: 'RQ5 Experience vs measured readings',
+    meta: 'Where participant experience agrees or disagrees with technical readings',
+    survey: 'Survey: combined B/C/D experience indicators by ward and respondent.',
+    data: 'Data readings: RSRP, RSRQ, RSSNR/SINR, speed, latency, bands and serving cells.',
+    interview: 'Interview: explanations for mismatches such as indoor use, congestion, devices and timing.'
+  },
+  {
+    id: 'rq6',
+    title: 'RQ6 Improvement priorities',
+    meta: 'Participant and stakeholder recommendations',
+    survey: 'Survey: E4 open response and related written comments.',
+    data: 'Data readings: weak wards, poor radio-quality clusters and speed/latency problem areas.',
+    interview: 'Interview: feasibility of upgrades, tower deployment, spectrum, backhaul and affordability measures.'
+  }
+];
+
+function scrollToDashboardEvidence(targetId) {
+  document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function openInterviewEvidence() {
+  switchView('interviews', document.getElementById('tnav-interviews'));
+}
+
+function toggleResearchNode(id) {
+  const node = document.getElementById(id);
+  if (!node) return;
+  node.classList.toggle('open');
+}
+
+function renderResearchEvidenceTree() {
+  const target = document.getElementById('dash-research-tree');
+  if (!target) return;
+  const rows = RESEARCH_EVIDENCE_TREE.map((rq, index) => `<div class="rq-node ${index === 0 ? 'open' : ''}" id="rq-node-${dashEscape(rq.id)}">
+    <button type="button" class="rq-node-btn" onclick="toggleResearchNode('rq-node-${dashEscape(rq.id)}')">
+      <span class="rq-node-title"><span class="rq-toggle">+</span>${dashEscape(rq.title)}</span>
+      <span class="rq-node-meta">${dashEscape(rq.meta)}</span>
+    </button>
+    <div class="rq-branches">
+      <div class="rq-branch"><strong>Participant survey evidence</strong><span>${dashEscape(rq.survey)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-participant-results')">Open</button></div>
+      <div class="rq-branch"><strong>Data reading evidence</strong><span>${dashEscape(rq.data)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-data-reading-results')">Open</button></div>
+      <div class="rq-branch"><strong>Interview evidence</strong><span>${dashEscape(rq.interview)}</span><button type="button" onclick="openInterviewEvidence()">Open</button></div>
+    </div>
+  </div>`).join('');
+  target.innerHTML = `<div class="analytics-card">
+    <div class="analytics-card-head">
+      <div>
+        <div class="analytics-card-title">Research Evidence Tree</div>
+        <div class="analytics-card-sub">Research questions connected to participant survey evidence, field data readings and interview evidence</div>
+      </div>
+      <div class="constituency-summary-actions">
+        <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-research-tree','honiara-research-evidence-tree')" title="Export" aria-label="Export">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="rq-tree"><div class="rq-tree-root">${rows}</div></div>
   </div>`;
 }
 
@@ -7604,6 +7784,7 @@ function renderDashboard() {
   const src = day ? points.filter(p => p.date <= day) : points;
   const allSurveys = src.filter(p => p.type === 'survey');
   renderConstituencyOverview(allSurveys);
+  renderResearchEvidenceTree();
   renderParticipantSurveyResults(allSurveys);
   renderDataReadingResults(allSurveys);
   const selectedWards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === selectedDashboardConstituency);
