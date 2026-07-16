@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-survey-card-standout-v103">
+<meta name="portal-build" content="2026-07-16-participant-card-fit-v104">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -956,25 +956,27 @@
   .participant-constituency-title { color:var(--navy);font-size:14px;font-weight:900; }
   .participant-constituency-count { color:var(--gray-600);font-size:11px;font-weight:800; }
   .participant-table-wrap { overflow:auto; }
-  .participant-rq-table { width:100%;min-width:1320px;border-collapse:collapse;font-size:11px;color:var(--text); }
-  .participant-rq-table th { padding:9px 10px;border-bottom:1px solid var(--border);background:#fff;color:var(--gray-600);font-size:10px;text-transform:uppercase;letter-spacing:.05em;text-align:left;font-weight:900;white-space:nowrap; }
-  .participant-rq-table td { padding:10px;border-bottom:1px solid var(--border);vertical-align:top; }
+  .participant-rq-table { width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:10px;color:var(--text); }
+  .participant-rq-table th { padding:8px 8px;border-bottom:1px solid var(--border);background:#fff;color:var(--gray-600);font-size:9px;text-transform:uppercase;letter-spacing:.04em;text-align:left;font-weight:900;white-space:normal; }
+  .participant-rq-table td { padding:8px;border-bottom:1px solid var(--border);vertical-align:top; }
+  .participant-rq-table th:nth-child(1), .participant-rq-table td:nth-child(1) { width:10%; }
+  .participant-rq-table th:nth-child(n+2), .participant-rq-table td:nth-child(n+2) { width:18%; }
   .participant-rq-table tr:last-child td { border-bottom:0; }
   .participant-rq-table th:nth-child(2), .participant-rq-table td:nth-child(2) { background:#f7fbff; }
   .participant-rq-table th:nth-child(3), .participant-rq-table td:nth-child(3) { background:#fffaf2; }
   .participant-rq-table th:nth-child(4), .participant-rq-table td:nth-child(4) { background:#f7fff9; }
   .participant-rq-table th:nth-child(5), .participant-rq-table td:nth-child(5) { background:#fbf8ff; }
   .participant-rq-table th:nth-child(6), .participant-rq-table td:nth-child(6) { background:#fff7f7; }
-  .participant-rq-head { display:block;color:var(--navy);font-size:11px;font-weight:900;letter-spacing:0;text-transform:none;line-height:1.2; }
-  .participant-rq-question { display:block;color:var(--gray-600);font-size:9px;font-weight:800;margin-top:3px;letter-spacing:0;text-transform:none;line-height:1.2;white-space:normal;max-width:230px; }
+  .participant-rq-head { display:block;color:var(--navy);font-size:10px;font-weight:900;letter-spacing:0;text-transform:none;line-height:1.18; }
+  .participant-rq-question { display:block;color:var(--gray-600);font-size:8px;font-weight:800;margin-top:3px;letter-spacing:0;text-transform:none;line-height:1.18;white-space:normal; }
   .participant-ward-name { color:var(--navy);font-size:13px;font-weight:900; }
   .participant-ward-count { display:block;color:var(--gray-600);font-size:10px;margin-top:3px;font-weight:700; }
-  .participant-stat { display:block;line-height:1.28;margin-bottom:7px;border:1px solid #dce7f3;border-left:4px solid #2f6fbd;border-radius:9px;background:#fff;padding:7px 8px;box-shadow:0 2px 5px rgba(16,24,40,.04); }
+  .participant-stat { display:block;line-height:1.22;margin-bottom:6px;border:1px solid #dce7f3;border-left:4px solid #2f6fbd;border-radius:8px;background:#fff;padding:6px 7px;box-shadow:0 2px 5px rgba(16,24,40,.04); }
   .participant-stat:last-child { margin-bottom:0; }
   .participant-stat.medium { border-left-color:#c17a13;background:#fffaf2; }
   .participant-stat.high { border-left-color:#b42318;background:#fff7f7; }
-  .participant-stat-label { display:block;color:#334155;font-weight:900;font-size:10px; }
-  .participant-stat-value { display:block;color:var(--navy);font-size:14px;font-weight:950;margin-top:3px; }
+  .participant-stat-label { display:block;color:#334155;font-weight:900;font-size:9px;overflow-wrap:anywhere; }
+  .participant-stat-value { display:block;color:var(--navy);font-size:13px;font-weight:950;margin-top:3px; }
   .participant-top-value { color:var(--navy);font-weight:900; }
   .rq-tree { padding:16px 18px 18px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);overflow:visible; }
   .rq-tree-root { width:100%;background:transparent;padding:4px 6px 16px;position:relative; }
