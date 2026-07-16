@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-sticky-gps-issue-worklist-v62">
+<meta name="portal-build" content="2026-07-16-kolaa-chip-gps-attention-v63">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -6367,7 +6367,8 @@ function dashboardGpsIssueLabel(kind) {
 function recordMatchesDashboardGpsIssue(record, filter) {
   if (!filter) return true;
   if (Array.isArray(filter.recordKeys) && filter.recordKeys.length) {
-    return filter.recordKeys.includes(dashboardRecordKey(record));
+    const key = dashboardRecordKey(record);
+    if (key && filter.recordKeys.includes(key)) return true;
   }
   if (filter.ward && record.ward !== filter.ward) return false;
   const kinds = dashboardGpsIssueKinds(record);
@@ -6401,7 +6402,7 @@ function dashboardWardIssueChips(ward, records) {
   ].filter(([kind]) => counts[kind]);
   if (!items.length) return '';
   return `<span class="ward-issue-list">${items.map(([kind, label]) =>
-    `<button type="button" class="ward-issue-chip ${kind === 'missing-invalid' ? '' : 'bad'}" onclick='openDashboardGpsIssueRecords(${JSON.stringify(ward)}, ${JSON.stringify(kind)})' title="Open affected survey records in Data Table">${counts[kind]} ${dashEscape(label)}</button>`
+    `<button type="button" class="ward-issue-chip ${kind === 'missing-invalid' ? '' : 'bad'}" onclick="openDashboardGpsIssueRecords(decodeURIComponent('${encodeURIComponent(ward)}'), decodeURIComponent('${encodeURIComponent(kind)}'))" title="Open affected survey records in Data Table">${counts[kind]} ${dashEscape(label)}</button>`
   ).join('')}</span>`;
 }
 
@@ -6425,17 +6426,18 @@ function renderConstituencyOverview(allSurveys) {
       const issueChips = dashboardWardIssueChips(ward, records);
       return `<span class="ward-pill">${dashEscape(ward)}<span class="ward-pill-count">${records.length} survey${records.length === 1 ? '' : 's'}</span>${issueChips}</span>`;
     });
+    const attentionTotal = constituencyTotals.outsideBoundaryWard + constituencyTotals.other;
     const outsideDetail = [
       constituencyTotals.outsideStudy ? `${constituencyTotals.outsideStudy} outside study area` : '',
       constituencyTotals.outsideWardBoundary ? `${constituencyTotals.outsideWardBoundary} outside ward boundary` : '',
-      constituencyTotals.wardMismatch ? `${constituencyTotals.wardMismatch} ward mismatch` : ''
-    ].filter(Boolean).join('; ') || 'No boundary issue';
+      constituencyTotals.wardMismatch ? `${constituencyTotals.wardMismatch} ward mismatch` : '',
+      constituencyTotals.other ? `${constituencyTotals.other} missing/invalid GPS` : ''
+    ].filter(Boolean).join('; ') || 'No GPS issue';
     return `<tr>
       <td class="left"><div class="const-name">${dashEscape(constituency)}</div></td>
       <td class="left"><div class="ward-list">${wardPills.join('')}</div></td>
       <td><span class="summary-value valid">${constituencyTotals.valid}</span></td>
-      <td><span class="summary-value outside">${constituencyTotals.outsideBoundaryWard}</span><span class="summary-detail">${dashEscape(outsideDetail)}</span></td>
-      <td><span class="summary-value other">${constituencyTotals.other}</span></td>
+      <td><span class="summary-value ${attentionTotal ? 'outside' : 'valid'}">${attentionTotal}</span><span class="summary-detail">${dashEscape(outsideDetail)}</span></td>
       <td><span class="summary-value completed">${constituencyTotals.total}</span></td>
     </tr>`;
   }).join('');
@@ -6448,14 +6450,13 @@ function renderConstituencyOverview(allSurveys) {
         </div>
       </div>
       <div style="overflow:auto">
-        <table class="constituency-summary-table" style="min-width:880px">
+        <table class="constituency-summary-table" style="min-width:780px">
           <thead>
             <tr>
               <th class="left">Constituency</th>
               <th class="left">Wards</th>
               <th>Valid GPS</th>
-              <th>Outside Boundary Ward</th>
-              <th>Other</th>
+              <th>GPS survey points that need attention</th>
               <th>Surveys Completed</th>
             </tr>
           </thead>
