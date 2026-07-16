@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-one-constituency-summary-card-v56">
+<meta name="portal-build" content="2026-07-16-one-card-dashboard-style-v58">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -927,17 +927,19 @@
   .dash-finding-text { font-size:12px;line-height:1.45;color:var(--text); }
   .dash-export-note { font-size:11px;color:var(--gray-600);line-height:1.45;margin-left:auto; }
   .constituency-dashboard { margin-bottom:14px; }
-  .constituency-summary-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px; }
-  .constituency-summary-title { font-size:20px;font-weight:900;color:var(--navy);letter-spacing:-.02em;margin-bottom:8px; }
-  .constituency-summary-table { width:100%;border-collapse:collapse;font-size:13px; }
-  .constituency-summary-table th { padding:9px 10px;border-bottom:2px solid var(--navy);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);text-align:center;white-space:nowrap; }
+  .constituency-summary-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden; }
+  .constituency-summary-title { font-size:18px;font-weight:900;color:#fff;letter-spacing:-.02em;margin:0;text-align:left; }
+  .constituency-summary-head { background:linear-gradient(135deg,var(--navy),#244B78);padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px; }
+  .constituency-summary-sub { font-size:11px;color:rgba(255,255,255,.82);margin-top:3px;line-height:1.35; }
+  .constituency-summary-table { width:100%;border-collapse:collapse;font-size:13px;color:var(--text); }
+  .constituency-summary-table th { padding:10px 12px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);text-align:center;white-space:nowrap;font-weight:900;background:#f8fafc; }
   .constituency-summary-table th.left, .constituency-summary-table td.left { text-align:left; }
-  .constituency-summary-table td { padding:11px 10px;border-bottom:1px solid var(--border);text-align:center;vertical-align:top; }
-  .constituency-summary-table tbody tr:hover { background:#f8fbff; }
+  .constituency-summary-table td { padding:12px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle; }
+  .constituency-summary-table tr:last-child td { border-bottom:0; }
   .constituency-summary-table .const-name { font-size:15px;font-weight:900;color:var(--navy); }
-  .constituency-summary-table .ward-list { display:flex;flex-wrap:wrap;gap:5px; }
-  .constituency-summary-table .ward-pill { border:1px solid var(--border);background:#fff;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--navy); }
-  .constituency-summary-table .summary-value { display:inline-flex;align-items:center;justify-content:center;min-width:54px;border-radius:9px;padding:7px 10px;font-size:18px;font-weight:900;background:var(--gray-50);border:1px solid var(--border); }
+  .constituency-summary-table .ward-list { display:flex;flex-wrap:wrap;gap:6px; }
+  .constituency-summary-table .ward-pill { border:1px solid var(--border);background:#fff;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;color:var(--navy); }
+  .constituency-summary-table .summary-value { display:inline-flex;align-items:center;justify-content:center;min-width:58px;border-radius:10px;padding:7px 10px;font-size:18px;font-weight:900;background:#f8fafc;border:1px solid var(--border);color:var(--navy); }
   .constituency-summary-table .summary-value.valid { color:var(--green);background:var(--green-light);border-color:#b7d8a4; }
   .constituency-summary-table .summary-value.outside { color:var(--red);background:var(--red-light);border-color:#e7a5a5; }
   .constituency-summary-table .summary-value.other { color:var(--amber);background:var(--amber-light);border-color:#efc77b; }
@@ -1377,7 +1379,7 @@
     <div style="max-width:1180px;margin:0 auto">
       <div class="dash-header">
         <div>
-          <div class="dash-title">Honiara Analytical Dashboard</div>
+          <div class="dash-title">Dashboard</div>
           <div class="dash-subtitle">Constituency-level overview first. Wards are grouped under West, Central, and East Honiara with GPS status and survey completion shown clearly.</div>
         </div>
         <div style="font-size:11px;color:var(--gray-600);text-align:right" id="dash-scope-note"></div>
@@ -6345,7 +6347,12 @@ function renderConstituencyOverview(allSurveys) {
   }).join('');
   target.innerHTML = `<div class="constituency-dashboard">
     <div class="constituency-summary-card">
-      <div class="constituency-summary-title">Constituency Survey Completion and GPS Status</div>
+      <div class="constituency-summary-head">
+        <div>
+          <div class="constituency-summary-title">Honiara Analytical Dashboard</div>
+          <div class="constituency-summary-sub">Constituency-level survey completion and GPS status</div>
+        </div>
+      </div>
       <div style="overflow:auto">
         <table class="constituency-summary-table" style="min-width:880px">
           <thead>
@@ -6361,7 +6368,6 @@ function renderConstituencyOverview(allSurveys) {
           <tbody>${rows}</tbody>
         </table>
       </div>
-      <div class="constituency-summary-note">This card summarises completed survey records by constituency. Valid GPS supports ward-level mapping; Outside Boundary Ward and Other should be checked before spatial interpretation.</div>
     </div>
   </div>`;
 }
