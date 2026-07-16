@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-analytical-findings-narrative-v51">
+<meta name="portal-build" content="2026-07-16-constituency-dashboard-redesign-v52">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -926,6 +926,22 @@
   .dash-finding-title { font-size:11px;font-weight:800;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px; }
   .dash-finding-text { font-size:12px;line-height:1.45;color:var(--text); }
   .dash-export-note { font-size:11px;color:var(--gray-600);line-height:1.45;margin-left:auto; }
+  .constituency-dashboard { background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:18px 22px;margin-bottom:18px; }
+  .constituency-dashboard-title { font-size:24px;font-weight:800;color:#000;text-align:left;margin:0 0 6px 0;letter-spacing:-.02em; }
+  .constituency-dashboard-rule { border-top:2px solid #222;margin:0 0 12px 0; }
+  .constituency-table { width:100%;border-collapse:collapse;font-size:14px;color:#000; }
+  .constituency-table th { font-size:13px;font-weight:800;text-align:center;padding:8px 10px;border-bottom:2px solid #222; }
+  .constituency-table td { padding:10px;border-bottom:1px solid #e4e7ec;text-align:center;vertical-align:middle; }
+  .constituency-table td.left, .constituency-table th.left { text-align:left; }
+  .constituency-table .constituency-name { font-weight:800;vertical-align:top;padding-top:14px; }
+  .constituency-table .ward-name { font-weight:600; }
+  .constituency-table .metric-box { display:inline-flex;min-width:74px;min-height:28px;border:1.5px solid #222;border-radius:2px;align-items:center;justify-content:center;font-weight:800;background:#fff; }
+  .constituency-table .metric-box.ok { color:var(--green);border-color:var(--green); }
+  .constituency-table .metric-box.warn { color:var(--amber);border-color:var(--amber); }
+  .constituency-table .metric-box.bad { color:var(--red);border-color:var(--red); }
+  .constituency-table .constituency-total td { border-top:2px solid #222;font-weight:800;background:#fafafa; }
+  .constituency-table .grand-total td { border-top:2px solid #222;border-bottom:2px solid #222;font-weight:900;background:#f2f4f7; }
+  .constituency-dashboard-note { font-size:11px;color:var(--gray-600);line-height:1.45;margin-top:10px; }
   @media (max-width: 900px) {
     .dash-header { flex-direction:column; }
     .dash-grid { grid-template-columns:1fr 1fr; }
@@ -1360,12 +1376,13 @@
     <div style="max-width:1180px;margin:0 auto">
       <div class="dash-header">
         <div>
-          <div class="dash-title">Constituency intelligence dashboard</div>
-          <div class="dash-subtitle">Select West, Central, or East Honiara to see the survey progress, data readings, signal quality, speed, GPS completeness, and ward-level warnings for that area.</div>
+          <div class="dash-title">Honiara Analytical Dashboard</div>
+          <div class="dash-subtitle">Constituency-level overview first. Wards are grouped under West, Central, and East Honiara with GPS status and survey completion shown clearly.</div>
         </div>
         <div style="font-size:11px;color:var(--gray-600);text-align:right" id="dash-scope-note"></div>
       </div>
       <div class="dash-selector" id="dash-constituency-selector"></div>
+      <div id="dash-constituency-overview"></div>
       <div class="dash-export-bar">
         <button class="btn primary" type="button" onclick="exportDashboardFindingsMarkdown()">Export findings notes</button>
         <button class="btn" type="button" onclick="exportDashboardFindingsImage()">Export image table</button>
@@ -6290,6 +6307,87 @@ function dashboardFindingSource() {
   return src.filter(p => p.type === 'survey');
 }
 
+function dashboardGpsStatusBuckets(records) {
+  const stats = dashboardGpsBoundaryStats(records);
+  return {
+    valid: stats.insideBoundary,
+    outsideBoundaryWard: stats.outsideBoundary + stats.wardMismatch,
+    other: stats.missingOrInvalid,
+    total: records.length
+  };
+}
+
+function renderConstituencyOverview(allSurveys) {
+  const target = document.getElementById('dash-constituency-overview');
+  if (!target) return;
+  const constituencyNames = ['West Honiara', 'Central Honiara', 'East Honiara'];
+  let grand = { valid: 0, outsideBoundaryWard: 0, other: 0, total: 0 };
+  const body = constituencyNames.map(constituency => {
+    const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
+    const constituencyTotals = { valid: 0, outsideBoundaryWard: 0, other: 0, total: 0 };
+    const rows = wards.map((ward, index) => {
+      const records = allSurveys.filter(record => record.ward === ward || (!record.ward && record.constituency === constituency));
+      const buckets = dashboardGpsStatusBuckets(records);
+      constituencyTotals.valid += buckets.valid;
+      constituencyTotals.outsideBoundaryWard += buckets.outsideBoundaryWard;
+      constituencyTotals.other += buckets.other;
+      constituencyTotals.total += buckets.total;
+      return `<tr>
+        ${index === 0 ? `<td class="left constituency-name" rowspan="${wards.length}">${dashEscape(constituency)}</td>` : ''}
+        <td class="left ward-name">${dashEscape(ward)}</td>
+        <td><span class="metric-box ${buckets.valid ? 'ok' : ''}">${buckets.valid}</span></td>
+        <td><span class="metric-box ${buckets.outsideBoundaryWard ? 'bad' : ''}">${buckets.outsideBoundaryWard}</span></td>
+        <td><span class="metric-box ${buckets.other ? 'warn' : ''}">${buckets.other}</span></td>
+        <td><span class="metric-box">${buckets.total}</span></td>
+      </tr>`;
+    }).join('');
+    grand.valid += constituencyTotals.valid;
+    grand.outsideBoundaryWard += constituencyTotals.outsideBoundaryWard;
+    grand.other += constituencyTotals.other;
+    grand.total += constituencyTotals.total;
+    return `${rows}
+      <tr class="constituency-total">
+        <td class="left" colspan="2">${dashEscape(constituency)} total</td>
+        <td><span class="metric-box ok">${constituencyTotals.valid}</span></td>
+        <td><span class="metric-box ${constituencyTotals.outsideBoundaryWard ? 'bad' : ''}">${constituencyTotals.outsideBoundaryWard}</span></td>
+        <td><span class="metric-box ${constituencyTotals.other ? 'warn' : ''}">${constituencyTotals.other}</span></td>
+        <td><span class="metric-box">${constituencyTotals.total}</span></td>
+      </tr>`;
+  }).join('');
+  target.innerHTML = `<div class="constituency-dashboard">
+    <div class="constituency-dashboard-title">Honiara Analytical Dashboard</div>
+    <div class="constituency-dashboard-rule"></div>
+    <div style="overflow:auto">
+      <table class="constituency-table" style="min-width:860px">
+        <thead>
+          <tr>
+            <th class="left" rowspan="2">Constituency</th>
+            <th class="left" rowspan="2">Wards</th>
+            <th colspan="3">GPS Status</th>
+            <th rowspan="2">Surveys Completed</th>
+          </tr>
+          <tr>
+            <th>Valid</th>
+            <th>Outside Boundary Ward</th>
+            <th>Other</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${body}
+          <tr class="grand-total">
+            <td class="left" colspan="2">Honiara total</td>
+            <td><span class="metric-box ok">${grand.valid}</span></td>
+            <td><span class="metric-box ${grand.outsideBoundaryWard ? 'bad' : ''}">${grand.outsideBoundaryWard}</span></td>
+            <td><span class="metric-box ${grand.other ? 'warn' : ''}">${grand.other}</span></td>
+            <td><span class="metric-box">${grand.total}</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="constituency-dashboard-note">GPS Status: Valid = survey point falls inside a loaded Honiara ward boundary. Outside Boundary Ward = point is outside the expected ward/boundary or appears mismatched. Other = missing or invalid GPS. Surveys Completed = submitted survey records in the selected date scope.</div>
+  </div>`;
+}
+
 function dashboardCsvCell(value) {
   const text = String(value ?? '');
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
@@ -6986,6 +7084,7 @@ function renderDashboard() {
   if (!constituencyNames.includes(selectedDashboardConstituency)) selectedDashboardConstituency = 'West Honiara';
   const src = day ? points.filter(p => p.date <= day) : points;
   const allSurveys = src.filter(p => p.type === 'survey');
+  renderConstituencyOverview(allSurveys);
   const selectedWards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === selectedDashboardConstituency);
   const selectedTarget = selectedWards.reduce((sum, ward) => sum + WARDS[ward].target, 0);
   const surv = allSurveys.filter(p => p.constituency === selectedDashboardConstituency || selectedWards.includes(p.ward));
