@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-dashboard-png-source-data-v75">
+<meta name="portal-build" content="2026-07-16-dashboard-export-html2canvas-v76">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -6830,6 +6830,46 @@ async function exportConstituencySummaryImage() {
     alert('Dashboard summary card is not available to export.');
     return;
   }
+  const filename = `honiara-dashboard-summary-${new Date().toISOString().slice(0, 10)}.png`;
+  const sourceText = 'Source data: Honiara Survey Portal field survey dataset (2026).';
+  const addSourceLineToCanvas = (sourceCanvas) => {
+    const scale = 2;
+    const sourceLineHeight = 30;
+    const width = Math.ceil(sourceCanvas.width / scale);
+    const height = Math.ceil(sourceCanvas.height / scale);
+    const output = document.createElement('canvas');
+    output.width = sourceCanvas.width;
+    output.height = sourceCanvas.height + sourceLineHeight * scale;
+    const ctx = output.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, output.width, output.height);
+    ctx.drawImage(sourceCanvas, 0, 0);
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#667085';
+    ctx.font = '400 11px Inter, Arial, sans-serif';
+    ctx.fillText(sourceText, 14, height + 20);
+    return output;
+  };
+  try {
+    await iaLoadScriptOnce('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', 'html2canvas');
+    const actionBlocks = [...card.querySelectorAll('.constituency-summary-actions')];
+    const previousDisplays = actionBlocks.map(el => el.style.display);
+    actionBlocks.forEach(el => { el.style.display = 'none'; });
+    try {
+      const canvas = await window.html2canvas(card, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      dashboardDownloadCanvas(addSourceLineToCanvas(canvas), filename);
+      return;
+    } finally {
+      actionBlocks.forEach((el, index) => { el.style.display = previousDisplays[index]; });
+    }
+  } catch (error) {
+    console.warn('html2canvas export failed; trying SVG fallback:', error);
+  }
   const clone = card.cloneNode(true);
   clone.querySelectorAll('.constituency-summary-actions').forEach(el => el.remove());
 
@@ -6877,9 +6917,13 @@ async function exportConstituencySummaryImage() {
     ctx.drawImage(img, 0, 0);
     ctx.fillStyle = '#667085';
     ctx.font = '400 11px Inter, Arial, sans-serif';
-    ctx.fillText('Source data: Honiara Survey Portal field survey dataset (2026).', 14, height + 20);
+    ctx.fillText(sourceText, 14, height + 20);
     URL.revokeObjectURL(url);
-    dashboardDownloadCanvas(canvas, `honiara-dashboard-summary-${new Date().toISOString().slice(0, 10)}.png`);
+    try {
+      dashboardDownloadCanvas(canvas, filename);
+    } catch (error) {
+      alert('Could not export the dashboard card image in this browser.');
+    }
   };
   img.onerror = () => {
     URL.revokeObjectURL(url);
@@ -6980,12 +7024,20 @@ function dashboardWrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines
 }
 
 function dashboardDownloadCanvas(canvas, filename) {
-  const link = document.createElement('a');
-  link.download = filename;
-  link.href = canvas.toDataURL('image/png');
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  canvas.toBlob(blob => {
+    if (!blob) {
+      alert('Could not create PNG export.');
+      return;
+    }
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.download = filename;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
 }
 
 function exportDashboardFindingsImage() {
