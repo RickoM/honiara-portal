@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-professional-research-structure-v94">
+<meta name="portal-build" content="2026-07-16-structure-export-source-v97">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -957,7 +957,7 @@
   .rq-flow-svg path, .rq-flow-svg line { stroke:#1f2a44;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter; }
   .rq-flow-title-arrow { height:48px;margin:8px 0 0; }
   .rq-flow-to-questions { height:68px;margin:0; }
-  .rq-flow-after-questions { height:66px;margin:0; }
+  .rq-flow-after-questions { height:66px;margin:0 0 10px; }
   .rq-flow-after-methods { height:38px;margin:0; }
   .rq-question-label { display:none; }
   .rq-question-label::after { display:none; }
@@ -973,10 +973,14 @@
   .rq-node-question { display:block;font-size:11px;font-weight:750;line-height:1.32;color:#111827; }
   .rq-toggle { width:22px;height:22px;border-radius:999px;border:1px solid #c9d8ea;display:inline-flex;align-items:center;justify-content:center;background:#edf3fb;color:var(--navy); }
   .rq-node-meta { font-size:9.5px;color:var(--gray-600);font-weight:800;line-height:1.28; }
-  .rq-node:nth-child(1) .rq-node-btn { background:linear-gradient(180deg,#f4f8fd 0%,#ffffff 72%); }
-  .rq-node:nth-child(2) .rq-node-btn { background:linear-gradient(180deg,#f7fbf7 0%,#ffffff 72%); }
-  .rq-node:nth-child(3) .rq-node-btn { background:linear-gradient(180deg,#fff8ef 0%,#ffffff 72%); }
-  .rq-node:nth-child(4) .rq-node-btn { background:linear-gradient(180deg,#f7f4ff 0%,#ffffff 72%); }
+  .rq-node:nth-child(1) { border-color:#9fbce0; }
+  .rq-node:nth-child(2) { border-color:#9fcaa6; }
+  .rq-node:nth-child(3) { border-color:#e3b47c; }
+  .rq-node:nth-child(4) { border-color:#bca8df; }
+  .rq-node:nth-child(1) .rq-node-btn { background:linear-gradient(180deg,#e8f1fb 0%,#ffffff 76%); }
+  .rq-node:nth-child(2) .rq-node-btn { background:linear-gradient(180deg,#eaf6ec 0%,#ffffff 76%); }
+  .rq-node:nth-child(3) .rq-node-btn { background:linear-gradient(180deg,#fff0dc 0%,#ffffff 76%); }
+  .rq-node:nth-child(4) .rq-node-btn { background:linear-gradient(180deg,#f0e9ff 0%,#ffffff 76%); }
   .rq-node.selected .rq-toggle { background:var(--navy);color:#fff;border-color:var(--navy); }
   .rq-node.selected .rq-toggle::before { content:'*'; }
   .rq-node:not(.selected) .rq-toggle::before { content:'+'; }
@@ -1492,21 +1496,6 @@
   <!-- DASHBOARD VIEW -->
   <div class="view-panel" id="view-dashboard">
     <div style="max-width:1180px;margin:0 auto">
-      <div class="dash-header">
-        <div>
-          <div class="dash-title">Dashboard</div>
-          <div class="dash-subtitle">Constituency-level overview first. Wards are grouped under West, Central, and East Honiara with GPS status and survey completion shown clearly.</div>
-        </div>
-        <div style="font-size:11px;color:var(--gray-600);text-align:right" id="dash-scope-note"></div>
-      </div>
-      <div class="dash-selector" id="dash-constituency-selector"></div>
-      <div class="analytics-nav">
-        <button type="button" onclick="document.getElementById('dash-constituency-overview')?.scrollIntoView({behavior:'smooth',block:'start'})">Overview</button>
-        <button type="button" onclick="document.getElementById('dash-research-tree')?.scrollIntoView({behavior:'smooth',block:'start'})">Dissertation and Research Structure</button>
-        <button type="button" onclick="document.getElementById('dash-participant-results')?.scrollIntoView({behavior:'smooth',block:'start'})">Participant Survey Results</button>
-        <button type="button" onclick="document.getElementById('dash-data-reading-results')?.scrollIntoView({behavior:'smooth',block:'start'})">Data Reading Results</button>
-        <button type="button" onclick="document.getElementById('dash-experience-correlation')?.scrollIntoView({behavior:'smooth',block:'start'})">Survey vs Readings</button>
-      </div>
       <div id="dash-research-tree"></div>
       <div id="dash-constituency-overview"></div>
       <div id="dash-participant-results"></div>
@@ -7095,7 +7084,10 @@ async function exportAnalyticsCardImage(cardId, filenamePrefix) {
     ctx.scale(2, 2);
     ctx.fillStyle = '#667085';
     ctx.font = '400 11px Inter, Arial, sans-serif';
-    ctx.fillText('Source data: Honiara Survey Portal field survey dataset (2026).', 14, canvas.height / 2 + 20);
+    const sourceText = cardId === 'dash-research-tree'
+      ? 'Source data: Honiara Survey Portal dissertation research structure and evidence framework (2026).'
+      : 'Source data: Honiara Survey Portal field survey dataset (2026).';
+    ctx.fillText(sourceText, 14, canvas.height / 2 + 20);
     dashboardDownloadCanvas(output, `${filenamePrefix}-${new Date().toISOString().slice(0,10)}.png`);
   } catch (error) {
     console.warn('Analytics card export failed:', error);
@@ -7338,6 +7330,11 @@ function renderResearchEvidenceTree() {
     <div class="analytics-card-head">
       <div>
         <div class="analytics-card-title">Dissertation and Research Structure</div>
+      </div>
+      <div class="constituency-summary-actions">
+        <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-research-tree','honiara-dissertation-research-structure')" title="Export" aria-label="Export">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        </button>
       </div>
     </div>
     <div class="rq-tree">
@@ -7903,11 +7900,15 @@ function renderDashboard() {
   }).length;
   const operators = [...new Set(surv.map(p => p.fd_s1_op || p.operator || p.op).filter(Boolean))];
 
-  document.getElementById('dash-scope-note').innerHTML = `${day ? 'Up to ' + day : 'All survey days'}<br>${surv.length} record${surv.length === 1 ? '' : 's'} in selected constituency`;
-  document.getElementById('dash-constituency-selector').innerHTML = constituencyNames.map(name => {
-    const count = allSurveys.filter(p => p.constituency === name || Object.keys(WARDS).some(w => WARDS[w].constituency === name && p.ward === w)).length;
-    return `<button class="dash-chip ${name === selectedDashboardConstituency ? 'on' : ''}" onclick="setDashboardConstituency('${name}')">${name.replace(' Honiara','')} <span style="opacity:.75">(${count})</span></button>`;
-  }).join('');
+  const scopeNote = document.getElementById('dash-scope-note');
+  if (scopeNote) scopeNote.innerHTML = `${day ? 'Up to ' + day : 'All survey days'}<br>${surv.length} record${surv.length === 1 ? '' : 's'} in selected constituency`;
+  const constituencySelector = document.getElementById('dash-constituency-selector');
+  if (constituencySelector) {
+    constituencySelector.innerHTML = constituencyNames.map(name => {
+      const count = allSurveys.filter(p => p.constituency === name || Object.keys(WARDS).some(w => WARDS[w].constituency === name && p.ward === w)).length;
+      return `<button class="dash-chip ${name === selectedDashboardConstituency ? 'on' : ''}" onclick="setDashboardConstituency('${name}')">${name.replace(' Honiara','')} <span style="opacity:.75">(${count})</span></button>`;
+    }).join('');
+  }
 
   const progressPct = dashPct(surv.length, selectedTarget);
   const gpsPct = dashPct(mapped.length, surv.length);
