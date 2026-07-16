@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-research-tree-question-connectors-v90">
+<meta name="portal-build" content="2026-07-16-research-tree-top-aligned-v91">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -979,7 +979,7 @@
   .rq-toggle { font-size:0; }
   .rq-methods-wrap { margin-top:0;border:2px solid rgba(31,42,68,.32);border-radius:14px;padding:22px 18px 22px;position:relative;background:#fcfcfd; }
   .rq-methods-wrap::before, .rq-methods-wrap::after { display:none; }
-  .rq-methods-title { position:absolute;left:18px;top:-13px;background:#fcfcfd;padding:0 8px;color:var(--navy);font-size:14px;font-weight:900; }
+  .rq-methods-title { position:absolute;left:50%;top:-16px;transform:translateX(-50%);background:#fcfcfd;padding:0 14px;color:var(--navy);font-size:18px;font-weight:900;white-space:nowrap; }
   .rq-methods-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px; }
   .rq-branch { border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;display:grid;gap:8px;align-items:start;box-shadow:var(--shadow); }
   .rq-branch strong { color:var(--navy);font-size:12px;text-transform:uppercase;letter-spacing:.04em; }
@@ -1503,8 +1503,8 @@
         <button type="button" onclick="document.getElementById('dash-data-reading-results')?.scrollIntoView({behavior:'smooth',block:'start'})">Data Reading Results</button>
         <button type="button" onclick="document.getElementById('dash-experience-correlation')?.scrollIntoView({behavior:'smooth',block:'start'})">Survey vs Readings</button>
       </div>
-      <div id="dash-constituency-overview"></div>
       <div id="dash-research-tree"></div>
+      <div id="dash-constituency-overview"></div>
       <div id="dash-participant-results"></div>
       <div id="dash-data-reading-results"></div>
       <div class="dash-export-bar">
@@ -7346,13 +7346,13 @@ function renderResearchEvidenceTree() {
       <div class="rq-tree-root">
         <div class="rq-project-title">Dissertation Project Title</div>
         <div class="rq-project-box">Mobile Network Performance and Competition in Honiara: A Demand-Capacity Assessment under Rapid Urban Growth</div>
-        <svg class="rq-flow-svg rq-flow-title-arrow" viewBox="0 0 1000 76" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-title-arrow" viewBox="0 0 1000 76" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowTop" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
           <line x1="500" y1="0" x2="500" y2="60" marker-end="url(#rqArrowTop)"></line>
         </svg>
         <div class="rq-section-title">Research Questions</div>
         <div class="rq-question-label">Research Questions</div>
-        <svg class="rq-flow-svg rq-flow-to-questions" viewBox="0 0 1000 116" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-to-questions" viewBox="0 0 1000 116" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowBranch" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
           <line x1="125" y1="12" x2="875" y2="12"></line>
           <line x1="125" y1="12" x2="125" y2="100" marker-end="url(#rqArrowBranch)"></line>
@@ -7361,7 +7361,7 @@ function renderResearchEvidenceTree() {
           <line x1="875" y1="12" x2="875" y2="100" marker-end="url(#rqArrowBranch)"></line>
         </svg>
         <div class="rq-question-row">${rows}</div>
-        <svg class="rq-flow-svg rq-flow-after-questions" viewBox="0 0 1000 100" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-after-questions" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowMid" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
           <line x1="125" y1="0" x2="125" y2="38"></line>
           <line x1="375" y1="0" x2="375" y2="38"></line>
@@ -7378,7 +7378,7 @@ function renderResearchEvidenceTree() {
             <div class="rq-branch"><strong>Interview evidence</strong><span>${dashEscape(selected.interview)}</span><button type="button" onclick="openInterviewEvidence()">Open interviews</button></div>
           </div>
         </div>
-        <svg class="rq-flow-svg rq-flow-after-methods" viewBox="0 0 1000 44" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-after-methods" viewBox="0 0 1000 44" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowBottom" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
           <line x1="500" y1="0" x2="500" y2="38" marker-end="url(#rqArrowBottom)"></line>
         </svg>
