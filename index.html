@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-ward-counts-gps-detail-v59">
+<meta name="portal-build" content="2026-07-16-clickable-ward-gps-issues-v60">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -940,6 +940,10 @@
   .constituency-summary-table .ward-list { display:flex;flex-wrap:wrap;gap:7px; }
   .constituency-summary-table .ward-pill { border:1px solid var(--border);background:#fff;border-radius:10px;padding:5px 8px;font-size:11px;font-weight:800;color:var(--navy);line-height:1.15;min-width:72px; }
   .constituency-summary-table .ward-pill-count { display:block;font-size:10px;font-weight:700;color:var(--gray-600);margin-top:3px; }
+  .ward-issue-list { display:flex;flex-wrap:wrap;gap:3px;margin-top:5px; }
+  .ward-issue-chip { border:1px solid #efc77b;background:var(--amber-light);color:#7a4b08;border-radius:999px;padding:2px 6px;font-size:9px;font-weight:800;cursor:pointer; }
+  .ward-issue-chip.bad { border-color:#e7a5a5;background:var(--red-light);color:#7d1f1f; }
+  .ward-issue-chip:hover { filter:brightness(.96);text-decoration:underline; }
   .constituency-summary-table .summary-value { display:inline-flex;align-items:center;justify-content:center;min-width:58px;border-radius:10px;padding:7px 10px;font-size:18px;font-weight:900;background:#f8fafc;border:1px solid var(--border);color:var(--navy); }
   .constituency-summary-table .summary-value.valid { color:var(--green);background:var(--green-light);border-color:#b7d8a4; }
   .constituency-summary-table .summary-value.outside { color:var(--red);background:var(--red-light);border-color:#e7a5a5; }
@@ -6322,6 +6326,61 @@ function dashboardGpsStatusBuckets(records) {
   };
 }
 
+let dashboardGpsIssueFilter = null;
+
+function dashboardGpsIssueKinds(record) {
+  const kinds = [];
+  const state = gpsStatus(record.lat, record.lng);
+  if (state === 'Outside study area') kinds.push('outside-study');
+  if (state !== 'Valid' && state !== 'Outside study area') kinds.push('missing-invalid');
+  const validation = wardBoundaryGeoFeatures.length ? wardGpsValidation(record) : null;
+  if (validation?.type === 'mismatch') kinds.push('ward-mismatch');
+  if (validation?.type === 'outside-boundary') kinds.push('outside-ward-boundary');
+  return kinds;
+}
+
+function dashboardGpsIssueLabel(kind) {
+  return {
+    'all': 'All GPS issues',
+    'outside-study': 'Outside study area',
+    'outside-ward-boundary': 'Outside ward boundary',
+    'ward-mismatch': 'Ward mismatch',
+    'missing-invalid': 'Missing/invalid GPS'
+  }[kind] || 'GPS issue';
+}
+
+function recordMatchesDashboardGpsIssue(record, filter) {
+  if (!filter) return true;
+  if (filter.ward && record.ward !== filter.ward) return false;
+  const kinds = dashboardGpsIssueKinds(record);
+  if (filter.kind === 'all') return kinds.length > 0;
+  return kinds.includes(filter.kind);
+}
+
+function openDashboardGpsIssueRecords(ward, kind) {
+  dashboardGpsIssueFilter = { ward, kind };
+  const wardSelect = document.getElementById('dt-ward');
+  const typeSelect = document.getElementById('dt-type');
+  if (wardSelect) wardSelect.value = ward;
+  if (typeSelect) typeSelect.value = 'survey';
+  switchView('data', document.getElementById('tnav-data'));
+}
+
+function dashboardWardIssueChips(ward, records) {
+  const counts = { 'outside-study': 0, 'outside-ward-boundary': 0, 'ward-mismatch': 0, 'missing-invalid': 0 };
+  records.forEach(record => dashboardGpsIssueKinds(record).forEach(kind => { counts[kind] = (counts[kind] || 0) + 1; }));
+  const items = [
+    ['outside-ward-boundary', 'Outside boundary'],
+    ['ward-mismatch', 'Ward mismatch'],
+    ['outside-study', 'Outside study area'],
+    ['missing-invalid', 'Missing/invalid']
+  ].filter(([kind]) => counts[kind]);
+  if (!items.length) return '';
+  return `<span class="ward-issue-list">${items.map(([kind, label]) =>
+    `<button type="button" class="ward-issue-chip ${kind === 'missing-invalid' ? '' : 'bad'}" onclick='openDashboardGpsIssueRecords(${JSON.stringify(ward)}, ${JSON.stringify(kind)})' title="Open affected survey records in Data Table">${counts[kind]} ${dashEscape(label)}</button>`
+  ).join('')}</span>`;
+}
+
 function renderConstituencyOverview(allSurveys) {
   const target = document.getElementById('dash-constituency-overview');
   if (!target) return;
@@ -6339,7 +6398,8 @@ function renderConstituencyOverview(allSurveys) {
       constituencyTotals.outsideStudy += stats.outsideStudy;
       constituencyTotals.outsideWardBoundary += stats.outsideWardBoundary;
       constituencyTotals.wardMismatch += stats.wardMismatch;
-      return `<span class="ward-pill">${dashEscape(ward)}<span class="ward-pill-count">${records.length} survey${records.length === 1 ? '' : 's'}</span></span>`;
+      const issueChips = dashboardWardIssueChips(ward, records);
+      return `<span class="ward-pill">${dashEscape(ward)}<span class="ward-pill-count">${records.length} survey${records.length === 1 ? '' : 's'}</span>${issueChips}</span>`;
     });
     const outsideDetail = [
       constituencyTotals.outsideStudy ? `${constituencyTotals.outsideStudy} outside study area` : '',
@@ -7546,10 +7606,14 @@ function renderDataTable() {
   const fw   = document.getElementById('dt-ward').value;
   const fo   = document.getElementById('dt-op').value;
   const ft   = document.getElementById('dt-type').value;
+  if (dashboardGpsIssueFilter && dashboardGpsIssueFilter.ward && fw && fw !== dashboardGpsIssueFilter.ward) {
+    dashboardGpsIssueFilter = null;
+  }
   let rows   = points;
   if (fw) rows = rows.filter(p => p.ward === fw);
   if (fo) rows = rows.filter(p => p.op === fo);
   if (ft) rows = rows.filter(p => p.type === ft);
+  if (dashboardGpsIssueFilter) rows = rows.filter(p => recordMatchesDashboardGpsIssue(p, dashboardGpsIssueFilter));
 
   const duplicateCount = duplicateRespondentIds.size;
   const sharedGpsCount = duplicateGpsGroups.size;
@@ -7574,6 +7638,10 @@ function renderDataTable() {
   } else if (wardBoundaryIndexStatus === 'unavailable') {
     document.getElementById('data-count').textContent +=
       '  - ward boundary check unavailable';
+  }
+  if (dashboardGpsIssueFilter) {
+    document.getElementById('data-count').textContent +=
+      `  - filtered: ${dashboardGpsIssueLabel(dashboardGpsIssueFilter.kind)} in ${dashboardGpsIssueFilter.ward}`;
   }
 
   const tbody = document.getElementById('dt-body');
@@ -7613,7 +7681,8 @@ function renderDataTable() {
       currentUser.role === 'admin' ||
       String(p.submittedBy || '').toLowerCase() === String(currentUser.username || '').toLowerCase()
     );
-    return `<tr>
+    const issueMatch = dashboardGpsIssueFilter && recordMatchesDashboardGpsIssue(p, dashboardGpsIssueFilter);
+    return `<tr ${issueMatch ? 'style="background:#FFF7ED;outline:2px solid #F59E0B;outline-offset:-2px"' : ''}>
       <td style="${mono};font-weight:500">${p.id || '\u2014'}${duplicateRespondentIds.has(String(p.id || '').trim().toUpperCase()) ? '<div><span class="badge badge-red" style="font-family:Inter,sans-serif;margin-top:3px">Duplicate ID</span></div>' : ''}${duplicateRecordBadge}</td>
       <td><span class="badge ${typeBdg}">${p.type === 'cell' ? 'Cell site' : 'Survey'}</span></td>
       <td style="color:var(--gray-600)">${p.date || '\u2014'}</td>
