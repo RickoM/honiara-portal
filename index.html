@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-project-story-map-flow-arrows-v87">
+<meta name="portal-build" content="2026-07-16-svg-research-tree-v88">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -949,20 +949,22 @@
   .analytics-stat-label { color:var(--gray-600);font-weight:700; }
   .analytics-stat-value { color:var(--navy);font-weight:900;white-space:nowrap;text-align:right; }
   .rq-tree { padding:18px;background:#fff;overflow:visible; }
-  .rq-tree-root { width:100%;background:#fff;padding:6px 10px 18px; }
+  .rq-tree-root { width:100%;background:#fff;padding:6px 10px 18px;position:relative; }
   .rq-project-title { text-align:center;color:var(--navy);font-size:19px;font-weight:900;margin:4px 0 8px;letter-spacing:-.02em; }
   .rq-project-box { width:360px;margin:0 auto;border:1px solid var(--border);border-radius:10px;background:#fff;padding:12px 16px;text-align:center;font-size:12px;line-height:1.35;color:var(--navy);font-weight:800;box-shadow:var(--shadow);position:relative; }
-  .rq-project-box::after { content:'';position:absolute;left:50%;bottom:-58px;width:2px;height:58px;background:#1f2a44; }
-  .rq-project-box::before { content:'';position:absolute;left:calc(50% - 6px);bottom:-60px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #1f2a44;z-index:2; }
-  .rq-question-label { display:inline-block;text-align:left;color:var(--navy);font-size:15px;font-weight:900;margin:58px 0 24px 12px;position:relative;padding:0 10px 0 0;background:#fff; }
+  .rq-project-box::after, .rq-project-box::before { display:none; }
+  .rq-flow-svg { width:100%;height:96px;display:block;margin:14px 0 2px;overflow:visible; }
+  .rq-flow-svg path, .rq-flow-svg line { stroke:#1f2a44;stroke-width:2.2;fill:none;stroke-linecap:square;stroke-linejoin:miter; }
+  .rq-flow-svg text { fill:var(--navy);font-weight:900;font-size:15px;font-family:'Inter',sans-serif; }
+  .rq-flow-after-questions { height:78px;margin:10px 0 -6px; }
+  .rq-flow-after-methods { height:44px;margin:0; }
+  .rq-question-label { display:none; }
   .rq-question-label::after { display:none; }
   .rq-question-row { display:grid;grid-template-columns:repeat(4,1fr);gap:22px;position:relative; }
-  .rq-question-row::before { content:'';position:absolute;left:12.5%;right:12.5%;top:-22px;height:2px;background:#1f2a44; }
-  .rq-question-row::after { content:'';position:absolute;left:12.5%;right:12.5%;bottom:-18px;height:2px;background:#1f2a44; }
+  .rq-question-row::before, .rq-question-row::after { display:none; }
   .rq-node { position:relative;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:visible; }
   .rq-node-btn { border-radius:12px; }
-  .rq-node::before { content:'';position:absolute;left:50%;top:-24px;width:2px;height:24px;background:#1f2a44; }
-  .rq-node::after { content:'';position:absolute;left:calc(50% - 6px);top:-9px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #1f2a44;z-index:2; }
+  .rq-node::before, .rq-node::after { display:none; }
   .rq-node.selected { border-color:#9db8d6;box-shadow:0 0 0 3px rgba(28,53,87,.10),var(--shadow); }
   .rq-node-btn { width:100%;min-height:195px;border:0;background:#fff;padding:18px 14px 14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:9px;cursor:pointer;text-align:center;color:var(--navy); }
   .rq-node-btn:hover, .rq-node.selected .rq-node-btn { background:#f8fafc; }
@@ -974,9 +976,8 @@
   .rq-node.selected .rq-toggle::before { content:'*'; }
   .rq-node:not(.selected) .rq-toggle::before { content:'+'; }
   .rq-toggle { font-size:0; }
-  .rq-methods-wrap { margin-top:36px;border:2px solid rgba(31,42,68,.32);border-radius:14px;padding:22px 18px 22px;position:relative;background:#fcfcfd; }
-  .rq-methods-wrap::before { content:'';position:absolute;left:50%;top:-36px;width:2px;height:36px;background:#1f2a44; }
-  .rq-methods-wrap::after { content:'';position:absolute;left:calc(50% - 6px);top:-8px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #1f2a44;z-index:2; }
+  .rq-methods-wrap { margin-top:0;border:2px solid rgba(31,42,68,.32);border-radius:14px;padding:22px 18px 22px;position:relative;background:#fcfcfd; }
+  .rq-methods-wrap::before, .rq-methods-wrap::after { display:none; }
   .rq-methods-title { position:absolute;left:18px;top:-13px;background:#fcfcfd;padding:0 8px;color:var(--navy);font-size:14px;font-weight:900; }
   .rq-methods-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px; }
   .rq-branch { border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;display:grid;gap:8px;align-items:start;box-shadow:var(--shadow); }
@@ -985,12 +986,13 @@
   .rq-branch button, .rq-results-box button { justify-self:start;border:1px solid #c9d8ea;background:#edf3fb;color:var(--navy);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap; }
   .rq-branch button:hover, .rq-results-box button:hover { filter:brightness(.97); }
   .rq-results-box { width:520px;margin:18px auto 0;border:2px solid rgba(31,42,68,.28);border-radius:14px;background:#fff;padding:14px 16px;text-align:center;box-shadow:var(--shadow);position:relative;display:grid;gap:8px; }
-  .rq-results-box::before { content:'';position:absolute;left:50%;top:-20px;width:2px;height:20px;background:#1f2a44; }
-  .rq-results-box::after { content:'';position:absolute;left:calc(50% - 6px);top:-8px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #1f2a44;z-index:2; }
+  .rq-results-box::before, .rq-results-box::after { display:none; }
   .rq-results-title { color:var(--navy);font-weight:900;font-size:15px; }
   .rq-results-detail { color:var(--gray-600);font-size:11px;line-height:1.35; }
   .rq-results-actions { display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px; }
   @media (max-width: 1120px) {
+    .rq-flow-svg { display:none; }
+    .rq-question-label { display:inline-block;margin:28px 0 18px 0; }
     .rq-question-row { grid-template-columns:repeat(2,1fr);gap:34px 22px; }
     .rq-question-row::before, .rq-question-row::after { display:none; }
     .rq-node::before, .rq-node::after { display:none; }
@@ -7342,8 +7344,23 @@ function renderResearchEvidenceTree() {
       <div class="rq-tree-root">
         <div class="rq-project-title">Dissertation Project Title</div>
         <div class="rq-project-box">Mobile Network Performance and Competition in Honiara: A Demand-Capacity Assessment under Rapid Urban Growth</div>
+        <svg class="rq-flow-svg rq-flow-to-questions" viewBox="0 0 1000 96" preserveAspectRatio="none" aria-hidden="true">
+          <defs><marker id="rqArrowTop" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 Z" fill="#1f2a44"></path></marker></defs>
+          <line x1="500" y1="0" x2="500" y2="36" marker-end="url(#rqArrowTop)"></line>
+          <text x="22" y="56">Research Questions</text>
+          <line x1="125" y1="62" x2="875" y2="62"></line>
+          <line x1="125" y1="62" x2="125" y2="92" marker-end="url(#rqArrowTop)"></line>
+          <line x1="375" y1="62" x2="375" y2="92" marker-end="url(#rqArrowTop)"></line>
+          <line x1="625" y1="62" x2="625" y2="92" marker-end="url(#rqArrowTop)"></line>
+          <line x1="875" y1="62" x2="875" y2="92" marker-end="url(#rqArrowTop)"></line>
+        </svg>
         <div class="rq-question-label">Research Questions</div>
         <div class="rq-question-row">${rows}</div>
+        <svg class="rq-flow-svg rq-flow-after-questions" viewBox="0 0 1000 78" preserveAspectRatio="none" aria-hidden="true">
+          <defs><marker id="rqArrowMid" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 Z" fill="#1f2a44"></path></marker></defs>
+          <line x1="125" y1="14" x2="875" y2="14"></line>
+          <line x1="500" y1="14" x2="500" y2="72" marker-end="url(#rqArrowMid)"></line>
+        </svg>
         <div class="rq-methods-wrap">
           <div class="rq-methods-title">Methods / Evidence</div>
           <div class="rq-methods-grid">
@@ -7352,6 +7369,10 @@ function renderResearchEvidenceTree() {
             <div class="rq-branch"><strong>Interview evidence</strong><span>${dashEscape(selected.interview)}</span><button type="button" onclick="openInterviewEvidence()">Open interviews</button></div>
           </div>
         </div>
+        <svg class="rq-flow-svg rq-flow-after-methods" viewBox="0 0 1000 44" preserveAspectRatio="none" aria-hidden="true">
+          <defs><marker id="rqArrowBottom" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 Z" fill="#1f2a44"></path></marker></defs>
+          <line x1="500" y1="0" x2="500" y2="38" marker-end="url(#rqArrowBottom)"></line>
+        </svg>
         <div class="rq-results-box">
           <div class="rq-results-title">Analytics Outputs / Results</div>
           <div class="rq-results-detail">${dashEscape(selected.output)}</div>
