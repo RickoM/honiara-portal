@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-research-question-tree-v81">
+<meta name="portal-build" content="2026-07-16-project-story-map-v82">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -958,23 +958,31 @@
   .rq-question-row::before { content:'';position:absolute;left:12.5%;right:12.5%;top:-16px;height:2px;background:#1f2a44; }
   .rq-node { position:relative;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden; }
   .rq-node::before { content:'';position:absolute;left:50%;top:-18px;width:2px;height:18px;background:#1f2a44; }
+  .rq-node.selected { border-color:#9db8d6;box-shadow:0 0 0 3px rgba(28,53,87,.10),var(--shadow); }
   .rq-node-btn { width:100%;min-height:185px;border:0;background:#fff;padding:16px 14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;cursor:pointer;text-align:center;color:var(--navy); }
-  .rq-node-btn:hover { background:#f8fafc; }
+  .rq-node-btn:hover, .rq-node.selected .rq-node-btn { background:#f8fafc; }
   .rq-node-title { display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:900;font-size:17px;line-height:1.2; }
   .rq-node-question { display:block;font-size:12px;font-weight:700;line-height:1.35;color:#111827; }
   .rq-toggle { width:24px;height:24px;border-radius:999px;border:1px solid #c9d8ea;display:inline-flex;align-items:center;justify-content:center;background:#edf3fb;color:var(--navy); }
   .rq-node-meta { font-size:10px;color:var(--gray-600);font-weight:800;line-height:1.3; }
-  .rq-branches { display:none;padding:0 12px 12px;background:#fff; }
-  .rq-node.open .rq-branches { display:grid;gap:8px; }
-  .rq-node.open .rq-toggle { background:var(--navy);color:#fff;border-color:var(--navy); }
-  .rq-node.open .rq-toggle::before { content:'-'; }
-  .rq-node:not(.open) .rq-toggle::before { content:'+'; }
+  .rq-node.selected .rq-toggle { background:var(--navy);color:#fff;border-color:var(--navy); }
+  .rq-node.selected .rq-toggle::before { content:'*'; }
+  .rq-node:not(.selected) .rq-toggle::before { content:'+'; }
   .rq-toggle { font-size:0; }
-  .rq-branch { border:1px solid var(--border);border-radius:10px;padding:9px;background:#fcfcfd;display:grid;gap:6px;align-items:start; }
-  .rq-branch strong { color:var(--navy);font-size:11px;text-transform:uppercase;letter-spacing:.04em; }
+  .rq-methods-wrap { margin-top:26px;border:2px solid rgba(31,42,68,.32);border-radius:14px;padding:18px 18px 20px;position:relative;background:#fcfcfd; }
+  .rq-methods-wrap::before { content:'';position:absolute;left:12.5%;right:12.5%;top:-26px;height:2px;background:#1f2a44; }
+  .rq-methods-title { position:absolute;left:18px;top:-13px;background:#fcfcfd;padding:0 8px;color:var(--navy);font-size:14px;font-weight:900; }
+  .rq-methods-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px; }
+  .rq-branch { border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;display:grid;gap:8px;align-items:start;box-shadow:var(--shadow); }
+  .rq-branch strong { color:var(--navy);font-size:12px;text-transform:uppercase;letter-spacing:.04em; }
   .rq-branch span { color:var(--gray-600);font-size:11px;line-height:1.35; }
-  .rq-branch button { justify-self:start;border:1px solid #c9d8ea;background:#edf3fb;color:var(--navy);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap; }
-  .rq-branch button:hover { filter:brightness(.97); }
+  .rq-branch button, .rq-results-box button { justify-self:start;border:1px solid #c9d8ea;background:#edf3fb;color:var(--navy);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap; }
+  .rq-branch button:hover, .rq-results-box button:hover { filter:brightness(.97); }
+  .rq-results-box { width:520px;margin:18px auto 0;border:2px solid rgba(31,42,68,.28);border-radius:14px;background:#fff;padding:14px 16px;text-align:center;box-shadow:var(--shadow);position:relative;display:grid;gap:8px; }
+  .rq-results-box::before { content:'';position:absolute;left:50%;top:-20px;width:2px;height:20px;background:#1f2a44; }
+  .rq-results-title { color:var(--navy);font-weight:900;font-size:15px; }
+  .rq-results-detail { color:var(--gray-600);font-size:11px;line-height:1.35; }
+  .rq-results-actions { display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px; }
   .constituency-dashboard { margin-bottom:14px; }
   .constituency-summary-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden; }
   .constituency-summary-title { font-size:18px;font-weight:900;color:#fff;letter-spacing:-.02em;margin:0;text-align:left; }
@@ -7261,27 +7269,30 @@ function openInterviewEvidence() {
   switchView('interviews', document.getElementById('tnav-interviews'));
 }
 
+let selectedResearchQuestionId = 'rq1';
+
 function toggleResearchNode(id) {
   const node = document.getElementById(id);
   if (!node) return;
   node.classList.toggle('open');
 }
 
+function selectResearchQuestion(id) {
+  selectedResearchQuestionId = id || 'rq1';
+  renderResearchEvidenceTree();
+}
+
 function renderResearchEvidenceTree() {
   const target = document.getElementById('dash-research-tree');
   if (!target) return;
-  const rows = RESEARCH_EVIDENCE_TREE.map((rq, index) => `<div class="rq-node ${index === 0 ? 'open' : ''}" id="rq-node-${dashEscape(rq.id)}">
-    <button type="button" class="rq-node-btn" onclick="toggleResearchNode('rq-node-${dashEscape(rq.id)}')">
+  const selected = RESEARCH_EVIDENCE_TREE.find(rq => rq.id === selectedResearchQuestionId) || RESEARCH_EVIDENCE_TREE[0];
+  selectedResearchQuestionId = selected.id;
+  const rows = RESEARCH_EVIDENCE_TREE.map(rq => `<div class="rq-node ${rq.id === selectedResearchQuestionId ? 'selected' : ''}" id="rq-node-${dashEscape(rq.id)}">
+    <button type="button" class="rq-node-btn" onclick="selectResearchQuestion('${dashEscape(rq.id)}')">
       <span class="rq-node-title">${dashEscape(rq.title)}<span class="rq-toggle">+</span></span>
       <span class="rq-node-question">${dashEscape(rq.question)}</span>
       <span class="rq-node-meta">${dashEscape(rq.meta)}</span>
     </button>
-    <div class="rq-branches">
-      <div class="rq-branch"><strong>Participant survey evidence</strong><span>${dashEscape(rq.survey)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-participant-results')">Open survey card</button></div>
-      <div class="rq-branch"><strong>Data reading evidence</strong><span>${dashEscape(rq.data)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-data-reading-results')">Open data card</button></div>
-      <div class="rq-branch"><strong>Interview evidence</strong><span>${dashEscape(rq.interview)}</span><button type="button" onclick="openInterviewEvidence()">Open interviews</button></div>
-      <div class="rq-branch"><strong>Analytics output</strong><span>${dashEscape(rq.output)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-constituency-overview')">Open overview</button></div>
-    </div>
   </div>`).join('');
   target.innerHTML = `<div class="analytics-card">
     <div class="analytics-card-head">
@@ -7301,6 +7312,23 @@ function renderResearchEvidenceTree() {
         <div class="rq-project-box">Mobile Network Performance and Competition in Honiara: A Demand-Capacity Assessment under Rapid Urban Growth</div>
         <div class="rq-question-label">Research Questions</div>
         <div class="rq-question-row">${rows}</div>
+        <div class="rq-methods-wrap">
+          <div class="rq-methods-title">Methods / Evidence</div>
+          <div class="rq-methods-grid">
+            <div class="rq-branch"><strong>Participant survey evidence</strong><span>${dashEscape(selected.survey)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-participant-results')">Open survey analytics</button></div>
+            <div class="rq-branch"><strong>Data reading evidence</strong><span>${dashEscape(selected.data)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-data-reading-results')">Open data analytics</button></div>
+            <div class="rq-branch"><strong>Interview evidence</strong><span>${dashEscape(selected.interview)}</span><button type="button" onclick="openInterviewEvidence()">Open interviews</button></div>
+          </div>
+        </div>
+        <div class="rq-results-box">
+          <div class="rq-results-title">Analytics Outputs / Results</div>
+          <div class="rq-results-detail">${dashEscape(selected.output)}</div>
+          <div class="rq-results-actions">
+            <button type="button" onclick="scrollToDashboardEvidence('dash-constituency-overview')">Overview</button>
+            <button type="button" onclick="scrollToDashboardEvidence('dash-participant-results')">Survey results</button>
+            <button type="button" onclick="scrollToDashboardEvidence('dash-data-reading-results')">Data readings</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>`;
