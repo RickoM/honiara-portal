@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-kolaa-mismatch-filter-reset-v64">
+<meta name="portal-build" content="2026-07-16-gps-issue-worklist-audit-v66">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -6330,6 +6330,7 @@ function dashboardGpsStatusBuckets(records) {
 
 let dashboardGpsIssueFilter = null;
 let dashboardGpsIssueOpening = false;
+const GPS_ISSUE_AUDIT_KEY = 'honiara_gps_issue_audit_v1';
 
 function dashboardRecordKey(record) {
   return String(record?._id || record?.id || record?.respondentId || record?.submissionId || '');
@@ -6342,6 +6343,47 @@ function clearDashboardGpsIssueFilter(resetControls = false) {
   const typeSelect = document.getElementById('dt-type');
   if (wardSelect) wardSelect.value = '';
   if (typeSelect && typeSelect.value === 'survey') typeSelect.value = '';
+}
+
+function gpsIssueAuditEntries() {
+  try { return JSON.parse(localStorage.getItem(GPS_ISSUE_AUDIT_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function addGpsIssueAudit(action, reason, record = {}) {
+  const entries = gpsIssueAuditEntries();
+  entries.unshift({
+    performedAt: new Date().toISOString(),
+    respondentId: record.respondentId || record.id || record._id || '-',
+    action,
+    performedBy: currentUser?.username || currentUser?.fullName || 'portal',
+    reason
+  });
+  localStorage.setItem(GPS_ISSUE_AUDIT_KEY, JSON.stringify(entries.slice(0, 100)));
+}
+
+function gpsIssueWorklistRecords(filter = dashboardGpsIssueFilter) {
+  if (!filter) return [];
+  return points.filter(record => record.type === 'survey' && recordMatchesDashboardGpsIssue(record, filter));
+}
+
+function refreshGpsIssueWorklistAfterSave(context, savedRecord = {}) {
+  if (!context?.filter) return '';
+  const remaining = gpsIssueWorklistRecords(context.filter);
+  const label = `${dashboardGpsIssueLabel(context.filter.kind)} in ${context.filter.ward}`;
+  if (!remaining.length) {
+    clearDashboardGpsIssueFilter(true);
+    addGpsIssueAudit('gps_issue_worklist_resolved', `${label} fixed; filter cleared after save.`, savedRecord || context.record || {});
+    if (activeView === 'data') renderDataTable();
+    return `${label} fixed. The GPS issue filter has been cleared because no matching issue records remain.`;
+  }
+  dashboardGpsIssueFilter = {
+    ...context.filter,
+    recordKeys: remaining.map(dashboardRecordKey).filter(Boolean)
+  };
+  addGpsIssueAudit('gps_issue_worklist_updated', `${label}: ${remaining.length} issue record${remaining.length === 1 ? '' : 's'} still need attention.`, savedRecord || context.record || {});
+  if (activeView === 'data') renderDataTable();
+  return `${label}: ${remaining.length} issue record${remaining.length === 1 ? '' : 's'} still need attention.`;
 }
 
 function dashboardGpsIssueKinds(record) {
@@ -6423,7 +6465,7 @@ function renderConstituencyOverview(allSurveys) {
     const wardPills = wards.map(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
       const stats = dashboardGpsBoundaryStats(records);
-      constituencyTotals.valid += stats.insideBoundary;
+      constituencyTotals.valid += stats.boundaryReady ? Math.max(0, stats.insideBoundary - stats.wardMismatch) : stats.insideBoundary;
       constituencyTotals.outsideBoundaryWard += stats.outsideBoundary + stats.wardMismatch;
       constituencyTotals.other += stats.missingOrInvalid;
       constituencyTotals.total += records.length;
@@ -6462,7 +6504,7 @@ function renderConstituencyOverview(allSurveys) {
             <tr>
               <th class="left">Constituency</th>
               <th class="left">Wards</th>
-              <th>Valid GPS</th>
+              <th>GPS valid and correct ward</th>
               <th>GPS survey points that need attention</th>
               <th>Surveys Completed</th>
             </tr>
@@ -7828,10 +7870,11 @@ async function loadSurveyAudit() {
     if (!res) return;
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to load audit log');
-    tbody.innerHTML = data.audit?.length ? data.audit.map(a => `<tr>
+    const auditRows = [...(data.audit || []), ...gpsIssueAuditEntries()].sort((a, b) => new Date(b.performedAt || 0) - new Date(a.performedAt || 0));
+    tbody.innerHTML = auditRows.length ? auditRows.map(a => `<tr>
       <td style="font-size:11px">${a.performedAt ? new Date(a.performedAt).toLocaleString() : '-'}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${a.respondentId || '-'}</td>
-      <td><span class="badge ${a.action === 'restored' ? 'badge-ok' : a.action === 'deleted' ? 'badge-red' : 'badge-warn'}">${String(a.action || '').replace('_', ' ')}</span></td>
+      <td><span class="badge ${a.action === 'restored' || String(a.action || '').includes('resolved') ? 'badge-ok' : a.action === 'deleted' ? 'badge-red' : 'badge-warn'}">${String(a.action || '').replace(/_/g, ' ')}</span></td>
       <td>${a.performedBy || '-'}</td>
       <td style="font-size:11px">${a.reason || (a.replacementRespondentId ? 'Replacement: ' + a.replacementRespondentId : '-')}</td>
     </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--gray-400)">No audit actions recorded yet</td></tr>';
@@ -9402,6 +9445,10 @@ async function sfSubmit() {
   // -- EDIT MODE - PUT to existing record ------------------
   if (editingId) {
     if (btn) { btn.textContent = 'Saving...'; btn.disabled = true; }
+    const gpsIssueSaveContext = dashboardGpsIssueFilter ? {
+      filter: { ...dashboardGpsIssueFilter },
+      record: points.find(point => String(point._id || '') === String(editingId || '')) || {}
+    } : null;
     try {
       const res = await fetch(API_URL + '/api/surveys/' + editingId, {
         method: 'PUT',
@@ -9414,9 +9461,11 @@ async function sfSubmit() {
       const banner = document.getElementById('sf-edit-banner');
       if (banner) banner.style.display = 'none';
       await syncSurveyViews();
+      const gpsIssueMessage = refreshGpsIssueWorklistAfterSave(gpsIssueSaveContext, result.survey || data);
+      await loadSurveyAudit();
       document.getElementById('sf-form-body').classList.add('hide');
       document.getElementById('sf-success').classList.add('show');
-      document.getElementById('sf-success-txt').textContent = 'Survey updated successfully in database.';
+      document.getElementById('sf-success-txt').textContent = 'Survey updated successfully in database.' + (gpsIssueMessage ? ' ' + gpsIssueMessage : '');
     } catch(err) {
       alert('Save failed: ' + err.message);
     } finally {
