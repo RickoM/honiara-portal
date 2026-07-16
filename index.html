@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-structure-export-source-v97">
+<meta name="portal-build" content="2026-07-16-structure-centred-longer-lower-arrows-v98">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -932,6 +932,8 @@
   .analytics-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px; }
   .analytics-card-head { background:linear-gradient(135deg,var(--navy),#244B78);padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px; }
   .analytics-card-title { color:#fff;font-size:18px;font-weight:900;letter-spacing:-.02em; }
+  #dash-research-tree .analytics-card-head { position:relative;justify-content:center;text-align:center; }
+  #dash-research-tree .analytics-card-head .constituency-summary-actions { position:absolute;right:18px;top:50%;transform:translateY(-50%); }
   .analytics-card-sub { color:rgba(255,255,255,.82);font-size:11px;margin-top:3px;line-height:1.35; }
   .analytics-table { width:100%;border-collapse:collapse;font-size:12px;color:var(--text); }
   .analytics-table th { padding:10px 12px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);text-align:left;white-space:nowrap;font-weight:900;background:#f8fafc; }
@@ -957,8 +959,8 @@
   .rq-flow-svg path, .rq-flow-svg line { stroke:#1f2a44;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter; }
   .rq-flow-title-arrow { height:48px;margin:8px 0 0; }
   .rq-flow-to-questions { height:68px;margin:0; }
-  .rq-flow-after-questions { height:66px;margin:0 0 10px; }
-  .rq-flow-after-methods { height:38px;margin:0; }
+  .rq-flow-after-questions { height:82px;margin:0 0 8px; }
+  .rq-flow-after-methods { height:54px;margin:0; }
   .rq-question-label { display:none; }
   .rq-question-label::after { display:none; }
   .rq-question-row { display:grid;grid-template-columns:repeat(4,1fr);gap:18px;position:relative; }
@@ -7356,14 +7358,14 @@ function renderResearchEvidenceTree() {
           <line x1="875" y1="12" x2="875" y2="53" marker-end="url(#rqArrowBranch)"></line>
         </svg>
         <div class="rq-question-row">${rows}</div>
-        <svg class="rq-flow-svg rq-flow-after-questions" viewBox="0 0 1000 66" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-after-questions" viewBox="0 0 1000 82" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowMid" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
           <line x1="125" y1="0" x2="125" y2="26"></line>
           <line x1="375" y1="0" x2="375" y2="26"></line>
           <line x1="625" y1="0" x2="625" y2="26"></line>
           <line x1="875" y1="0" x2="875" y2="26"></line>
           <line x1="125" y1="26" x2="875" y2="26"></line>
-          <line x1="500" y1="26" x2="500" y2="52" marker-end="url(#rqArrowMid)"></line>
+          <line x1="500" y1="26" x2="500" y2="68" marker-end="url(#rqArrowMid)"></line>
         </svg>
         <div class="rq-methods-wrap">
           <div class="rq-methods-title">Methods / Evidence</div>
@@ -7373,9 +7375,9 @@ function renderResearchEvidenceTree() {
             <div class="rq-branch"><strong>Interview evidence</strong><span>${dashEscape(selected.interview)}</span><button type="button" onclick="openInterviewEvidence()">Open interviews</button></div>
           </div>
         </div>
-        <svg class="rq-flow-svg rq-flow-after-methods" viewBox="0 0 1000 38" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-after-methods" viewBox="0 0 1000 54" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowBottom" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
-          <line x1="500" y1="0" x2="500" y2="28" marker-end="url(#rqArrowBottom)"></line>
+          <line x1="500" y1="0" x2="500" y2="42" marker-end="url(#rqArrowBottom)"></line>
         </svg>
         <div class="rq-results-box">
           <div class="rq-results-title">Analytics Outputs / Results</div>
