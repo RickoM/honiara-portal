@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-project-story-map-v82">
+<meta name="portal-build" content="2026-07-16-project-story-map-arrows-v83">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -953,11 +953,15 @@
   .rq-project-title { text-align:center;color:var(--navy);font-size:19px;font-weight:900;margin:4px 0 8px;letter-spacing:-.02em; }
   .rq-project-box { width:360px;margin:0 auto;border:1px solid var(--border);border-radius:10px;background:#fff;padding:12px 16px;text-align:center;font-size:12px;line-height:1.35;color:var(--navy);font-weight:800;box-shadow:var(--shadow);position:relative; }
   .rq-project-box::after { content:'';position:absolute;left:50%;bottom:-42px;width:2px;height:42px;background:#1f2a44; }
+  .rq-project-box::before { content:'';position:absolute;left:calc(50% - 6px);bottom:-44px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #1f2a44;z-index:2; }
   .rq-question-label { text-align:center;color:var(--navy);font-size:16px;font-weight:900;margin:42px 0 16px;position:relative; }
+  .rq-question-label::after { content:'';position:absolute;left:50%;bottom:-16px;width:2px;height:16px;background:#1f2a44; }
   .rq-question-row { display:grid;grid-template-columns:repeat(4,1fr);gap:18px;position:relative; }
   .rq-question-row::before { content:'';position:absolute;left:12.5%;right:12.5%;top:-16px;height:2px;background:#1f2a44; }
-  .rq-node { position:relative;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden; }
+  .rq-node { position:relative;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:visible; }
+  .rq-node-btn { border-radius:12px; }
   .rq-node::before { content:'';position:absolute;left:50%;top:-18px;width:2px;height:18px;background:#1f2a44; }
+  .rq-node::after { content:'';position:absolute;left:calc(50% - 6px);top:-7px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #1f2a44;z-index:2; }
   .rq-node.selected { border-color:#9db8d6;box-shadow:0 0 0 3px rgba(28,53,87,.10),var(--shadow); }
   .rq-node-btn { width:100%;min-height:185px;border:0;background:#fff;padding:16px 14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;cursor:pointer;text-align:center;color:var(--navy); }
   .rq-node-btn:hover, .rq-node.selected .rq-node-btn { background:#f8fafc; }
@@ -971,6 +975,7 @@
   .rq-toggle { font-size:0; }
   .rq-methods-wrap { margin-top:26px;border:2px solid rgba(31,42,68,.32);border-radius:14px;padding:18px 18px 20px;position:relative;background:#fcfcfd; }
   .rq-methods-wrap::before { content:'';position:absolute;left:12.5%;right:12.5%;top:-26px;height:2px;background:#1f2a44; }
+  .rq-methods-wrap::after { content:'';position:absolute;left:calc(50% - 6px);top:-8px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #1f2a44;z-index:2; }
   .rq-methods-title { position:absolute;left:18px;top:-13px;background:#fcfcfd;padding:0 8px;color:var(--navy);font-size:14px;font-weight:900; }
   .rq-methods-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px; }
   .rq-branch { border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;display:grid;gap:8px;align-items:start;box-shadow:var(--shadow); }
@@ -980,6 +985,7 @@
   .rq-branch button:hover, .rq-results-box button:hover { filter:brightness(.97); }
   .rq-results-box { width:520px;margin:18px auto 0;border:2px solid rgba(31,42,68,.28);border-radius:14px;background:#fff;padding:14px 16px;text-align:center;box-shadow:var(--shadow);position:relative;display:grid;gap:8px; }
   .rq-results-box::before { content:'';position:absolute;left:50%;top:-20px;width:2px;height:20px;background:#1f2a44; }
+  .rq-results-box::after { content:'';position:absolute;left:calc(50% - 6px);top:-8px;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid #1f2a44;z-index:2; }
   .rq-results-title { color:var(--navy);font-weight:900;font-size:15px; }
   .rq-results-detail { color:var(--gray-600);font-size:11px;line-height:1.35; }
   .rq-results-actions { display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px; }
