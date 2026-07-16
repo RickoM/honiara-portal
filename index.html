@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-clickable-ward-gps-issues-v60">
+<meta name="portal-build" content="2026-07-16-sticky-gps-issue-worklist-v62">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1598,6 +1598,7 @@
     <div class="data-card">
       <div class="data-toolbar">
         <span style="font-size:12px;color:var(--gray-600)" id="data-count">0 records</span>
+        <button class="btn btn-sm" id="dt-clear-gps-issue-filter" onclick="clearDashboardGpsIssueFilter(true);renderDataTable()" style="display:none">Clear GPS issue filter</button>
         <select id="dt-ward" onchange="renderDataTable()" style="font-size:11px">
           <option value="">All wards</option>
           <option>Nggossi</option><option>Mbumburu</option><option>Rove/Lengakiki</option>
@@ -6327,6 +6328,20 @@ function dashboardGpsStatusBuckets(records) {
 }
 
 let dashboardGpsIssueFilter = null;
+let dashboardGpsIssueOpening = false;
+
+function dashboardRecordKey(record) {
+  return String(record?._id || record?.id || record?.respondentId || record?.submissionId || '');
+}
+
+function clearDashboardGpsIssueFilter(resetControls = false) {
+  dashboardGpsIssueFilter = null;
+  if (!resetControls) return;
+  const wardSelect = document.getElementById('dt-ward');
+  const typeSelect = document.getElementById('dt-type');
+  if (wardSelect) wardSelect.value = '';
+  if (typeSelect && typeSelect.value === 'survey') typeSelect.value = '';
+}
 
 function dashboardGpsIssueKinds(record) {
   const kinds = [];
@@ -6351,6 +6366,9 @@ function dashboardGpsIssueLabel(kind) {
 
 function recordMatchesDashboardGpsIssue(record, filter) {
   if (!filter) return true;
+  if (Array.isArray(filter.recordKeys) && filter.recordKeys.length) {
+    return filter.recordKeys.includes(dashboardRecordKey(record));
+  }
   if (filter.ward && record.ward !== filter.ward) return false;
   const kinds = dashboardGpsIssueKinds(record);
   if (filter.kind === 'all') return kinds.length > 0;
@@ -6358,12 +6376,18 @@ function recordMatchesDashboardGpsIssue(record, filter) {
 }
 
 function openDashboardGpsIssueRecords(ward, kind) {
-  dashboardGpsIssueFilter = { ward, kind };
+  const recordKeys = points
+    .filter(record => record.type === 'survey' && record.ward === ward && recordMatchesDashboardGpsIssue(record, { ward, kind }))
+    .map(dashboardRecordKey)
+    .filter(Boolean);
+  dashboardGpsIssueFilter = { ward, kind, recordKeys };
   const wardSelect = document.getElementById('dt-ward');
   const typeSelect = document.getElementById('dt-type');
   if (wardSelect) wardSelect.value = ward;
   if (typeSelect) typeSelect.value = 'survey';
+  dashboardGpsIssueOpening = true;
   switchView('data', document.getElementById('tnav-data'));
+  dashboardGpsIssueOpening = false;
 }
 
 function dashboardWardIssueChips(ward, records) {
@@ -7606,9 +7630,6 @@ function renderDataTable() {
   const fw   = document.getElementById('dt-ward').value;
   const fo   = document.getElementById('dt-op').value;
   const ft   = document.getElementById('dt-type').value;
-  if (dashboardGpsIssueFilter && dashboardGpsIssueFilter.ward && fw && fw !== dashboardGpsIssueFilter.ward) {
-    dashboardGpsIssueFilter = null;
-  }
   let rows   = points;
   if (fw) rows = rows.filter(p => p.ward === fw);
   if (fo) rows = rows.filter(p => p.op === fo);
@@ -7643,6 +7664,8 @@ function renderDataTable() {
     document.getElementById('data-count').textContent +=
       `  - filtered: ${dashboardGpsIssueLabel(dashboardGpsIssueFilter.kind)} in ${dashboardGpsIssueFilter.ward}`;
   }
+  const clearGpsIssueFilterBtn = document.getElementById('dt-clear-gps-issue-filter');
+  if (clearGpsIssueFilterBtn) clearGpsIssueFilterBtn.style.display = dashboardGpsIssueFilter ? 'inline-flex' : 'none';
 
   const tbody = document.getElementById('dt-body');
   if (!rows.length) {
