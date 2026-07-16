@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-participant-question-stats-v80">
+<meta name="portal-build" content="2026-07-16-research-question-tree-v81">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -948,25 +948,32 @@
   .analytics-stat-row:last-child { border-bottom:0;padding-bottom:0; }
   .analytics-stat-label { color:var(--gray-600);font-weight:700; }
   .analytics-stat-value { color:var(--navy);font-weight:900;white-space:nowrap;text-align:right; }
-  .rq-tree { padding:16px;background:#fff; }
-  .rq-tree-root { border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#f8fafc; }
-  .rq-node { border-bottom:1px solid var(--border);background:#fff; }
-  .rq-node:last-child { border-bottom:0; }
-  .rq-node-btn { width:100%;border:0;background:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;text-align:left;color:var(--navy);font-weight:900;font-size:13px; }
+  .rq-tree { padding:18px;background:#fff;overflow:auto; }
+  .rq-tree-root { min-width:980px;background:#fff;padding:6px 10px 18px; }
+  .rq-project-title { text-align:center;color:var(--navy);font-size:19px;font-weight:900;margin:4px 0 8px;letter-spacing:-.02em; }
+  .rq-project-box { width:360px;margin:0 auto;border:1px solid var(--border);border-radius:10px;background:#fff;padding:12px 16px;text-align:center;font-size:12px;line-height:1.35;color:var(--navy);font-weight:800;box-shadow:var(--shadow);position:relative; }
+  .rq-project-box::after { content:'';position:absolute;left:50%;bottom:-42px;width:2px;height:42px;background:#1f2a44; }
+  .rq-question-label { text-align:center;color:var(--navy);font-size:16px;font-weight:900;margin:42px 0 16px;position:relative; }
+  .rq-question-row { display:grid;grid-template-columns:repeat(4,1fr);gap:18px;position:relative; }
+  .rq-question-row::before { content:'';position:absolute;left:12.5%;right:12.5%;top:-16px;height:2px;background:#1f2a44; }
+  .rq-node { position:relative;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden; }
+  .rq-node::before { content:'';position:absolute;left:50%;top:-18px;width:2px;height:18px;background:#1f2a44; }
+  .rq-node-btn { width:100%;min-height:185px;border:0;background:#fff;padding:16px 14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;cursor:pointer;text-align:center;color:var(--navy); }
   .rq-node-btn:hover { background:#f8fafc; }
-  .rq-node-title { display:flex;align-items:center;gap:8px; }
-  .rq-toggle { width:20px;height:20px;border-radius:999px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:12px;background:#fff;color:var(--navy); }
-  .rq-node-meta { font-size:10px;color:var(--gray-600);font-weight:700; }
-  .rq-branches { display:none;padding:0 14px 14px 43px;background:#fff; }
+  .rq-node-title { display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:900;font-size:17px;line-height:1.2; }
+  .rq-node-question { display:block;font-size:12px;font-weight:700;line-height:1.35;color:#111827; }
+  .rq-toggle { width:24px;height:24px;border-radius:999px;border:1px solid #c9d8ea;display:inline-flex;align-items:center;justify-content:center;background:#edf3fb;color:var(--navy); }
+  .rq-node-meta { font-size:10px;color:var(--gray-600);font-weight:800;line-height:1.3; }
+  .rq-branches { display:none;padding:0 12px 12px;background:#fff; }
   .rq-node.open .rq-branches { display:grid;gap:8px; }
   .rq-node.open .rq-toggle { background:var(--navy);color:#fff;border-color:var(--navy); }
   .rq-node.open .rq-toggle::before { content:'-'; }
   .rq-node:not(.open) .rq-toggle::before { content:'+'; }
   .rq-toggle { font-size:0; }
-  .rq-branch { border:1px solid var(--border);border-radius:10px;padding:9px 10px;background:#fcfcfd;display:grid;grid-template-columns:150px 1fr auto;gap:10px;align-items:start; }
-  .rq-branch strong { color:var(--navy);font-size:12px; }
+  .rq-branch { border:1px solid var(--border);border-radius:10px;padding:9px;background:#fcfcfd;display:grid;gap:6px;align-items:start; }
+  .rq-branch strong { color:var(--navy);font-size:11px;text-transform:uppercase;letter-spacing:.04em; }
   .rq-branch span { color:var(--gray-600);font-size:11px;line-height:1.35; }
-  .rq-branch button { border:1px solid #c9d8ea;background:#edf3fb;color:var(--navy);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap; }
+  .rq-branch button { justify-self:start;border:1px solid #c9d8ea;background:#edf3fb;color:var(--navy);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap; }
   .rq-branch button:hover { filter:brightness(.97); }
   .constituency-dashboard { margin-bottom:14px; }
   .constituency-summary-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden; }
@@ -7206,51 +7213,43 @@ function renderDataReadingResults(allSurveys) {
 const RESEARCH_EVIDENCE_TREE = [
   {
     id: 'rq1',
-    title: 'RQ1 Coverage and availability',
-    meta: 'Coverage experience, weak signal locations and mapped signal evidence',
-    survey: 'Survey: B1-B4 coverage rating, dropped calls, dead zones and problem locations.',
-    data: 'Data readings: GPS status, RSRP, ward clusters, bands and tower/cell context.',
-    interview: 'Interview: coverage gaps, terrain, tower placement and rollout constraints.'
+    title: 'Question 1',
+    question: 'Do measurable problems exist in mobile network coverage, quality of service, and affordability in Honiara relative to ITU benchmarks and comparable Pacific SIDS?',
+    meta: 'Coverage, QoS, affordability and measured performance evidence',
+    survey: 'Survey evidence: B1-B4 coverage, C1-C8 QoS, D1-D4 affordability.',
+    data: 'Data reading evidence: RSRP, RSRQ, RSSNR/SINR, speed, latency, GPS and ward-level clusters.',
+    interview: 'Interview evidence: stakeholder explanations for coverage, QoS and affordability gaps.',
+    output: 'Analytics output: ward-level participant survey statistics and measured reading tables.'
   },
   {
     id: 'rq2',
-    title: 'RQ2 QoS and service performance',
-    meta: 'Voice reliability, data speed, latency and service quality',
-    survey: 'Survey: C1-C8 call quality, reliability, internet speed, usage times and app demand.',
-    data: 'Data readings: RSRQ, RSSNR/SINR, download, upload, ping and jitter.',
-    interview: 'Interview: congestion, backhaul, spectrum capacity and operational limits.'
+    title: 'Question 2',
+    question: 'Is existing and planned mobile network capacity in Honiara aligned with current population density and projected population growth over the next 5-10 years?',
+    meta: 'Capacity, demand, spectrum, tower and ward-density evidence',
+    survey: 'Survey evidence: usage demand, service reliability, app use and user experience by ward.',
+    data: 'Data reading evidence: bands, PLMN, serving cells, eNB/LCID, speed, ping and congestion indicators.',
+    interview: 'Interview evidence: planned capacity, rollout constraints, tower deployment and backhaul.',
+    output: 'Analytics output: ward-level data reading results and tower/cell/band summaries.'
   },
   {
     id: 'rq3',
-    title: 'RQ3 Affordability and value',
-    meta: 'Cost, top-up pressure and value-for-money experience',
-    survey: 'Survey: D1-D4 monthly spend, affordability, top-up difficulty and WiFi alternative.',
-    data: 'Data readings: used for comparison where high cost overlaps with poor measured service.',
-    interview: 'Interview: pricing, packages, affordability policy and market constraints.'
+    title: 'Question 3',
+    question: "How does competition in Solomon Islands' duopoly mobile market affect network performance and service affordability?",
+    meta: 'Operator choice, switching, perceived quality and market evidence',
+    survey: 'Survey evidence: A3 operator, E1 switching, E2 perceived quality difference, E3 Starlink awareness.',
+    data: 'Data reading evidence: MCC/MNC, PLMN, operator, band and serving-cell performance by ward.',
+    interview: 'Interview evidence: market structure, competition, pricing and investment incentives.',
+    output: 'Analytics output: operator comparison, participant market responses and measured operator evidence.'
   },
   {
     id: 'rq4',
-    title: 'RQ4 Competition and choice',
-    meta: 'Operator switching, perceived quality difference and substitutes',
-    survey: 'Survey: E1-E3 switching, operator quality comparison and Starlink awareness/use.',
-    data: 'Data readings: MCC/MNC operator, PLMN, band distribution and serving-cell evidence.',
-    interview: 'Interview: competition, market structure, operator strategy and regulatory context.'
-  },
-  {
-    id: 'rq5',
-    title: 'RQ5 Experience vs measured readings',
-    meta: 'Where participant experience agrees or disagrees with technical readings',
-    survey: 'Survey: combined B/C/D experience indicators by ward and respondent.',
-    data: 'Data readings: RSRP, RSRQ, RSSNR/SINR, speed, latency, bands and serving cells.',
-    interview: 'Interview: explanations for mismatches such as indoor use, congestion, devices and timing.'
-  },
-  {
-    id: 'rq6',
-    title: 'RQ6 Improvement priorities',
-    meta: 'Participant and stakeholder recommendations',
-    survey: 'Survey: E4 open response and related written comments.',
-    data: 'Data readings: weak wards, poor radio-quality clusters and speed/latency problem areas.',
-    interview: 'Interview: feasibility of upgrades, tower deployment, spectrum, backhaul and affordability measures.'
+    title: 'Question 4',
+    question: 'What policy, regulatory, and infrastructure interventions could address any demand-capacity gap identified in Honiara, given the constraints of Small Island Developing States?',
+    meta: 'Intervention, regulation, infrastructure and improvement evidence',
+    survey: 'Survey evidence: E4 user improvement priorities and related coverage, QoS and affordability statistics.',
+    data: 'Data reading evidence: weak-signal wards, poor-quality clusters, tower gaps, bands and serving cells.',
+    interview: 'Interview evidence: feasible interventions, policy options, spectrum, towers, backhaul and affordability.',
+    output: 'Analytics output: evidence tables for dissertation findings and presentation export.'
   }
 ];
 
@@ -7273,13 +7272,15 @@ function renderResearchEvidenceTree() {
   if (!target) return;
   const rows = RESEARCH_EVIDENCE_TREE.map((rq, index) => `<div class="rq-node ${index === 0 ? 'open' : ''}" id="rq-node-${dashEscape(rq.id)}">
     <button type="button" class="rq-node-btn" onclick="toggleResearchNode('rq-node-${dashEscape(rq.id)}')">
-      <span class="rq-node-title"><span class="rq-toggle">+</span>${dashEscape(rq.title)}</span>
+      <span class="rq-node-title">${dashEscape(rq.title)}<span class="rq-toggle">+</span></span>
+      <span class="rq-node-question">${dashEscape(rq.question)}</span>
       <span class="rq-node-meta">${dashEscape(rq.meta)}</span>
     </button>
     <div class="rq-branches">
-      <div class="rq-branch"><strong>Participant survey evidence</strong><span>${dashEscape(rq.survey)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-participant-results')">Open</button></div>
-      <div class="rq-branch"><strong>Data reading evidence</strong><span>${dashEscape(rq.data)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-data-reading-results')">Open</button></div>
-      <div class="rq-branch"><strong>Interview evidence</strong><span>${dashEscape(rq.interview)}</span><button type="button" onclick="openInterviewEvidence()">Open</button></div>
+      <div class="rq-branch"><strong>Participant survey evidence</strong><span>${dashEscape(rq.survey)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-participant-results')">Open survey card</button></div>
+      <div class="rq-branch"><strong>Data reading evidence</strong><span>${dashEscape(rq.data)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-data-reading-results')">Open data card</button></div>
+      <div class="rq-branch"><strong>Interview evidence</strong><span>${dashEscape(rq.interview)}</span><button type="button" onclick="openInterviewEvidence()">Open interviews</button></div>
+      <div class="rq-branch"><strong>Analytics output</strong><span>${dashEscape(rq.output)}</span><button type="button" onclick="scrollToDashboardEvidence('dash-constituency-overview')">Open overview</button></div>
     </div>
   </div>`).join('');
   target.innerHTML = `<div class="analytics-card">
@@ -7294,7 +7295,14 @@ function renderResearchEvidenceTree() {
         </button>
       </div>
     </div>
-    <div class="rq-tree"><div class="rq-tree-root">${rows}</div></div>
+    <div class="rq-tree">
+      <div class="rq-tree-root">
+        <div class="rq-project-title">Dissertation Project Title</div>
+        <div class="rq-project-box">Mobile Network Performance and Competition in Honiara: A Demand-Capacity Assessment under Rapid Urban Growth</div>
+        <div class="rq-question-label">Research Questions</div>
+        <div class="rq-question-row">${rows}</div>
+      </div>
+    </div>
   </div>`;
 }
 
