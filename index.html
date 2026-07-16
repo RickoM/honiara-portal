@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-kolaa-chip-gps-attention-v63">
+<meta name="portal-build" content="2026-07-16-kolaa-mismatch-filter-reset-v64">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -3546,6 +3546,7 @@ function iaEsc(value) {
 function switchView(id, btn) {
   applyRolePermissions();
   if (activeView === 'survey' && id !== 'survey' && surveyReadOnlyMode) sfReset();
+  if (id === 'dashboard') clearDashboardGpsIssueFilter(true);
   document.querySelectorAll('.tnav').forEach(t => t.classList.remove('on'));
   if (btn) btn.classList.add('on');
   activeView = id;
@@ -6376,8 +6377,9 @@ function recordMatchesDashboardGpsIssue(record, filter) {
   return kinds.includes(filter.kind);
 }
 
-function openDashboardGpsIssueRecords(ward, kind) {
-  const recordKeys = points
+function openDashboardGpsIssueRecords(ward, kind, encodedKeys = '') {
+  const passedKeys = String(encodedKeys || '').split('|').map(value => value.trim()).filter(Boolean);
+  const recordKeys = passedKeys.length ? passedKeys : points
     .filter(record => record.type === 'survey' && record.ward === ward && recordMatchesDashboardGpsIssue(record, { ward, kind }))
     .map(dashboardRecordKey)
     .filter(Boolean);
@@ -6401,9 +6403,14 @@ function dashboardWardIssueChips(ward, records) {
     ['missing-invalid', 'Missing/invalid']
   ].filter(([kind]) => counts[kind]);
   if (!items.length) return '';
-  return `<span class="ward-issue-list">${items.map(([kind, label]) =>
-    `<button type="button" class="ward-issue-chip ${kind === 'missing-invalid' ? '' : 'bad'}" onclick="openDashboardGpsIssueRecords(decodeURIComponent('${encodeURIComponent(ward)}'), decodeURIComponent('${encodeURIComponent(kind)}'))" title="Open affected survey records in Data Table">${counts[kind]} ${dashEscape(label)}</button>`
-  ).join('')}</span>`;
+  return `<span class="ward-issue-list">${items.map(([kind, label]) => {
+    const recordKeys = records
+      .filter(record => dashboardGpsIssueKinds(record).includes(kind))
+      .map(dashboardRecordKey)
+      .filter(Boolean)
+      .join('|');
+    return `<button type="button" class="ward-issue-chip ${kind === 'missing-invalid' ? '' : 'bad'}" data-ward="${dashEscape(ward)}" data-kind="${dashEscape(kind)}" data-keys="${dashEscape(recordKeys)}" onclick="openDashboardGpsIssueRecords(this.dataset.ward, this.dataset.kind, this.dataset.keys)" title="Open affected survey records in Data Table">${counts[kind]} ${dashEscape(label)}</button>`;
+  }).join('')}</span>`;
 }
 
 function renderConstituencyOverview(allSurveys) {
