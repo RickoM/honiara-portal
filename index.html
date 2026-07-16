@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-research-tree-top-aligned-v91">
+<meta name="portal-build" content="2026-07-16-professional-research-structure-v94">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -948,50 +948,54 @@
   .analytics-stat-row:last-child { border-bottom:0;padding-bottom:0; }
   .analytics-stat-label { color:var(--gray-600);font-weight:700; }
   .analytics-stat-value { color:var(--navy);font-weight:900;white-space:nowrap;text-align:right; }
-  .rq-tree { padding:18px;background:#fff;overflow:visible; }
-  .rq-tree-root { width:100%;background:#fff;padding:6px 10px 18px;position:relative; }
-  .rq-project-title { text-align:center;color:var(--navy);font-size:19px;font-weight:900;margin:4px 0 8px;letter-spacing:-.02em; }
-  .rq-project-box { width:360px;margin:0 auto;border:1px solid var(--border);border-radius:10px;background:#fff;padding:12px 16px;text-align:center;font-size:12px;line-height:1.35;color:var(--navy);font-weight:800;box-shadow:var(--shadow);position:relative; }
+  .rq-tree { padding:16px 18px 18px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);overflow:visible; }
+  .rq-tree-root { width:100%;background:transparent;padding:4px 6px 16px;position:relative; }
+  .rq-project-title { text-align:center;color:var(--navy);font-size:18px;font-weight:900;margin:2px 0 8px;letter-spacing:-.015em; }
+  .rq-project-box { width:380px;margin:0 auto;border:1px solid #cfd9e6;border-radius:10px;background:#fff;padding:11px 16px;text-align:center;font-size:12px;line-height:1.35;color:var(--navy);font-weight:800;box-shadow:0 4px 12px rgba(16,24,40,.08);position:relative; }
   .rq-project-box::after, .rq-project-box::before { display:none; }
   .rq-flow-svg { width:100%;display:block;overflow:visible; }
-  .rq-flow-svg path, .rq-flow-svg line { stroke:#1f2a44;stroke-width:2.2;fill:none;stroke-linecap:square;stroke-linejoin:miter; }
-  .rq-flow-title-arrow { height:76px;margin:14px 0 0; }
-  .rq-flow-to-questions { height:116px;margin:0 0 -2px; }
-  .rq-flow-after-questions { height:100px;margin:0 0 -4px; }
-  .rq-flow-after-methods { height:44px;margin:0; }
+  .rq-flow-svg path, .rq-flow-svg line { stroke:#1f2a44;stroke-width:2;fill:none;stroke-linecap:square;stroke-linejoin:miter; }
+  .rq-flow-title-arrow { height:48px;margin:8px 0 0; }
+  .rq-flow-to-questions { height:68px;margin:0; }
+  .rq-flow-after-questions { height:66px;margin:0; }
+  .rq-flow-after-methods { height:38px;margin:0; }
   .rq-question-label { display:none; }
   .rq-question-label::after { display:none; }
-  .rq-question-row { display:grid;grid-template-columns:repeat(4,1fr);gap:22px;position:relative; }
+  .rq-question-row { display:grid;grid-template-columns:repeat(4,1fr);gap:18px;position:relative; }
   .rq-question-row::before, .rq-question-row::after { display:none; }
-  .rq-node { position:relative;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:visible; }
+  .rq-node { position:relative;background:#fff;border:1px solid #d8e1ec;border-radius:12px;box-shadow:0 4px 14px rgba(16,24,40,.07);overflow:hidden; }
   .rq-node-btn { border-radius:12px; }
   .rq-node::before, .rq-node::after { display:none; }
-  .rq-node.selected { border-color:#9db8d6;box-shadow:0 0 0 3px rgba(28,53,87,.10),var(--shadow); }
-  .rq-node-btn { width:100%;min-height:195px;border:0;background:#fff;padding:18px 14px 14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:9px;cursor:pointer;text-align:center;color:var(--navy); }
-  .rq-node-btn:hover, .rq-node.selected .rq-node-btn { background:#f8fafc; }
-  .rq-node-title { display:flex;flex-direction:column;align-items:center;gap:8px;font-weight:900;font-size:17px;line-height:1.2; }
-  .rq-node-question { display:block;font-size:12px;font-weight:700;line-height:1.35;color:#111827; }
-  .rq-toggle { width:24px;height:24px;border-radius:999px;border:1px solid #c9d8ea;display:inline-flex;align-items:center;justify-content:center;background:#edf3fb;color:var(--navy); }
-  .rq-node-meta { font-size:10px;color:var(--gray-600);font-weight:800;line-height:1.3; }
+  .rq-node.selected { border-color:#7fa4cd;box-shadow:0 0 0 3px rgba(28,53,87,.10),0 6px 18px rgba(16,24,40,.10); }
+  .rq-node-btn { width:100%;min-height:170px;border:0;background:#fff;padding:15px 13px 13px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;cursor:pointer;text-align:center;color:var(--navy); }
+  .rq-node-btn:hover, .rq-node.selected .rq-node-btn { background:#fbfdff; }
+  .rq-node-title { display:flex;flex-direction:column;align-items:center;gap:7px;font-weight:900;font-size:15px;line-height:1.2;letter-spacing:-.01em; }
+  .rq-node-question { display:block;font-size:11px;font-weight:750;line-height:1.32;color:#111827; }
+  .rq-toggle { width:22px;height:22px;border-radius:999px;border:1px solid #c9d8ea;display:inline-flex;align-items:center;justify-content:center;background:#edf3fb;color:var(--navy); }
+  .rq-node-meta { font-size:9.5px;color:var(--gray-600);font-weight:800;line-height:1.28; }
+  .rq-node:nth-child(1) .rq-node-btn { background:linear-gradient(180deg,#f4f8fd 0%,#ffffff 72%); }
+  .rq-node:nth-child(2) .rq-node-btn { background:linear-gradient(180deg,#f7fbf7 0%,#ffffff 72%); }
+  .rq-node:nth-child(3) .rq-node-btn { background:linear-gradient(180deg,#fff8ef 0%,#ffffff 72%); }
+  .rq-node:nth-child(4) .rq-node-btn { background:linear-gradient(180deg,#f7f4ff 0%,#ffffff 72%); }
   .rq-node.selected .rq-toggle { background:var(--navy);color:#fff;border-color:var(--navy); }
   .rq-node.selected .rq-toggle::before { content:'*'; }
   .rq-node:not(.selected) .rq-toggle::before { content:'+'; }
   .rq-toggle { font-size:0; }
-  .rq-methods-wrap { margin-top:0;border:2px solid rgba(31,42,68,.32);border-radius:14px;padding:22px 18px 22px;position:relative;background:#fcfcfd; }
+  .rq-methods-wrap { margin-top:0;border:1.5px solid rgba(31,42,68,.30);border-radius:14px;padding:24px 18px 20px;position:relative;background:#fcfcfd; }
   .rq-methods-wrap::before, .rq-methods-wrap::after { display:none; }
-  .rq-methods-title { position:absolute;left:50%;top:-16px;transform:translateX(-50%);background:#fcfcfd;padding:0 14px;color:var(--navy);font-size:18px;font-weight:900;white-space:nowrap; }
-  .rq-methods-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px; }
-  .rq-branch { border:1px solid var(--border);border-radius:12px;padding:12px;background:#fff;display:grid;gap:8px;align-items:start;box-shadow:var(--shadow); }
-  .rq-branch strong { color:var(--navy);font-size:12px;text-transform:uppercase;letter-spacing:.04em; }
+  .rq-methods-title { position:absolute;left:50%;top:-14px;transform:translateX(-50%);background:#fcfcfd;padding:0 14px;color:var(--navy);font-size:16px;font-weight:900;white-space:nowrap;line-height:1.15; }
+  .rq-methods-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:6px; }
+  .rq-branch { border:1px solid #d8e1ec;border-radius:12px;padding:12px;background:#fff;display:grid;gap:8px;align-items:start;box-shadow:0 3px 10px rgba(16,24,40,.06); }
+  .rq-branch strong { color:var(--navy);font-size:11px;text-transform:uppercase;letter-spacing:.04em; }
   .rq-branch span { color:var(--gray-600);font-size:11px;line-height:1.35; }
   .rq-branch button, .rq-results-box button { justify-self:start;border:1px solid #c9d8ea;background:#edf3fb;color:var(--navy);border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap; }
   .rq-branch button:hover, .rq-results-box button:hover { filter:brightness(.97); }
-  .rq-results-box { width:520px;margin:18px auto 0;border:2px solid rgba(31,42,68,.28);border-radius:14px;background:#fff;padding:14px 16px;text-align:center;box-shadow:var(--shadow);position:relative;display:grid;gap:8px; }
+  .rq-results-box { width:500px;margin:16px auto 0;border:1.5px solid rgba(31,42,68,.26);border-radius:14px;background:#fff;padding:13px 16px;text-align:center;box-shadow:0 4px 14px rgba(16,24,40,.07);position:relative;display:grid;gap:8px; }
   .rq-results-box::before, .rq-results-box::after { display:none; }
   .rq-results-title { color:var(--navy);font-weight:900;font-size:15px; }
   .rq-results-detail { color:var(--gray-600);font-size:11px;line-height:1.35; }
   .rq-results-actions { display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px; }
-  .rq-section-title { text-align:center;color:var(--navy);font-size:21px;font-weight:900;margin:0 0 8px;letter-spacing:-0.02em; }
+  .rq-section-title { text-align:center;color:var(--navy);font-size:19px;font-weight:900;margin:0 0 8px;letter-spacing:-0.02em; }
   @media (max-width: 1120px) {
     .rq-flow-svg { display:none; }
     .rq-question-label { display:inline-block;margin:28px 0 18px 0; }
@@ -1498,7 +1502,7 @@
       <div class="dash-selector" id="dash-constituency-selector"></div>
       <div class="analytics-nav">
         <button type="button" onclick="document.getElementById('dash-constituency-overview')?.scrollIntoView({behavior:'smooth',block:'start'})">Overview</button>
-        <button type="button" onclick="document.getElementById('dash-research-tree')?.scrollIntoView({behavior:'smooth',block:'start'})">Research Evidence Tree</button>
+        <button type="button" onclick="document.getElementById('dash-research-tree')?.scrollIntoView({behavior:'smooth',block:'start'})">Dissertation and Research Structure</button>
         <button type="button" onclick="document.getElementById('dash-participant-results')?.scrollIntoView({behavior:'smooth',block:'start'})">Participant Survey Results</button>
         <button type="button" onclick="document.getElementById('dash-data-reading-results')?.scrollIntoView({behavior:'smooth',block:'start'})">Data Reading Results</button>
         <button type="button" onclick="document.getElementById('dash-experience-correlation')?.scrollIntoView({behavior:'smooth',block:'start'})">Survey vs Readings</button>
@@ -7333,42 +7337,36 @@ function renderResearchEvidenceTree() {
   target.innerHTML = `<div class="analytics-card">
     <div class="analytics-card-head">
       <div>
-        <div class="analytics-card-title">Research Evidence Tree</div>
-        <div class="analytics-card-sub">Research questions connected to participant survey evidence, field data readings and interview evidence</div>
-      </div>
-      <div class="constituency-summary-actions">
-        <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-research-tree','honiara-research-evidence-tree')" title="Export" aria-label="Export">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-        </button>
+        <div class="analytics-card-title">Dissertation and Research Structure</div>
       </div>
     </div>
     <div class="rq-tree">
       <div class="rq-tree-root">
         <div class="rq-project-title">Dissertation Project Title</div>
         <div class="rq-project-box">Mobile Network Performance and Competition in Honiara: A Demand-Capacity Assessment under Rapid Urban Growth</div>
-        <svg class="rq-flow-svg rq-flow-title-arrow" viewBox="0 0 1000 76" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-title-arrow" viewBox="0 0 1000 48" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowTop" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
-          <line x1="500" y1="0" x2="500" y2="60" marker-end="url(#rqArrowTop)"></line>
+          <line x1="500" y1="0" x2="500" y2="35" marker-end="url(#rqArrowTop)"></line>
         </svg>
         <div class="rq-section-title">Research Questions</div>
         <div class="rq-question-label">Research Questions</div>
-        <svg class="rq-flow-svg rq-flow-to-questions" viewBox="0 0 1000 116" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-to-questions" viewBox="0 0 1000 68" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowBranch" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
           <line x1="125" y1="12" x2="875" y2="12"></line>
-          <line x1="125" y1="12" x2="125" y2="100" marker-end="url(#rqArrowBranch)"></line>
-          <line x1="375" y1="12" x2="375" y2="100" marker-end="url(#rqArrowBranch)"></line>
-          <line x1="625" y1="12" x2="625" y2="100" marker-end="url(#rqArrowBranch)"></line>
-          <line x1="875" y1="12" x2="875" y2="100" marker-end="url(#rqArrowBranch)"></line>
+          <line x1="125" y1="12" x2="125" y2="53" marker-end="url(#rqArrowBranch)"></line>
+          <line x1="375" y1="12" x2="375" y2="53" marker-end="url(#rqArrowBranch)"></line>
+          <line x1="625" y1="12" x2="625" y2="53" marker-end="url(#rqArrowBranch)"></line>
+          <line x1="875" y1="12" x2="875" y2="53" marker-end="url(#rqArrowBranch)"></line>
         </svg>
         <div class="rq-question-row">${rows}</div>
-        <svg class="rq-flow-svg rq-flow-after-questions" viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-after-questions" viewBox="0 0 1000 66" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowMid" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
-          <line x1="125" y1="0" x2="125" y2="38"></line>
-          <line x1="375" y1="0" x2="375" y2="38"></line>
-          <line x1="625" y1="0" x2="625" y2="38"></line>
-          <line x1="875" y1="0" x2="875" y2="38"></line>
-          <line x1="125" y1="38" x2="875" y2="38"></line>
-          <line x1="500" y1="38" x2="500" y2="92" marker-end="url(#rqArrowMid)"></line>
+          <line x1="125" y1="0" x2="125" y2="26"></line>
+          <line x1="375" y1="0" x2="375" y2="26"></line>
+          <line x1="625" y1="0" x2="625" y2="26"></line>
+          <line x1="875" y1="0" x2="875" y2="26"></line>
+          <line x1="125" y1="26" x2="875" y2="26"></line>
+          <line x1="500" y1="26" x2="500" y2="52" marker-end="url(#rqArrowMid)"></line>
         </svg>
         <div class="rq-methods-wrap">
           <div class="rq-methods-title">Methods / Evidence</div>
@@ -7378,9 +7376,9 @@ function renderResearchEvidenceTree() {
             <div class="rq-branch"><strong>Interview evidence</strong><span>${dashEscape(selected.interview)}</span><button type="button" onclick="openInterviewEvidence()">Open interviews</button></div>
           </div>
         </div>
-        <svg class="rq-flow-svg rq-flow-after-methods" viewBox="0 0 1000 44" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-after-methods" viewBox="0 0 1000 38" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowBottom" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
-          <line x1="500" y1="0" x2="500" y2="38" marker-end="url(#rqArrowBottom)"></line>
+          <line x1="500" y1="0" x2="500" y2="28" marker-end="url(#rqArrowBottom)"></line>
         </svg>
         <div class="rq-results-box">
           <div class="rq-results-title">Analytics Outputs / Results</div>
