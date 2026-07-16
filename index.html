@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-research-tree-fixed-arrows-v89">
+<meta name="portal-build" content="2026-07-16-research-tree-question-connectors-v90">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -956,8 +956,8 @@
   .rq-flow-svg { width:100%;display:block;overflow:visible; }
   .rq-flow-svg path, .rq-flow-svg line { stroke:#1f2a44;stroke-width:2.2;fill:none;stroke-linecap:square;stroke-linejoin:miter; }
   .rq-flow-title-arrow { height:76px;margin:14px 0 0; }
-  .rq-flow-to-questions { height:92px;margin:0 0 -8px; }
-  .rq-flow-after-questions { height:78px;margin:10px 0 -6px; }
+  .rq-flow-to-questions { height:116px;margin:0 0 -2px; }
+  .rq-flow-after-questions { height:100px;margin:0 0 -4px; }
   .rq-flow-after-methods { height:44px;margin:0; }
   .rq-question-label { display:none; }
   .rq-question-label::after { display:none; }
@@ -7352,19 +7352,23 @@ function renderResearchEvidenceTree() {
         </svg>
         <div class="rq-section-title">Research Questions</div>
         <div class="rq-question-label">Research Questions</div>
-        <svg class="rq-flow-svg rq-flow-to-questions" viewBox="0 0 1000 92" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-to-questions" viewBox="0 0 1000 116" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
           <defs><marker id="rqArrowBranch" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
           <line x1="125" y1="12" x2="875" y2="12"></line>
-          <line x1="125" y1="12" x2="125" y2="72" marker-end="url(#rqArrowBranch)"></line>
-          <line x1="375" y1="12" x2="375" y2="72" marker-end="url(#rqArrowBranch)"></line>
-          <line x1="625" y1="12" x2="625" y2="72" marker-end="url(#rqArrowBranch)"></line>
-          <line x1="875" y1="12" x2="875" y2="72" marker-end="url(#rqArrowBranch)"></line>
+          <line x1="125" y1="12" x2="125" y2="100" marker-end="url(#rqArrowBranch)"></line>
+          <line x1="375" y1="12" x2="375" y2="100" marker-end="url(#rqArrowBranch)"></line>
+          <line x1="625" y1="12" x2="625" y2="100" marker-end="url(#rqArrowBranch)"></line>
+          <line x1="875" y1="12" x2="875" y2="100" marker-end="url(#rqArrowBranch)"></line>
         </svg>
         <div class="rq-question-row">${rows}</div>
-        <svg class="rq-flow-svg rq-flow-after-questions" viewBox="0 0 1000 78" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
+        <svg class="rq-flow-svg rq-flow-after-questions" viewBox="0 0 1000 100" preserveAspectRatio="xMidYMin meet" aria-hidden="true">
           <defs><marker id="rqArrowMid" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
-          <line x1="125" y1="30" x2="875" y2="30"></line>
-          <line x1="500" y1="30" x2="500" y2="72" marker-end="url(#rqArrowMid)"></line>
+          <line x1="125" y1="0" x2="125" y2="38"></line>
+          <line x1="375" y1="0" x2="375" y2="38"></line>
+          <line x1="625" y1="0" x2="625" y2="38"></line>
+          <line x1="875" y1="0" x2="875" y2="38"></line>
+          <line x1="125" y1="38" x2="875" y2="38"></line>
+          <line x1="500" y1="38" x2="500" y2="92" marker-end="url(#rqArrowMid)"></line>
         </svg>
         <div class="rq-methods-wrap">
           <div class="rq-methods-title">Methods / Evidence</div>
