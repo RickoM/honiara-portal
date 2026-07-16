@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-project-story-map-spacing-v84">
+<meta name="portal-build" content="2026-07-16-project-story-map-responsive-v85">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -948,8 +948,8 @@
   .analytics-stat-row:last-child { border-bottom:0;padding-bottom:0; }
   .analytics-stat-label { color:var(--gray-600);font-weight:700; }
   .analytics-stat-value { color:var(--navy);font-weight:900;white-space:nowrap;text-align:right; }
-  .rq-tree { padding:18px;background:#fff;overflow:auto; }
-  .rq-tree-root { min-width:980px;background:#fff;padding:6px 10px 18px; }
+  .rq-tree { padding:18px;background:#fff;overflow:visible; }
+  .rq-tree-root { width:100%;background:#fff;padding:6px 10px 18px; }
   .rq-project-title { text-align:center;color:var(--navy);font-size:19px;font-weight:900;margin:4px 0 8px;letter-spacing:-.02em; }
   .rq-project-box { width:360px;margin:0 auto;border:1px solid var(--border);border-radius:10px;background:#fff;padding:12px 16px;text-align:center;font-size:12px;line-height:1.35;color:var(--navy);font-weight:800;box-shadow:var(--shadow);position:relative; }
   .rq-project-box::after { content:'';position:absolute;left:50%;bottom:-42px;width:2px;height:42px;background:#1f2a44; }
@@ -989,6 +989,31 @@
   .rq-results-title { color:var(--navy);font-weight:900;font-size:15px; }
   .rq-results-detail { color:var(--gray-600);font-size:11px;line-height:1.35; }
   .rq-results-actions { display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px; }
+  @media (max-width: 1120px) {
+    .rq-question-row { grid-template-columns:repeat(2,1fr);gap:34px 22px; }
+    .rq-question-row::before { display:none; }
+    .rq-node::before, .rq-node::after { display:none; }
+    .rq-question-label::after { height:22px;bottom:-22px; }
+    .rq-methods-wrap { margin-top:34px; }
+    .rq-methods-wrap::before { left:50%;right:auto;width:2px;height:34px;top:-34px; }
+    .rq-methods-grid { grid-template-columns:1fr; }
+  }
+  @media (max-width: 680px) {
+    .rq-tree { padding:12px; }
+    .rq-tree-root { padding:4px 0 12px; }
+    .rq-project-title { font-size:17px; }
+    .rq-project-box, .rq-results-box { width:100%; }
+    .rq-question-label { margin:50px 0 18px;padding-left:0;text-align:left; }
+    .rq-question-label::after { display:none; }
+    .rq-question-row { grid-template-columns:1fr;gap:12px; }
+    .rq-node-btn { min-height:0;padding:14px 12px; }
+    .rq-node-title { font-size:15px; }
+    .rq-node-question { font-size:11px; }
+    .rq-methods-wrap { margin-top:18px;padding:18px 12px 14px; }
+    .rq-methods-wrap::before, .rq-methods-wrap::after, .rq-results-box::before, .rq-results-box::after { display:none; }
+    .rq-methods-title { position:static;display:inline-block;margin-bottom:10px;background:transparent;padding:0; }
+    .rq-results-actions button, .rq-branch button { width:100%;justify-self:stretch; }
+  }
   .constituency-dashboard { margin-bottom:14px; }
   .constituency-summary-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden; }
   .constituency-summary-title { font-size:18px;font-weight:900;color:#fff;letter-spacing:-.02em;margin:0;text-align:left; }
