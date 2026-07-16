@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-15-step7-raw-map-photo-order-v45">
+<meta name="portal-build" content="2026-07-16-findings-image-latex-export-v47">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -919,10 +919,18 @@
   .dash-mini-bar { height:7px;background:var(--gray-200);border-radius:999px;overflow:hidden;min-width:74px; }
   .dash-mini-fill { height:100%;border-radius:999px; }
   .dash-two-col { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px; }
+  .dash-export-bar { display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px;align-items:center; }
+  .dash-export-bar .btn { min-height:34px; }
+  .dash-findings-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px; }
+  .dash-finding-card { border:1px solid var(--border);border-radius:10px;padding:12px;background:#fff; }
+  .dash-finding-title { font-size:11px;font-weight:800;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px; }
+  .dash-finding-text { font-size:12px;line-height:1.45;color:var(--text); }
+  .dash-export-note { font-size:11px;color:var(--gray-600);line-height:1.45;margin-left:auto; }
   @media (max-width: 900px) {
     .dash-header { flex-direction:column; }
     .dash-grid { grid-template-columns:1fr 1fr; }
-    .dash-story, .dash-two-col { grid-template-columns:1fr; }
+    .dash-story, .dash-two-col, .dash-findings-grid { grid-template-columns:1fr; }
+    .dash-export-note { width:100%;margin-left:0; }
   }
   @media (max-width: 520px) {
     .dash-grid { grid-template-columns:1fr; }
@@ -1358,6 +1366,16 @@
         <div style="font-size:11px;color:var(--gray-600);text-align:right" id="dash-scope-note"></div>
       </div>
       <div class="dash-selector" id="dash-constituency-selector"></div>
+      <div class="dash-export-bar">
+        <button class="btn primary" type="button" onclick="exportDashboardFindingsMarkdown()">Export findings notes</button>
+        <button class="btn" type="button" onclick="exportDashboardFindingsImage()">Export image table</button>
+        <button class="btn" type="button" onclick="exportDashboardFindingsLatex()">Export LaTeX table</button>
+        <button class="btn" type="button" onclick="exportDashboardFindingsCSV()">Export ward metrics CSV</button>
+        <button class="btn" type="button" onclick="copyDashboardFindings()">Copy findings text</button>
+        <button class="btn" type="button" onclick="window.print()">Print / save PDF</button>
+        <div class="dash-export-note">Use image for slides, LaTeX for dissertation tables, notes for write-up wording, and CSV for further analysis.</div>
+      </div>
+      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-findings-pack"></div>
       <div class="dash-grid" id="dash-metrics"></div>
       <div class="dash-story">
         <div class="data-card" style="padding:16px" id="dash-zone-bars"></div>
@@ -5880,6 +5898,421 @@ function wardRadioTechnicalSummary(records) {
   };
 }
 
+function dashboardFindingSource() {
+  const day = selDay === 'all' ? null : selDay;
+  const src = day ? points.filter(p => p.date <= day) : points;
+  return src.filter(p => p.type === 'survey');
+}
+
+function dashboardCsvCell(value) {
+  const text = String(value ?? '');
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function dashboardFindingRows(constituencies = ['West Honiara', 'Central Honiara', 'East Honiara']) {
+  const allSurveys = dashboardFindingSource();
+  const rows = [];
+  constituencies.forEach(constituency => {
+    const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
+    wards.forEach(ward => {
+      const records = allSurveys.filter(record => record.ward === ward || (record.constituency === constituency && !record.ward && false));
+      const target = WARDS[ward]?.target || 0;
+      const tech = wardRadioTechnicalSummary(records);
+      const profiles = records.map(record => ({ survey: dashboardSurveyProfile(record), reading: dashboardReadingProfile(record) }));
+      const qosConcern = profiles.filter(item => item.survey.qosConcern).length;
+      const coverageConcern = profiles.filter(item => item.survey.coverageConcern).length;
+      const affordability = profiles.filter(item => item.survey.affordabilityPressure).length;
+      const measuredPoor = profiles.filter(item => item.reading.measuredPoor).length;
+      const avgUpload = dashAverage(records, ['fd_s1_ookla_ul', 'fd_s1_ncil_ul', 'fd_s1_nperf_ul_avg', 'fd_s1_nperf_ul']);
+      const issue = dashboardFindingAssessment({
+        count: records.length,
+        qosPct: dashPct(qosConcern, records.length),
+        coveragePct: dashPct(coverageConcern, records.length),
+        affordabilityPct: dashPct(affordability, records.length),
+        measuredPct: dashPct(measuredPoor, records.length),
+        tech
+      });
+      rows.push({
+        constituency,
+        ward,
+        target,
+        records: records.length,
+        gpsValid: tech.gps.validGps,
+        insideBoundary: tech.gps.insideBoundary,
+        outsideBoundary: tech.gps.outsideBoundary,
+        wardMismatch: tech.gps.wardMismatch,
+        avgRsrp: tech.avgRsrp,
+        avgRsrq: tech.avgRsrq,
+        avgSinr: tech.avgRssnr,
+        avgDl: tech.avgDl,
+        avgUpload,
+        avgPing: tech.avgPing,
+        bands: tech.bandText,
+        plmn: tech.plmnText,
+        servingTowerGroups: tech.servingTowerCount,
+        servingCells: tech.servingCellCount,
+        qosConcern,
+        coverageConcern,
+        affordability,
+        measuredPoor,
+        assessment: issue.assessment,
+        dissertationFinding: issue.finding
+      });
+    });
+  });
+  return rows;
+}
+
+function dashboardFindingAssessment(row) {
+  if (!row.count) {
+    return {
+      assessment: 'No data yet',
+      finding: 'No finding can be drawn until participant survey records and field readings are entered.'
+    };
+  }
+  const tech = row.tech;
+  if (row.qosPct >= 40 && row.measuredPct >= 30) {
+    return {
+      assessment: 'QoS concern supported by readings',
+      finding: 'Participant QoS concerns align with weak signal, degraded quality, slow speed, or high latency readings.'
+    };
+  }
+  if (Number.isFinite(tech.avgRsrp) && tech.avgRsrp < -100) {
+    return {
+      assessment: 'Coverage strength risk',
+      finding: 'Average RSRP is poor, suggesting weak LTE coverage strength in this ward.'
+    };
+  }
+  if ((Number.isFinite(tech.avgRsrq) && tech.avgRsrq < -15) || (Number.isFinite(tech.avgRssnr) && tech.avgRssnr <= 0)) {
+    return {
+      assessment: 'Radio quality risk',
+      finding: 'RSRQ or SINR/RSSNR indicates degraded quality or a noisy radio environment, which can reduce usable throughput.'
+    };
+  }
+  if (Number.isFinite(tech.avgDl) && tech.avgDl < 1) {
+    return {
+      assessment: 'Throughput risk',
+      finding: 'Average download speed is below 1 Mbps, so the ward should be checked for congestion, poor radio quality, or data-entry issues.'
+    };
+  }
+  if (row.affordabilityPct >= 40) {
+    return {
+      assessment: 'Affordability pressure',
+      finding: 'Affordability concerns are prominent, so the problem is partly value-for-money and not only radio performance.'
+    };
+  }
+  if (row.qosPct >= 40 && row.measuredPct < 30) {
+    return {
+      assessment: 'Experience-reading mismatch',
+      finding: 'Users report QoS problems, but current readings do not fully explain them. Check indoor use, time-of-day congestion, handset/SIM differences, and screenshots.'
+    };
+  }
+  return {
+    assessment: 'No dominant risk yet',
+    finding: 'Current evidence does not show one dominant technical or affordability problem in this ward.'
+  };
+}
+
+function dashboardFindingsMarkdown() {
+  const rows = dashboardFindingRows();
+  const dayText = selDay === 'all' ? 'All survey days' : `Up to ${selDay}`;
+  const activeRows = rows.filter(row => row.constituency === selectedDashboardConstituency);
+  const lines = [];
+  lines.push(`# Honiara mobile network survey findings pack`);
+  lines.push('');
+  lines.push(`Scope: ${dayText}`);
+  lines.push(`Dashboard selection: ${selectedDashboardConstituency}`);
+  lines.push('');
+  ['West Honiara', 'East Honiara', 'Central Honiara'].forEach(constituency => {
+    const constituencyRows = rows.filter(row => row.constituency === constituency);
+    const total = constituencyRows.reduce((sum, row) => sum + row.records, 0);
+    if (!total) return;
+    const target = constituencyRows.reduce((sum, row) => sum + row.target, 0);
+    const avgRsrp = dashAverage(dashboardFindingSource().filter(record => record.constituency === constituency || constituencyRows.some(row => row.ward === record.ward)), ['rsrp', 'fd_s2a_rsrp']);
+    const avgDl = dashAverage(dashboardFindingSource().filter(record => record.constituency === constituency || constituencyRows.some(row => row.ward === record.ward)), ['dl', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl']);
+    lines.push(`## ${constituency}`);
+    lines.push('');
+    lines.push(`- Survey data points: ${total}/${target} (${dashPct(total, target)}% of target).`);
+    lines.push(`- Average RSRP: ${dashNumber(avgRsrp, 0)} dBm (${classifyRsrp(avgRsrp).label}).`);
+    lines.push(`- Average download speed: ${dashNumber(avgDl, 1)} Mbps.`);
+    lines.push('');
+    lines.push(`| Ward | Surveys | GPS inside/outside | Avg RSRP | Avg RSRQ | Avg SINR | DL Mbps | Bands | PLMN/operator | Assessment | Dissertation wording |`);
+    lines.push(`|---|---:|---:|---:|---:|---:|---:|---|---|---|---|`);
+    constituencyRows.forEach(row => {
+      if (!row.records) return;
+      lines.push(`| ${row.ward} | ${row.records}/${row.target} | ${row.insideBoundary}/${row.outsideBoundary} | ${dashNumber(row.avgRsrp, 0)} | ${dashNumber(row.avgRsrq, 1)} | ${dashNumber(row.avgSinr, 1)} | ${dashNumber(row.avgDl, 1)} | ${row.bands} | ${row.plmn} | ${row.assessment} | ${row.dissertationFinding} |`);
+    });
+    lines.push('');
+  });
+  if (activeRows.length) {
+    const keyRows = activeRows.filter(row => row.records).sort((a, b) => b.measuredPoor - a.measuredPoor || a.avgRsrp - b.avgRsrp).slice(0, 3);
+    lines.push(`## Suggested slide summary for ${selectedDashboardConstituency}`);
+    lines.push('');
+    keyRows.forEach(row => {
+      lines.push(`- ${row.ward}: ${row.assessment}. ${row.dissertationFinding}`);
+    });
+    lines.push('');
+  }
+  lines.push('Interpretation note: These outputs describe associations in the survey and readings. Causal claims should be supported with paired screenshots, tower readings, repeated ward patterns, and field notes.');
+  return lines.join('\n');
+}
+
+function dashboardFindingsCSV() {
+  const headers = [
+    'Constituency','Ward','Target surveys','Survey records','Valid GPS','Inside boundary','Outside boundary','Ward mismatch',
+    'Avg RSRP dBm','Avg RSRQ dB','Avg SINR dB','Avg download Mbps','Avg upload Mbps','Avg ping ms',
+    'Bands observed','PLMN/operator observations','Serving tower groups','Serving LTE cells',
+    'QoS concern count','Coverage concern count','Affordability pressure count','Poor measured reading count',
+    'Assessment','Dissertation finding'
+  ];
+  const body = dashboardFindingRows().map(row => [
+    row.constituency, row.ward, row.target, row.records, row.gpsValid, row.insideBoundary, row.outsideBoundary, row.wardMismatch,
+    dashNumber(row.avgRsrp, 0), dashNumber(row.avgRsrq, 1), dashNumber(row.avgSinr, 1), dashNumber(row.avgDl, 1), dashNumber(row.avgUpload, 1), dashNumber(row.avgPing, 0),
+    row.bands, row.plmn, row.servingTowerGroups, row.servingCells,
+    row.qosConcern, row.coverageConcern, row.affordability, row.measuredPoor,
+    row.assessment, row.dissertationFinding
+  ]);
+  return [headers, ...body].map(row => row.map(dashboardCsvCell).join(',')).join('\n');
+}
+
+function dashboardLatexEscape(value) {
+  return String(value ?? '')
+    .replace(/\\/g, '\\textbackslash{}')
+    .replace(/&/g, '\\&')
+    .replace(/%/g, '\\%')
+    .replace(/\$/g, '\\$')
+    .replace(/#/g, '\\#')
+    .replace(/_/g, '\\_')
+    .replace(/{/g, '\\{')
+    .replace(/}/g, '\\}')
+    .replace(/~/g, '\\textasciitilde{}')
+    .replace(/\^/g, '\\textasciicircum{}');
+}
+
+function dashboardSelectedFindingRows() {
+  return dashboardFindingRows([selectedDashboardConstituency]).filter(row => row.records);
+}
+
+function dashboardFindingsLatex() {
+  const rows = dashboardSelectedFindingRows();
+  const caption = `${selectedDashboardConstituency} ward-level mobile network findings`;
+  const label = `tab:${selectedDashboardConstituency.toLowerCase().replace(/\s+/g, '-')}-findings`;
+  const body = rows.map(row => [
+    dashboardLatexEscape(row.ward),
+    `${row.records}/${row.target}`,
+    `${row.insideBoundary}/${row.outsideBoundary}`,
+    dashNumber(row.avgRsrp, 0),
+    dashNumber(row.avgRsrq, 1),
+    dashNumber(row.avgSinr, 1),
+    dashNumber(row.avgDl, 1),
+    dashboardLatexEscape(row.bands.replace(/ \(\d+\)/g, '')),
+    dashboardLatexEscape(row.assessment)
+  ].join(' & ') + ' \\\\').join('\n');
+  return [
+    '% Requires: \\usepackage{booktabs}',
+    '% Optional for wide tables: \\usepackage{adjustbox}',
+    '\\begin{table}[htbp]',
+    '\\centering',
+    `\\caption{${dashboardLatexEscape(caption)}}`,
+    `\\label{${dashboardLatexEscape(label)}}`,
+    '\\small',
+    '\\begin{tabular}{llrrrrrll}',
+    '\\toprule',
+    'Ward & Surveys & GPS in/out & RSRP & RSRQ & SINR & DL & Bands & Assessment \\\\',
+    ' &  &  & dBm & dB & dB & Mbps &  &  \\\\',
+    '\\midrule',
+    body || '\\multicolumn{9}{l}{No ward-level records available.} \\\\',
+    '\\bottomrule',
+    '\\end{tabular}',
+    '\\end{table}',
+    '',
+    '% Note: GPS in/out means records inside the ward boundary / outside or mismatched boundary.',
+    '% RSRP, RSRQ and SINR are averages from the available NCIL/field readings.'
+  ].join('\n');
+}
+
+function dashboardWrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+  const words = String(text || '').split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  words.forEach(word => {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width <= maxWidth) {
+      line = test;
+    } else {
+      if (line) lines.push(line);
+      line = word;
+    }
+  });
+  if (line) lines.push(line);
+  const clipped = lines.slice(0, maxLines);
+  if (lines.length > maxLines && clipped.length) clipped[clipped.length - 1] = clipped[clipped.length - 1].replace(/\.*$/, '') + '...';
+  clipped.forEach((part, index) => ctx.fillText(part, x, y + index * lineHeight));
+  return clipped.length * lineHeight;
+}
+
+function dashboardDownloadCanvas(canvas, filename) {
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = canvas.toDataURL('image/png');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+function exportDashboardFindingsImage() {
+  const rows = dashboardSelectedFindingRows();
+  const scale = 2;
+  const width = 1500;
+  const rowHeight = 92;
+  const headerHeight = 170;
+  const footerHeight = 70;
+  const height = headerHeight + Math.max(rows.length, 1) * rowHeight + footerHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = '#1C3557';
+  ctx.fillRect(0, 0, width, 92);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '700 30px Inter, Arial, sans-serif';
+  ctx.fillText(`${selectedDashboardConstituency} ward-level findings`, 36, 46);
+  ctx.font = '400 15px Inter, Arial, sans-serif';
+  ctx.fillText('Survey experience, GPS validity, NCIL radio readings, spectrum bands and analytical interpretation', 36, 72);
+  ctx.fillStyle = '#344054';
+  ctx.font = '600 15px Inter, Arial, sans-serif';
+  ctx.fillText(`Generated from Honiara Survey Portal - ${new Date().toISOString().slice(0, 10)}`, 36, 122);
+
+  const cols = [
+    { label: 'Ward', x: 36, w: 170 },
+    { label: 'Surveys', x: 220, w: 95 },
+    { label: 'GPS in/out', x: 325, w: 110 },
+    { label: 'RSRP', x: 445, w: 90 },
+    { label: 'RSRQ', x: 545, w: 90 },
+    { label: 'SINR', x: 645, w: 90 },
+    { label: 'DL Mbps', x: 745, w: 100 },
+    { label: 'Bands', x: 855, w: 145 },
+    { label: 'PLMN/operator', x: 1010, w: 190 },
+    { label: 'Assessment', x: 1210, w: 250 },
+  ];
+  ctx.fillStyle = '#F2F4F7';
+  ctx.fillRect(24, 140, width - 48, 38);
+  ctx.fillStyle = '#475467';
+  ctx.font = '700 13px Inter, Arial, sans-serif';
+  cols.forEach(col => ctx.fillText(col.label, col.x, 164));
+  ctx.strokeStyle = '#D0D5DD';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(24, 140, width - 48, 38 + Math.max(rows.length, 1) * rowHeight);
+
+  if (!rows.length) {
+    ctx.fillStyle = '#667085';
+    ctx.font = '400 18px Inter, Arial, sans-serif';
+    ctx.fillText('No ward-level records available for this selected constituency.', 36, 225);
+  } else {
+    rows.forEach((row, index) => {
+      const y = 178 + index * rowHeight;
+      ctx.fillStyle = index % 2 ? '#FFFFFF' : '#FCFCFD';
+      ctx.fillRect(24, y, width - 48, rowHeight);
+      ctx.strokeStyle = '#EAECF0';
+      ctx.beginPath();
+      ctx.moveTo(24, y + rowHeight);
+      ctx.lineTo(width - 24, y + rowHeight);
+      ctx.stroke();
+      ctx.fillStyle = '#101828';
+      ctx.font = '700 15px Inter, Arial, sans-serif';
+      dashboardWrapCanvasText(ctx, row.ward, cols[0].x, y + 27, cols[0].w, 18, 2);
+      ctx.font = '600 14px Inter, Arial, sans-serif';
+      ctx.fillText(`${row.records}/${row.target}`, cols[1].x, y + 28);
+      ctx.fillText(`${row.insideBoundary}/${row.outsideBoundary}`, cols[2].x, y + 28);
+      ctx.fillText(`${dashNumber(row.avgRsrp, 0)} dBm`, cols[3].x, y + 28);
+      ctx.fillText(`${dashNumber(row.avgRsrq, 1)} dB`, cols[4].x, y + 28);
+      ctx.fillText(`${dashNumber(row.avgSinr, 1)} dB`, cols[5].x, y + 28);
+      ctx.fillText(`${dashNumber(row.avgDl, 1)}`, cols[6].x, y + 28);
+      ctx.font = '400 13px Inter, Arial, sans-serif';
+      dashboardWrapCanvasText(ctx, row.bands, cols[7].x, y + 25, cols[7].w, 17, 3);
+      dashboardWrapCanvasText(ctx, row.plmn, cols[8].x, y + 25, cols[8].w, 17, 3);
+      ctx.fillStyle = row.assessment.includes('risk') || row.assessment.includes('concern') ? '#7A4B08' : '#1C3557';
+      ctx.font = '600 13px Inter, Arial, sans-serif';
+      dashboardWrapCanvasText(ctx, row.assessment, cols[9].x, y + 25, cols[9].w, 17, 3);
+    });
+  }
+
+  ctx.fillStyle = '#667085';
+  ctx.font = '400 12px Inter, Arial, sans-serif';
+  ctx.fillText('Note: GPS in/out means records inside the ward boundary / outside or mismatched boundary. Use with screenshots and field notes before making causal claims.', 36, height - 30);
+  dashboardDownloadCanvas(canvas, `honiara-${selectedDashboardConstituency.toLowerCase().replace(/\s+/g, '-')}-findings-table.png`);
+}
+
+function exportDashboardFindingsLatex() {
+  iaDownloadText(`honiara-${selectedDashboardConstituency.toLowerCase().replace(/\s+/g, '-')}-findings-table.tex`, dashboardFindingsLatex());
+}
+
+function exportDashboardFindingsMarkdown() {
+  iaDownloadText(`honiara-findings-notes-${new Date().toISOString().slice(0,10)}.md`, dashboardFindingsMarkdown());
+}
+
+function exportDashboardFindingsCSV() {
+  iaDownloadText(`honiara-ward-findings-${new Date().toISOString().slice(0,10)}.csv`, dashboardFindingsCSV());
+}
+
+async function copyDashboardFindings() {
+  const text = dashboardFindingsMarkdown();
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('Findings text copied. You can paste it into Word or PowerPoint.');
+  } catch (error) {
+    iaDownloadText(`honiara-findings-notes-${new Date().toISOString().slice(0,10)}.md`, text);
+  }
+}
+
+function renderDashboardFindingsPack(records, constituency) {
+  const target = document.getElementById('dash-findings-pack');
+  if (!target) return;
+  const rows = dashboardFindingRows([constituency]).filter(row => row.records);
+  const total = records.length;
+  if (!total) {
+    target.innerHTML = `<div style="font-size:13px;font-weight:800;color:var(--navy)">Exportable findings pack</div>
+      <div class="dash-insight warn" style="margin-top:10px">No records are available for this selected constituency yet.</div>`;
+    return;
+  }
+  const profiles = records.map(record => ({ survey: dashboardSurveyProfile(record), reading: dashboardReadingProfile(record) }));
+  const qosConcern = profiles.filter(item => item.survey.qosConcern).length;
+  const measuredPoor = profiles.filter(item => item.reading.measuredPoor).length;
+  const affordability = profiles.filter(item => item.survey.affordabilityPressure).length;
+  const strongest = rows.slice().sort((a, b) => b.measuredPoor - a.measuredPoor || a.avgRsrp - b.avgRsrp)[0];
+  const mismatch = profiles.filter(item => item.survey.qosConcern && item.reading.hasReading && !item.reading.measuredPoor).length;
+  const bullets = [
+    `${constituency} has ${total} survey data point${total === 1 ? '' : 's'} in this view.`,
+    `${qosConcern} record${qosConcern === 1 ? '' : 's'} show reported QoS concern; ${measuredPoor} show poor measured readings.`,
+    `${affordability} record${affordability === 1 ? '' : 's'} show affordability pressure.`,
+    mismatch ? `${mismatch} QoS concern${mismatch === 1 ? '' : 's'} are not fully explained by readings and need interpretation.` : 'No major QoS/readings mismatch is dominant in this view.'
+  ];
+  target.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div>
+        <div style="font-size:13px;font-weight:800;color:var(--navy)">Exportable findings pack</div>
+        <div style="font-size:11px;color:var(--gray-600);margin-top:3px;line-height:1.45">A concise evidence format for your dissertation write-up and presentation slides. Export the notes for wording, or CSV for ward-level charts.</div>
+      </div>
+      <span class="badge badge-blue">${selectedDashboardConstituency} selected</span>
+    </div>
+    <div class="dash-findings-grid">
+      <div class="dash-finding-card">
+        <div class="dash-finding-title">Headline finding</div>
+        <div class="dash-finding-text">${bullets.map(item => `<div style="margin-bottom:6px">${dashEscape(item)}</div>`).join('')}</div>
+      </div>
+      <div class="dash-finding-card">
+        <div class="dash-finding-title">Ward to discuss first</div>
+        <div class="dash-finding-text"><strong>${dashEscape(strongest?.ward || 'No ward')}</strong><br>${dashEscape(strongest?.assessment || 'No assessment')}<br><span style="color:var(--gray-600)">${dashEscape(strongest?.dissertationFinding || '')}</span></div>
+      </div>
+      <div class="dash-finding-card">
+        <div class="dash-finding-title">How to use in dissertation</div>
+        <div class="dash-finding-text">Use this as an analytical evidence table: compare user experience, measured readings, GPS validity, operators/PLMN, bands, and serving-cell groups at ward level. Avoid claiming causation unless the same pattern appears across readings, screenshots, and field notes.</div>
+      </div>
+    </div>`;
+}
+
 function renderQuestionnaireResultsTable(records) {
   const target = document.getElementById('dash-questionnaire-results');
   if (!target) return;
@@ -6323,6 +6756,7 @@ function renderDashboard() {
       Quality snapshot: Avg RSRQ ${dashNumber(avgRsrq,1)} dB - Avg SINR ${dashNumber(avgSinr,1)} dB. Use this with RSRP and download speed to tell whether the issue is weak coverage, interference/congestion, or throughput.
   </div>`;
 
+  renderDashboardFindingsPack(surv, selectedDashboardConstituency);
   renderExperienceCorrelation(surv);
   renderDissertationInsights(surv);
   renderQuestionnaireResultsTable(surv);
