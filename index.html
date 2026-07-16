@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-dashboard-export-html2canvas-v76">
+<meta name="portal-build" content="2026-07-16-analytics-category-cards-v77">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -926,6 +926,23 @@
   .dash-finding-title { font-size:11px;font-weight:800;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px; }
   .dash-finding-text { font-size:12px;line-height:1.45;color:var(--text); }
   .dash-export-note { font-size:11px;color:var(--gray-600);line-height:1.45;margin-left:auto; }
+  .analytics-nav { display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px; }
+  .analytics-nav button { border:1px solid var(--border);background:#fff;color:var(--navy);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 1px 3px rgba(16,24,40,.08); }
+  .analytics-nav button:hover { background:#edf3fb;border-color:#c9d8ea; }
+  .analytics-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px; }
+  .analytics-card-head { background:linear-gradient(135deg,var(--navy),#244B78);padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px; }
+  .analytics-card-title { color:#fff;font-size:18px;font-weight:900;letter-spacing:-.02em; }
+  .analytics-card-sub { color:rgba(255,255,255,.82);font-size:11px;margin-top:3px;line-height:1.35; }
+  .analytics-table { width:100%;border-collapse:collapse;font-size:12px;color:var(--text); }
+  .analytics-table th { padding:10px 12px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);text-align:left;white-space:nowrap;font-weight:900;background:#f8fafc; }
+  .analytics-table td { padding:12px;border-bottom:1px solid var(--border);vertical-align:top; }
+  .analytics-table tr:last-child td { border-bottom:0; }
+  .analytics-metric { font-size:18px;font-weight:900;color:var(--navy);line-height:1.1; }
+  .analytics-note { display:block;color:var(--gray-600);font-size:10px;line-height:1.25;margin-top:4px; }
+  .analytics-pill { display:inline-flex;border-radius:999px;padding:3px 8px;font-size:10px;font-weight:900;border:1px solid var(--border);background:#f8fafc;color:var(--navy); }
+  .analytics-pill.good { color:var(--green);background:var(--green-light);border-color:#b7d8a4; }
+  .analytics-pill.warn { color:var(--amber);background:var(--amber-light);border-color:#efc77b; }
+  .analytics-pill.bad { color:var(--red);background:var(--red-light);border-color:#e7a5a5; }
   .constituency-dashboard { margin-bottom:14px; }
   .constituency-summary-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden; }
   .constituency-summary-title { font-size:18px;font-weight:900;color:#fff;letter-spacing:-.02em;margin:0;text-align:left; }
@@ -1403,7 +1420,15 @@
         <div style="font-size:11px;color:var(--gray-600);text-align:right" id="dash-scope-note"></div>
       </div>
       <div class="dash-selector" id="dash-constituency-selector"></div>
+      <div class="analytics-nav">
+        <button type="button" onclick="document.getElementById('dash-constituency-overview')?.scrollIntoView({behavior:'smooth',block:'start'})">Overview</button>
+        <button type="button" onclick="document.getElementById('dash-participant-results')?.scrollIntoView({behavior:'smooth',block:'start'})">Participant Survey Results</button>
+        <button type="button" onclick="document.getElementById('dash-data-reading-results')?.scrollIntoView({behavior:'smooth',block:'start'})">Data Reading Results</button>
+        <button type="button" onclick="document.getElementById('dash-experience-correlation')?.scrollIntoView({behavior:'smooth',block:'start'})">Survey vs Readings</button>
+      </div>
       <div id="dash-constituency-overview"></div>
+      <div id="dash-participant-results"></div>
+      <div id="dash-data-reading-results"></div>
       <div class="dash-export-bar">
         <button class="btn primary" type="button" onclick="exportDashboardFindingsMarkdown()">Export findings notes</button>
         <button class="btn" type="button" onclick="exportDashboardFindingsImage()">Export image table</button>
@@ -6965,6 +6990,134 @@ function exportConstituencySummaryLatex() {
   iaDownloadText(`honiara-constituency-summary-${new Date().toISOString().slice(0,10)}.tex`, lines.join('\n'));
 }
 
+async function exportAnalyticsCardImage(cardId, filenamePrefix) {
+  const card = document.getElementById(cardId)?.querySelector('.analytics-card') || document.getElementById(cardId);
+  if (!card) {
+    alert('Analytics card is not available to export.');
+    return;
+  }
+  const actionBlocks = [...card.querySelectorAll('.constituency-summary-actions')];
+  const previousDisplays = actionBlocks.map(el => el.style.display);
+  actionBlocks.forEach(el => { el.style.display = 'none'; });
+  try {
+    await iaLoadScriptOnce('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', 'html2canvas');
+    const canvas = await window.html2canvas(card, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false });
+    const sourceLineHeight = 30;
+    const output = document.createElement('canvas');
+    output.width = canvas.width;
+    output.height = canvas.height + sourceLineHeight * 2;
+    const ctx = output.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, output.width, output.height);
+    ctx.drawImage(canvas, 0, 0);
+    ctx.scale(2, 2);
+    ctx.fillStyle = '#667085';
+    ctx.font = '400 11px Inter, Arial, sans-serif';
+    ctx.fillText('Source data: Honiara Survey Portal field survey dataset (2026).', 14, canvas.height / 2 + 20);
+    dashboardDownloadCanvas(output, `${filenamePrefix}-${new Date().toISOString().slice(0,10)}.png`);
+  } catch (error) {
+    console.warn('Analytics card export failed:', error);
+    alert('Could not export this analytics card image in this browser.');
+  } finally {
+    actionBlocks.forEach((el, index) => { el.style.display = previousDisplays[index]; });
+  }
+}
+
+function dashboardConstituencyRecords(allSurveys, constituency) {
+  const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
+  return allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
+}
+
+function concernCell(count, total) {
+  const pct = dashPct(count, total);
+  const cls = pct >= 50 ? 'bad' : pct >= 25 ? 'warn' : 'good';
+  return `<span class="analytics-pill ${cls}">${count}/${total} (${pct}%)</span>`;
+}
+
+function renderParticipantSurveyResults(allSurveys) {
+  const target = document.getElementById('dash-participant-results');
+  if (!target) return;
+  const rows = ['West Honiara', 'Central Honiara', 'East Honiara'].map(constituency => {
+    const records = dashboardConstituencyRecords(allSurveys, constituency);
+    const profiles = records.map(dashboardSurveyProfile);
+    const coverage = profiles.filter(profile => profile.coverageConcern).length;
+    const qos = profiles.filter(profile => profile.qosConcern).length;
+    const afford = profiles.filter(profile => profile.affordabilityPressure).length;
+    const market = profiles.filter(profile => profile.marketSignal).length;
+    const improvements = records.filter(record => dashText(record.e4)).length;
+    const topOperator = dashTopOptions(records, 'a3', 2).map(([name, n]) => `${dashEscape(name)} (${n})`).join(', ') || '-';
+    return `<tr>
+      <td><strong>${dashEscape(constituency)}</strong></td>
+      <td><div class="analytics-metric">${records.length}</div><span class="analytics-note">participant survey responses</span></td>
+      <td>${concernCell(coverage, records.length)}<span class="analytics-note">coverage availability concern</span></td>
+      <td>${concernCell(qos, records.length)}<span class="analytics-note">call/data QoS concern</span></td>
+      <td>${concernCell(afford, records.length)}<span class="analytics-note">cost or top-up pressure</span></td>
+      <td>${concernCell(market, records.length)}<span class="analytics-note">switching, quality difference or Starlink awareness</span></td>
+      <td><strong>${topOperator}</strong><span class="analytics-note">${improvements} written improvement response${improvements === 1 ? '' : 's'}</span></td>
+    </tr>`;
+  }).join('');
+  target.innerHTML = `<div class="analytics-card">
+    <div class="analytics-card-head">
+      <div>
+        <div class="analytics-card-title">Participant Survey Results</div>
+        <div class="analytics-card-sub">Reported mobile service experience from participant questionnaire responses</div>
+      </div>
+      <div class="constituency-summary-actions">
+        <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-participant-results','honiara-participant-survey-results')" title="Export" aria-label="Export">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div style="overflow:auto">
+      <table class="analytics-table" style="min-width:980px">
+        <thead><tr><th>Constituency</th><th>Responses</th><th>Coverage</th><th>QoS</th><th>Affordability</th><th>Market / switching</th><th>Operator / improvement</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderDataReadingResults(allSurveys) {
+  const target = document.getElementById('dash-data-reading-results');
+  if (!target) return;
+  const rows = ['West Honiara', 'Central Honiara', 'East Honiara'].map(constituency => {
+    const records = dashboardConstituencyRecords(allSurveys, constituency);
+    const tech = wardRadioTechnicalSummary(records);
+    const gpsOk = tech.gps.boundaryReady ? Math.max(0, tech.gps.insideBoundary - tech.gps.wardMismatch) : tech.gps.insideBoundary;
+    const gpsAttention = tech.gps.outsideBoundary + tech.gps.wardMismatch + tech.gps.missingOrInvalid;
+    return `<tr>
+      <td><strong>${dashEscape(constituency)}</strong></td>
+      <td><div class="analytics-metric">${records.length}</div><span class="analytics-note">survey data reading records</span></td>
+      <td><span class="analytics-pill ${gpsAttention ? 'warn' : 'good'}">${gpsOk} OK / ${gpsAttention} check</span><span class="analytics-note">GPS ward/boundary status</span></td>
+      <td><strong style="color:${tech.rsrpClass.color}">${dashNumber(tech.avgRsrp,0)} dBm</strong><span class="analytics-note">${dashEscape(tech.rsrpClass.label)} RSRP</span></td>
+      <td><strong style="color:${tech.rsrqClass.color}">${dashNumber(tech.avgRsrq,1)} dB</strong><span class="analytics-note">${dashEscape(tech.rsrqClass.label)} RSRQ</span></td>
+      <td><strong style="color:${tech.rssnrClass.color}">${dashNumber(tech.avgRssnr,1)} dB</strong><span class="analytics-note">${dashEscape(tech.rssnrClass.label)} RSSNR/SINR</span></td>
+      <td><strong>${dashNumber(tech.avgDl,1)} Mbps</strong><span class="analytics-note">avg DL; ping ${dashNumber(tech.avgPing,0)} ms</span></td>
+      <td><strong>${dashEscape(tech.bandText)}</strong><span class="analytics-note">${dashEscape(tech.plmnText)}</span></td>
+      <td><strong>${tech.servingTowerCount || 0}</strong> tower groups<span class="analytics-note">${tech.servingCellCount || 0} serving LTE cells</span></td>
+    </tr>`;
+  }).join('');
+  target.innerHTML = `<div class="analytics-card">
+    <div class="analytics-card-head">
+      <div>
+        <div class="analytics-card-title">Data Reading Results</div>
+        <div class="analytics-card-sub">Measured GPS, LTE radio quality, speed, spectrum band and serving-cell evidence</div>
+      </div>
+      <div class="constituency-summary-actions">
+        <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-data-reading-results','honiara-data-reading-results')" title="Export" aria-label="Export">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div style="overflow:auto">
+      <table class="analytics-table" style="min-width:1180px">
+        <thead><tr><th>Constituency</th><th>Records</th><th>GPS</th><th>RSRP</th><th>RSRQ</th><th>RSSNR/SINR</th><th>Speed</th><th>Band / PLMN</th><th>Serving cells</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
 function dashboardFindingsLatex() {
   const rows = dashboardSelectedFindingRows();
   const caption = `${selectedDashboardConstituency} ward-level mobile network findings`;
@@ -7451,6 +7604,8 @@ function renderDashboard() {
   const src = day ? points.filter(p => p.date <= day) : points;
   const allSurveys = src.filter(p => p.type === 'survey');
   renderConstituencyOverview(allSurveys);
+  renderParticipantSurveyResults(allSurveys);
+  renderDataReadingResults(allSurveys);
   const selectedWards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === selectedDashboardConstituency);
   const selectedTarget = selectedWards.reduce((sum, ward) => sum + WARDS[ward].target, 0);
   const surv = allSurveys.filter(p => p.constituency === selectedDashboardConstituency || selectedWards.includes(p.ward));
