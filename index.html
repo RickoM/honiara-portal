@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-dashboard-survey-total-dates-v68">
+<meta name="portal-build" content="2026-07-16-dashboard-footer-total-right-v69">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -6538,12 +6538,7 @@ function renderConstituencyOverview(allSurveys) {
       </div>
       <div class="constituency-summary-footer">
         <div class="constituency-summary-footer-item">
-          <div class="constituency-summary-footer-label">Running total surveys</div>
-          <div class="constituency-summary-footer-value">${allSurveys.length}</div>
-          <div class="constituency-summary-footer-note">Sum of all survey data points in this dashboard.</div>
-        </div>
-        <div class="constituency-summary-footer-item">
-          <div class="constituency-summary-footer-label">Survey start date</div>
+          <div class="constituency-summary-footer-label">Start date first recorded</div>
           <div class="constituency-summary-footer-value">${dashboardFormatDate(startDate)}</div>
           <div class="constituency-summary-footer-note">Earliest recorded survey date.</div>
         </div>
@@ -6556,6 +6551,11 @@ function renderConstituencyOverview(allSurveys) {
           <div class="constituency-summary-footer-label">Survey duration</div>
           <div class="constituency-summary-footer-value">${durationDays || '-'}</div>
           <div class="constituency-summary-footer-note">${durationDays ? `calendar day${durationDays === 1 ? '' : 's'} from first to latest survey.` : 'No survey dates recorded.'}</div>
+        </div>
+        <div class="constituency-summary-footer-item">
+          <div class="constituency-summary-footer-label">Total survey completed</div>
+          <div class="constituency-summary-footer-value">${allSurveys.length}</div>
+          <div class="constituency-summary-footer-note">Sum of all survey data points in this dashboard.</div>
         </div>
       </div>
     </div>
