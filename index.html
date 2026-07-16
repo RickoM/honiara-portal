@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-summary-card-export-icon-v71">
+<meta name="portal-build" content="2026-07-16-dashboard-png-source-data-v75">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -6824,92 +6824,68 @@ function dashboardConstituencySummaryData() {
   return { rows, total: allSurveys.length, startDate, latestDate, durationDays };
 }
 
-function exportConstituencySummaryImage() {
-  const data = dashboardConstituencySummaryData();
-  const scale = 2;
-  const width = 1500;
-  const height = 620;
-  const canvas = document.createElement('canvas');
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(scale, scale);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = '#1C3557';
-  ctx.fillRect(0, 0, width, 92);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '700 30px Inter, Arial, sans-serif';
-  ctx.fillText('Honiara Analytical Dashboard', 36, 42);
-  ctx.font = '400 15px Inter, Arial, sans-serif';
-  ctx.fillText('Constituency-level survey completion and GPS status', 36, 68);
+async function exportConstituencySummaryImage() {
+  const card = document.querySelector('.constituency-summary-card');
+  if (!card) {
+    alert('Dashboard summary card is not available to export.');
+    return;
+  }
+  const clone = card.cloneNode(true);
+  clone.querySelectorAll('.constituency-summary-actions').forEach(el => el.remove());
 
-  const cols = [
-    { label: 'Constituency', x: 36, w: 170 },
-    { label: 'Wards and survey counts', x: 230, w: 520 },
-    { label: 'GPS OK', x: 780, w: 120 },
-    { label: 'GPS needs attention', x: 930, w: 250 },
-    { label: 'Surveys completed', x: 1220, w: 180 }
-  ];
-  ctx.fillStyle = '#F2F4F7';
-  ctx.fillRect(24, 116, width - 48, 42);
-  ctx.fillStyle = '#475467';
-  ctx.font = '700 13px Inter, Arial, sans-serif';
-  cols.forEach(col => ctx.fillText(col.label, col.x, 142));
-  const rowHeight = 96;
-  data.rows.forEach((row, index) => {
-    const y = 158 + index * rowHeight;
-    ctx.fillStyle = index % 2 ? '#FFFFFF' : '#FCFCFD';
-    ctx.fillRect(24, y, width - 48, rowHeight);
-    ctx.strokeStyle = '#EAECF0';
-    ctx.beginPath();
-    ctx.moveTo(24, y + rowHeight);
-    ctx.lineTo(width - 24, y + rowHeight);
-    ctx.stroke();
-    ctx.fillStyle = '#1C3557';
-    ctx.font = '700 17px Inter, Arial, sans-serif';
-    dashboardWrapCanvasText(ctx, row.constituency, cols[0].x, y + 30, cols[0].w, 20, 2);
-    ctx.fillStyle = '#101828';
-    ctx.font = '600 14px Inter, Arial, sans-serif';
-    dashboardWrapCanvasText(ctx, row.wardText, cols[1].x, y + 25, cols[1].w, 18, 3);
-    ctx.font = '800 23px Inter, Arial, sans-serif';
-    ctx.fillStyle = '#2F6B1A';
-    ctx.fillText(String(row.valid), cols[2].x + 18, y + 44);
-    ctx.fillStyle = row.attention ? '#B42318' : '#2F6B1A';
-    ctx.fillText(String(row.attention), cols[3].x + 18, y + 38);
-    ctx.fillStyle = '#667085';
-    ctx.font = '400 12px Inter, Arial, sans-serif';
-    dashboardWrapCanvasText(ctx, row.attentionDetail, cols[3].x, y + 58, cols[3].w, 15, 2);
-    ctx.fillStyle = '#1C3557';
-    ctx.font = '800 23px Inter, Arial, sans-serif';
-    ctx.fillText(String(row.total), cols[4].x + 36, y + 44);
-  });
+  const copyComputedStyles = (source, target) => {
+    const computed = window.getComputedStyle(source);
+    for (let i = 0; i < computed.length; i++) {
+      const property = computed[i];
+      target.style.setProperty(property, computed.getPropertyValue(property), computed.getPropertyPriority(property));
+    }
+    Array.from(source.children).forEach((child, index) => {
+      if (target.children[index]) copyComputedStyles(child, target.children[index]);
+    });
+  };
+  copyComputedStyles(card, clone);
 
-  const footerY = 470;
-  const footerItems = [
-    ['Start date first recorded', dashboardFormatDate(data.startDate)],
-    ['Latest survey date', dashboardFormatDate(data.latestDate)],
-    ['Survey duration', data.durationDays ? `${data.durationDays} days` : '-'],
-    ['Total survey completed', String(data.total)]
-  ];
-  footerItems.forEach((item, index) => {
-    const x = 24 + index * ((width - 48) / 4);
-    const w = (width - 48) / 4;
-    ctx.fillStyle = '#F8FAFC';
-    ctx.fillRect(x, footerY, w, 92);
-    ctx.strokeStyle = '#D0D5DD';
-    ctx.strokeRect(x, footerY, w, 92);
+  const rect = card.getBoundingClientRect();
+  const width = Math.ceil(Math.max(rect.width, card.scrollWidth));
+  const height = Math.ceil(Math.max(rect.height, card.scrollHeight));
+  clone.style.width = `${width}px`;
+  clone.style.height = 'auto';
+  clone.style.margin = '0';
+  clone.style.boxShadow = 'none';
+
+  const wrapper = document.createElement('div');
+  wrapper.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  wrapper.style.width = `${width}px`;
+  wrapper.style.background = '#ffffff';
+  wrapper.appendChild(clone);
+
+  const serialized = new XMLSerializer().serializeToString(wrapper);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
+  const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = () => {
+    const scale = 2;
+    const sourceLineHeight = 30;
+    const canvas = document.createElement('canvas');
+    canvas.width = width * scale;
+    canvas.height = (height + sourceLineHeight) * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height + sourceLineHeight);
+    ctx.drawImage(img, 0, 0);
     ctx.fillStyle = '#667085';
-    ctx.font = '700 12px Inter, Arial, sans-serif';
-    ctx.fillText(item[0], x + 18, footerY + 30);
-    ctx.fillStyle = '#1C3557';
-    ctx.font = '800 23px Inter, Arial, sans-serif';
-    ctx.fillText(item[1], x + 18, footerY + 62);
-  });
-  ctx.fillStyle = '#667085';
-  ctx.font = '400 12px Inter, Arial, sans-serif';
-  ctx.fillText(`Generated from Honiara Survey Portal - ${new Date().toISOString().slice(0, 10)}`, 36, height - 28);
-  dashboardDownloadCanvas(canvas, `honiara-constituency-summary-${new Date().toISOString().slice(0, 10)}.png`);
+    ctx.font = '400 11px Inter, Arial, sans-serif';
+    ctx.fillText('Source data: Honiara Survey Portal field survey dataset (2026).', 14, height + 20);
+    URL.revokeObjectURL(url);
+    dashboardDownloadCanvas(canvas, `honiara-dashboard-summary-${new Date().toISOString().slice(0, 10)}.png`);
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    alert('Could not export the dashboard card image in this browser. Try Print / save PDF if this repeats.');
+  };
+  img.src = url;
 }
 
 function exportConstituencySummaryLatex() {
