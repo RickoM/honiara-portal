@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-evidence-type-separation-v101">
+<meta name="portal-build" content="2026-07-16-hide-zero-survey-metrics-v102">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -7164,13 +7164,14 @@ function participantPctCount(count, total) {
 }
 
 function participantMetric(label, count, total) {
+  if (!count) return '';
   return `<span class="participant-stat"><span class="participant-stat-label">${dashEscape(label)}</span><span class="participant-stat-value">${participantPctCount(count, total)}</span></span>`;
 }
 
 function participantTopOption(records, field) {
   const total = records.length;
   const top = dashTopOptions(records, field, 1)[0];
-  if (!top) return `<span class="participant-stat"><span class="participant-stat-label">Top response</span><span class="participant-stat-value">0% (0/0)</span></span>`;
+  if (!top || !top[1]) return '';
   const [label, count] = top;
   return `<span class="participant-stat"><span class="participant-stat-label">${dashEscape(label)}</span><span class="participant-stat-value">${participantPctCount(count, total)}</span></span>`;
 }
@@ -7193,7 +7194,7 @@ function participantTopImprovement(records) {
     counts.set(label, (counts.get(label) || 0) + 1);
   });
   const top = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
-  if (!top) return `<span class="participant-stat"><span class="participant-stat-label">Top written improvement E4</span><span class="participant-stat-value">0% (0/0)</span></span>`;
+  if (!top || !top[1]) return '';
   return `<span class="participant-stat"><span class="participant-stat-label">Top written improvement E4: ${dashEscape(top[0])}</span><span class="participant-stat-value">${participantPctCount(top[1], total)}</span></span>`;
 }
 
