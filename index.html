@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-section-a-context-v105">
+<meta name="portal-build" content="2026-07-17-participant-ward-section-cards-v106">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -966,6 +966,31 @@
   .participant-context-label { color:#475569;font-weight:850; }
   .participant-context-value { color:var(--navy);font-weight:950;text-align:right; }
   .participant-rq-tag { display:inline-flex;margin-top:2px;border-radius:999px;background:#eaf3ff;color:#18375d;font-size:8px;font-weight:900;padding:2px 6px;white-space:nowrap; }
+  .participant-ward-panel { border:1px solid #d8e3ef;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(16,24,40,.06);overflow:hidden;margin:12px; }
+  .participant-ward-panel-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(135deg,#f8fbff,#eef5ff);border-bottom:1px solid #d8e3ef;padding:11px 13px; }
+  .participant-ward-panel-title { color:var(--navy);font-size:15px;font-weight:950; }
+  .participant-ward-panel-meta { color:#475569;font-size:11px;font-weight:850; }
+  .participant-section-grid { display:grid;grid-template-columns:1.05fr 1fr 1fr 1fr;gap:10px;padding:12px;align-items:stretch; }
+  .participant-section-card { border:1px solid #dce7f3;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(16,24,40,.04);overflow:hidden;min-height:128px; }
+  .participant-section-card h5 { margin:0;padding:8px 10px;background:#18375d;color:#fff;font-size:12px;font-weight:950;letter-spacing:.01em; }
+  .participant-section-card.section-a h5 { background:#1d4e89; }
+  .participant-section-card.section-b h5 { background:#2f6fbd; }
+  .participant-section-card.section-c h5 { background:#0f766e; }
+  .participant-section-card.section-d h5 { background:#b45309; }
+  .participant-section-card.section-e h5 { background:#6d28d9; }
+  .participant-section-list { padding:9px 10px;display:grid;gap:7px; }
+  .participant-section-line { display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed rgba(15,35,60,.12);padding-bottom:6px;line-height:1.2; }
+  .participant-section-line:last-child { border-bottom:0;padding-bottom:0; }
+  .participant-section-label { color:#475569;font-size:10px;font-weight:850; }
+  .participant-section-value { color:var(--navy);font-size:11px;font-weight:950;text-align:right; }
+  .participant-key-findings { grid-column:2 / span 3;border:1px solid #d8e3ef;border-radius:12px;background:linear-gradient(135deg,#f8fafc,#fff);box-shadow:0 2px 8px rgba(16,24,40,.04);overflow:hidden; }
+  .participant-key-findings h5 { margin:0;padding:8px 10px;background:#0f233c;color:#fff;font-size:12px;font-weight:950; }
+  .participant-key-list { padding:10px 12px;margin:0;display:grid;gap:7px;list-style:none; }
+  .participant-key-list li { color:#0f233c;font-size:11px;line-height:1.35;font-weight:800;border-left:4px solid #2f6fbd;background:#fff;border-radius:8px;padding:7px 8px;box-shadow:0 1px 4px rgba(16,24,40,.04); }
+  .participant-key-list li.high { border-left-color:#b42318;background:#fff7f7; }
+  .participant-key-list li.medium { border-left-color:#c17a13;background:#fffaf2; }
+  @media (max-width:1100px) { .participant-section-grid { grid-template-columns:1fr 1fr; } .participant-key-findings { grid-column:1 / span 2; } }
+  @media (max-width:720px) { .participant-section-grid { grid-template-columns:1fr; } .participant-key-findings { grid-column:auto; } }
   .participant-table-wrap { overflow:auto; }
   .participant-rq-table { width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:10px;color:var(--text); }
   .participant-rq-table th { padding:8px 8px;border-bottom:1px solid var(--border);background:#fff;color:var(--gray-600);font-size:9px;text-transform:uppercase;letter-spacing:.04em;text-align:left;font-weight:900;white-space:normal; }
@@ -7209,6 +7234,23 @@ function participantContextValue(records, field) {
   return `${dashEscape(top[0])} ${participantPctCount(top[1], total)}`;
 }
 
+function participantLine(label, value) {
+  if (!value || value === 'No reading' || /^0%/.test(String(value))) return '';
+  return `<div class="participant-section-line"><span class="participant-section-label">${dashEscape(label)}</span><span class="participant-section-value">${value}</span></div>`;
+}
+
+function participantSectionCard(sectionClass, title, lines) {
+  const body = lines.filter(Boolean).join('') || `<div class="participant-section-line"><span class="participant-section-label">No notable reading</span><span class="participant-section-value">-</span></div>`;
+  return `<div class="participant-section-card ${sectionClass}"><h5>${dashEscape(title)}</h5><div class="participant-section-list">${body}</div></div>`;
+}
+
+function participantFindingLine(label, count, total) {
+  if (!count) return '';
+  const pct = total ? dashPct(count, total) : 0;
+  const cls = pct >= 70 ? 'high' : pct >= 35 ? 'medium' : '';
+  return `<li class="${cls}">${dashEscape(label)}: ${participantPctCount(count, total)}</li>`;
+}
+
 function participantTopImprovement(records) {
   const total = records.length;
   const buckets = [
@@ -7240,19 +7282,7 @@ function renderParticipantSurveyResults(allSurveys) {
   const sections = constituencies.map(constituency => {
     const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
     const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
-    const contextCards = wards.map(ward => {
-      const records = allSurveys.filter(record => record.ward === ward);
-      const total = records.length;
-      const heavyHousehold = records.filter(record => surveyMentions(record, 'a6', ['4-5', '6', '6+'])).length;
-      return `<div class="participant-context-ward">
-        <h5>${dashEscape(ward)} <span class="participant-ward-count">${total} surveys</span></h5>
-        <div class="participant-context-item"><span class="participant-context-label">Primary mobile operator <span class="participant-rq-tag">RQ3</span></span><span class="participant-context-value">${participantContextValue(records, 'a3')}</span></div>
-        <div class="participant-context-item"><span class="participant-context-label">SIM with coverage/speed issue <span class="participant-rq-tag">RQ1/RQ3</span></span><span class="participant-context-value">${participantContextValue(records, 'a4')}</span></div>
-        <div class="participant-context-item"><span class="participant-context-label">Most-used mobile plan <span class="participant-rq-tag">RQ3/RQ4</span></span><span class="participant-context-value">${participantContextValue(records, 'a5')}</span></div>
-        <div class="participant-context-item"><span class="participant-context-label">Households with 4+ data users <span class="participant-rq-tag">RQ2</span></span><span class="participant-context-value">${participantPctCount(heavyHousehold, total)}</span></div>
-      </div>`;
-    }).join('');
-    const rows = wards.map(ward => {
+    const wardPanels = wards.map(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
       const total = records.length;
       const count = test => records.filter(test).length;
@@ -7272,38 +7302,63 @@ function renderParticipantSurveyResults(allSurveys) {
       const qualityDifference = count(record => dashText(record.e2) && !surveyMentions(record, 'e2', ['About the same']));
       const starlinkAware = count(record => surveyMentions(record, 'e3', ['Yes']));
       const writtenImprovement = count(record => dashText(record.e4));
-      return `<tr>
-        <td><span class="participant-ward-name">${dashEscape(ward)}</span><span class="participant-ward-count">${total} surveys</span></td>
-        <td>${participantMetric('Weak signal at home', weakSignal, total)}${participantMetric('Dropped calls reported', droppedCalls, total)}${participantMetric('Places with signal loss', signalLoss, total)}${participantMetric('Coverage problem location noted', coveragePlaces, total)}</td>
-        <td>${participantMetric('Poor voice-call experience', poorVoice, total)}${participantMetric('Slow mobile data experience', slowData, total)}${participantMetric('Mobile plan not clearly affordable', affordabilityPressure, total)}${participantMetric('Difficulty topping up', topupDifficulty, total)}</td>
-        <td>${participantMetric('Households with 4+ data users', heavyHousehold, total)}${participantMetric('Evening/night is slowest period', eveningNightSlow, total)}${participantMetric('Data has become slower', dataWorse, total)}${participantMetric('No home WiFi alternative', noHomeWifi, total)}</td>
-        <td>${participantTopOption(records, 'a3')}${participantMetric('Changed mobile provider before', switchedProvider, total)}${participantMetric('Perceive quality difference between operators', qualityDifference, total)}${participantMetric('Aware of or using Starlink', starlinkAware, total)}</td>
-        <td>${participantMetric('Coverage location evidence given', Math.max(signalLoss, coveragePlaces), total)}${participantMetric('Affordability intervention signal', topupDifficulty, total)}${participantMetric('Suggested improvement written', writtenImprovement, total)}${participantTopImprovement(records)}</td>
-      </tr>`;
+      const sectionA = participantSectionCard('section-a', 'Section A - Profile', [
+        participantLine('Primary operator', participantContextValue(records, 'a3')),
+        participantLine('Issue SIM/operator', participantContextValue(records, 'a4')),
+        participantLine('Most-used plan', participantContextValue(records, 'a5')),
+        participantLine('4+ data users', participantPctCount(heavyHousehold, total))
+      ]);
+      const sectionB = participantSectionCard('section-b', 'Section B - Coverage', [
+        participantLine('Weak signal at home', participantPctCount(weakSignal, total)),
+        participantLine('Dropped calls', participantPctCount(droppedCalls, total)),
+        participantLine('Signal loss places', participantPctCount(signalLoss, total)),
+        participantLine('Problem location noted', participantPctCount(coveragePlaces, total))
+      ]);
+      const sectionC = participantSectionCard('section-c', 'Section C - QoS', [
+        participantLine('Poor voice calls', participantPctCount(poorVoice, total)),
+        participantLine('Slow mobile data', participantPctCount(slowData, total)),
+        participantLine('Evening/night slowest', participantPctCount(eveningNightSlow, total)),
+        participantLine('Data has become slower', participantPctCount(dataWorse, total))
+      ]);
+      const sectionD = participantSectionCard('section-d', 'Section D - Affordability', [
+        participantLine('Plan not clearly affordable', participantPctCount(affordabilityPressure, total)),
+        participantLine('Top-up difficulty', participantPctCount(topupDifficulty, total)),
+        participantLine('No home WiFi alternative', participantPctCount(noHomeWifi, total))
+      ]);
+      const sectionE = participantSectionCard('section-e', 'Section E - Market', [
+        participantLine('Switched provider', participantPctCount(switchedProvider, total)),
+        participantLine('Operator quality difference', participantPctCount(qualityDifference, total)),
+        participantLine('Starlink aware/use', participantPctCount(starlinkAware, total)),
+        participantLine('Improvement suggested', participantPctCount(writtenImprovement, total))
+      ]);
+      const findingLines = [
+        participantFindingLine('Coverage concern reported', Math.max(droppedCalls, signalLoss, coveragePlaces, weakSignal), total),
+        participantFindingLine('QoS concern reported', Math.max(poorVoice, slowData, eveningNightSlow, dataWorse), total),
+        participantFindingLine('Affordability pressure reported', Math.max(affordabilityPressure, topupDifficulty, noHomeWifi), total),
+        participantFindingLine('Competition or market signal reported', Math.max(switchedProvider, qualityDifference, starlinkAware), total),
+        participantFindingLine('Household demand pressure', heavyHousehold, total)
+      ].filter(Boolean).join('') || '<li>No strong participant-reported pattern yet.</li>';
+      return `<article class="participant-ward-panel">
+        <div class="participant-ward-panel-head">
+          <div class="participant-ward-panel-title">Ward: ${dashEscape(ward)}</div>
+          <div class="participant-ward-panel-meta">${total} survey responses</div>
+        </div>
+        <div class="participant-section-grid">
+          ${sectionA}
+          ${sectionB}
+          ${sectionC}
+          ${sectionD}
+          ${sectionE}
+          <div class="participant-key-findings"><h5>Key Findings</h5><ul class="participant-key-list">${findingLines}</ul></div>
+        </div>
+      </article>`;
     }).join('');
     return `<section class="participant-constituency-block">
       <div class="participant-constituency-head">
         <div class="participant-constituency-title">${dashEscape(constituency)}</div>
         <div class="participant-constituency-count">${constituencyRecords.length} survey responses</div>
       </div>
-      <div class="participant-context-block">
-        <div class="participant-context-title">Section A: User profile and network dependency</div>
-        <div class="participant-context-sub">Context evidence: identifies the operator, problem SIM, plan type and household demand behind the research-question findings.</div>
-        <div class="participant-context-grid">${contextCards}</div>
-      </div>
-      <div class="participant-table-wrap">
-        <table class="participant-rq-table">
-          <thead><tr>
-            <th>Ward</th>
-            <th><span class="participant-rq-head">RQ1: Coverage</span><span class="participant-rq-question">Are users reporting network coverage problems?</span></th>
-            <th><span class="participant-rq-head">RQ1: Service quality and affordability</span><span class="participant-rq-question">Are users reporting QoS and affordability problems?</span></th>
-            <th><span class="participant-rq-head">RQ2: Capacity pressure</span><span class="participant-rq-question">Are user patterns suggesting demand pressure?</span></th>
-            <th><span class="participant-rq-head">RQ3: Competition and market</span><span class="participant-rq-question">How do users describe operators and alternatives?</span></th>
-            <th><span class="participant-rq-head">RQ4: Intervention evidence</span><span class="participant-rq-question">What improvements do users point toward?</span></th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
+      ${wardPanels}
     </section>`;
   }).join('');
   target.innerHTML = `<div class="analytics-card">
