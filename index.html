@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-hide-zero-survey-metrics-v102">
+<meta name="portal-build" content="2026-07-16-survey-card-standout-v103">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -960,12 +960,21 @@
   .participant-rq-table th { padding:9px 10px;border-bottom:1px solid var(--border);background:#fff;color:var(--gray-600);font-size:10px;text-transform:uppercase;letter-spacing:.05em;text-align:left;font-weight:900;white-space:nowrap; }
   .participant-rq-table td { padding:10px;border-bottom:1px solid var(--border);vertical-align:top; }
   .participant-rq-table tr:last-child td { border-bottom:0; }
+  .participant-rq-table th:nth-child(2), .participant-rq-table td:nth-child(2) { background:#f7fbff; }
+  .participant-rq-table th:nth-child(3), .participant-rq-table td:nth-child(3) { background:#fffaf2; }
+  .participant-rq-table th:nth-child(4), .participant-rq-table td:nth-child(4) { background:#f7fff9; }
+  .participant-rq-table th:nth-child(5), .participant-rq-table td:nth-child(5) { background:#fbf8ff; }
+  .participant-rq-table th:nth-child(6), .participant-rq-table td:nth-child(6) { background:#fff7f7; }
+  .participant-rq-head { display:block;color:var(--navy);font-size:11px;font-weight:900;letter-spacing:0;text-transform:none;line-height:1.2; }
+  .participant-rq-question { display:block;color:var(--gray-600);font-size:9px;font-weight:800;margin-top:3px;letter-spacing:0;text-transform:none;line-height:1.2;white-space:normal;max-width:230px; }
   .participant-ward-name { color:var(--navy);font-size:13px;font-weight:900; }
   .participant-ward-count { display:block;color:var(--gray-600);font-size:10px;margin-top:3px;font-weight:700; }
-  .participant-stat { display:block;line-height:1.28;margin-bottom:6px;border-bottom:1px dashed rgba(15,35,60,.1);padding-bottom:5px; }
-  .participant-stat:last-child { margin-bottom:0;border-bottom:0;padding-bottom:0; }
-  .participant-stat-label { display:block;color:var(--gray-600);font-weight:800; }
-  .participant-stat-value { display:block;color:var(--navy);font-size:12px;font-weight:900;margin-top:2px; }
+  .participant-stat { display:block;line-height:1.28;margin-bottom:7px;border:1px solid #dce7f3;border-left:4px solid #2f6fbd;border-radius:9px;background:#fff;padding:7px 8px;box-shadow:0 2px 5px rgba(16,24,40,.04); }
+  .participant-stat:last-child { margin-bottom:0; }
+  .participant-stat.medium { border-left-color:#c17a13;background:#fffaf2; }
+  .participant-stat.high { border-left-color:#b42318;background:#fff7f7; }
+  .participant-stat-label { display:block;color:#334155;font-weight:900;font-size:10px; }
+  .participant-stat-value { display:block;color:var(--navy);font-size:14px;font-weight:950;margin-top:3px; }
   .participant-top-value { color:var(--navy);font-weight:900; }
   .rq-tree { padding:16px 18px 18px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);overflow:visible; }
   .rq-tree-root { width:100%;background:transparent;padding:4px 6px 16px;position:relative; }
@@ -7165,7 +7174,9 @@ function participantPctCount(count, total) {
 
 function participantMetric(label, count, total) {
   if (!count) return '';
-  return `<span class="participant-stat"><span class="participant-stat-label">${dashEscape(label)}</span><span class="participant-stat-value">${participantPctCount(count, total)}</span></span>`;
+  const pct = total ? dashPct(count, total) : 0;
+  const cls = pct >= 70 ? ' high' : pct >= 35 ? ' medium' : '';
+  return `<span class="participant-stat${cls}"><span class="participant-stat-label">${dashEscape(label)}</span><span class="participant-stat-value">${participantPctCount(count, total)}</span></span>`;
 }
 
 function participantTopOption(records, field) {
@@ -7173,7 +7184,9 @@ function participantTopOption(records, field) {
   const top = dashTopOptions(records, field, 1)[0];
   if (!top || !top[1]) return '';
   const [label, count] = top;
-  return `<span class="participant-stat"><span class="participant-stat-label">${dashEscape(label)}</span><span class="participant-stat-value">${participantPctCount(count, total)}</span></span>`;
+  const pct = total ? dashPct(count, total) : 0;
+  const cls = pct >= 70 ? ' high' : pct >= 35 ? ' medium' : '';
+  return `<span class="participant-stat${cls}"><span class="participant-stat-label">Main mobile operator reported: ${dashEscape(label)}</span><span class="participant-stat-value">${participantPctCount(count, total)}</span></span>`;
 }
 
 function participantTopImprovement(records) {
@@ -7195,7 +7208,9 @@ function participantTopImprovement(records) {
   });
   const top = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
   if (!top || !top[1]) return '';
-  return `<span class="participant-stat"><span class="participant-stat-label">Top written improvement E4: ${dashEscape(top[0])}</span><span class="participant-stat-value">${participantPctCount(top[1], total)}</span></span>`;
+  const pct = total ? dashPct(top[1], total) : 0;
+  const cls = pct >= 70 ? ' high' : pct >= 35 ? ' medium' : '';
+  return `<span class="participant-stat${cls}"><span class="participant-stat-label">Most common improvement suggested: ${dashEscape(top[0])}</span><span class="participant-stat-value">${participantPctCount(top[1], total)}</span></span>`;
 }
 
 function renderParticipantSurveyResults(allSurveys) {
@@ -7227,11 +7242,11 @@ function renderParticipantSurveyResults(allSurveys) {
       const writtenImprovement = count(record => dashText(record.e4));
       return `<tr>
         <td><span class="participant-ward-name">${dashEscape(ward)}</span><span class="participant-ward-count">${total} surveys</span></td>
-        <td>${participantMetric('B1 weak signal rating', weakSignal, total)}${participantMetric('B2 dropped calls sometimes/often', droppedCalls, total)}${participantMetric('B3 signal loss reported', signalLoss, total)}${participantMetric('B4 coverage place/problem noted', coveragePlaces, total)}</td>
-        <td>${participantMetric('C1/C3 poor voice/call rating', poorVoice, total)}${participantMetric('C5 slow data rating', slowData, total)}${participantMetric('D2 affordability fair/unaffordable', affordabilityPressure, total)}${participantMetric('D3 top-up difficulty', topupDifficulty, total)}</td>
-        <td>${participantMetric('A6 four or more data users', heavyHousehold, total)}${participantMetric('C6 evening/night slowest data', eveningNightSlow, total)}${participantMetric('C7 data slower over 1-2 years', dataWorse, total)}${participantMetric('D4 no WiFi at home', noHomeWifi, total)}</td>
-        <td>${participantTopOption(records, 'a3')}${participantMetric('E1 switched provider', switchedProvider, total)}${participantMetric('E2 perceived quality difference', qualityDifference, total)}${participantMetric('E3 Starlink aware/use', starlinkAware, total)}</td>
-        <td>${participantMetric('B3/B4 coverage location evidence', Math.max(signalLoss, coveragePlaces), total)}${participantMetric('D3 top-up difficulty', topupDifficulty, total)}${participantMetric('E4 written improvement response', writtenImprovement, total)}${participantTopImprovement(records)}</td>
+        <td>${participantMetric('Weak signal at home', weakSignal, total)}${participantMetric('Dropped calls reported', droppedCalls, total)}${participantMetric('Places with signal loss', signalLoss, total)}${participantMetric('Coverage problem location noted', coveragePlaces, total)}</td>
+        <td>${participantMetric('Poor voice-call experience', poorVoice, total)}${participantMetric('Slow mobile data experience', slowData, total)}${participantMetric('Mobile plan not clearly affordable', affordabilityPressure, total)}${participantMetric('Difficulty topping up', topupDifficulty, total)}</td>
+        <td>${participantMetric('Households with 4+ data users', heavyHousehold, total)}${participantMetric('Evening/night is slowest period', eveningNightSlow, total)}${participantMetric('Data has become slower', dataWorse, total)}${participantMetric('No home WiFi alternative', noHomeWifi, total)}</td>
+        <td>${participantTopOption(records, 'a3')}${participantMetric('Changed mobile provider before', switchedProvider, total)}${participantMetric('Perceive quality difference between operators', qualityDifference, total)}${participantMetric('Aware of or using Starlink', starlinkAware, total)}</td>
+        <td>${participantMetric('Coverage location evidence given', Math.max(signalLoss, coveragePlaces), total)}${participantMetric('Affordability intervention signal', topupDifficulty, total)}${participantMetric('Suggested improvement written', writtenImprovement, total)}${participantTopImprovement(records)}</td>
       </tr>`;
     }).join('');
     return `<section class="participant-constituency-block">
@@ -7241,7 +7256,14 @@ function renderParticipantSurveyResults(allSurveys) {
       </div>
       <div class="participant-table-wrap">
         <table class="participant-rq-table">
-          <thead><tr><th>Ward</th><th>RQ1 user-reported coverage B1-B4</th><th>RQ1 user-reported QoS/affordability C/D</th><th>RQ2 user-reported demand pressure A/C/D</th><th>RQ3 user-reported competition/market A/E</th><th>RQ4 user-reported improvement evidence B/D/E</th></tr></thead>
+          <thead><tr>
+            <th>Ward</th>
+            <th><span class="participant-rq-head">RQ1: Coverage</span><span class="participant-rq-question">Are users reporting network coverage problems?</span></th>
+            <th><span class="participant-rq-head">RQ1: Service quality and affordability</span><span class="participant-rq-question">Are users reporting QoS and affordability problems?</span></th>
+            <th><span class="participant-rq-head">RQ2: Capacity pressure</span><span class="participant-rq-question">Are user patterns suggesting demand pressure?</span></th>
+            <th><span class="participant-rq-head">RQ3: Competition and market</span><span class="participant-rq-question">How do users describe operators and alternatives?</span></th>
+            <th><span class="participant-rq-head">RQ4: Intervention evidence</span><span class="participant-rq-question">What improvements do users point toward?</span></th>
+          </tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
