@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-title-cleanup-v99">
+<meta name="portal-build" content="2026-07-16-evidence-type-separation-v101">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -950,6 +950,23 @@
   .analytics-stat-row:last-child { border-bottom:0;padding-bottom:0; }
   .analytics-stat-label { color:var(--gray-600);font-weight:700; }
   .analytics-stat-value { color:var(--navy);font-weight:900;white-space:nowrap;text-align:right; }
+  .participant-results-body { padding:14px;background:#fff;display:grid;gap:14px; }
+  .participant-constituency-block { border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 2px 8px rgba(16,24,40,.04); }
+  .participant-constituency-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:#f8fafc;border-bottom:1px solid var(--border);padding:10px 12px; }
+  .participant-constituency-title { color:var(--navy);font-size:14px;font-weight:900; }
+  .participant-constituency-count { color:var(--gray-600);font-size:11px;font-weight:800; }
+  .participant-table-wrap { overflow:auto; }
+  .participant-rq-table { width:100%;min-width:1320px;border-collapse:collapse;font-size:11px;color:var(--text); }
+  .participant-rq-table th { padding:9px 10px;border-bottom:1px solid var(--border);background:#fff;color:var(--gray-600);font-size:10px;text-transform:uppercase;letter-spacing:.05em;text-align:left;font-weight:900;white-space:nowrap; }
+  .participant-rq-table td { padding:10px;border-bottom:1px solid var(--border);vertical-align:top; }
+  .participant-rq-table tr:last-child td { border-bottom:0; }
+  .participant-ward-name { color:var(--navy);font-size:13px;font-weight:900; }
+  .participant-ward-count { display:block;color:var(--gray-600);font-size:10px;margin-top:3px;font-weight:700; }
+  .participant-stat { display:block;line-height:1.28;margin-bottom:6px;border-bottom:1px dashed rgba(15,35,60,.1);padding-bottom:5px; }
+  .participant-stat:last-child { margin-bottom:0;border-bottom:0;padding-bottom:0; }
+  .participant-stat-label { display:block;color:var(--gray-600);font-weight:800; }
+  .participant-stat-value { display:block;color:var(--navy);font-size:12px;font-weight:900;margin-top:2px; }
+  .participant-top-value { color:var(--navy);font-weight:900; }
   .rq-tree { padding:16px 18px 18px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);overflow:visible; }
   .rq-tree-root { width:100%;background:transparent;padding:4px 6px 16px;position:relative; }
   .rq-project-title { text-align:center;color:var(--navy);font-size:18px;font-weight:900;margin:2px 0 8px;letter-spacing:-.015em; }
@@ -7140,63 +7157,100 @@ function dashboardWardRows() {
   return Object.entries(WARDS).map(([ward, meta]) => ({ ward, constituency: meta.constituency }));
 }
 
+function participantPctCount(count, total) {
+  const base = Number.isFinite(total) && total > 0 ? total : 0;
+  if (!base) return `0% (0/0)`;
+  return `${dashPct(count, base)}% (${count}/${base})`;
+}
+
+function participantMetric(label, count, total) {
+  return `<span class="participant-stat"><span class="participant-stat-label">${dashEscape(label)}</span><span class="participant-stat-value">${participantPctCount(count, total)}</span></span>`;
+}
+
+function participantTopOption(records, field) {
+  const total = records.length;
+  const top = dashTopOptions(records, field, 1)[0];
+  if (!top) return `<span class="participant-stat"><span class="participant-stat-label">Top response</span><span class="participant-stat-value">0% (0/0)</span></span>`;
+  const [label, count] = top;
+  return `<span class="participant-stat"><span class="participant-stat-label">${dashEscape(label)}</span><span class="participant-stat-value">${participantPctCount(count, total)}</span></span>`;
+}
+
+function participantTopImprovement(records) {
+  const total = records.length;
+  const buckets = [
+    ['Better coverage', ['coverage', 'signal', 'network', 'reception']],
+    ['Lower cost', ['cost', 'price', 'afford', 'cheap', 'top up', 'data bundle']],
+    ['Better speed/capacity', ['speed', 'internet', 'data', 'capacity', 'slow']],
+    ['More towers/infrastructure', ['tower', 'site', 'infrastructure', 'equipment']],
+    ['Better competition/service', ['competition', 'operator', 'service', 'customer']]
+  ];
+  const counts = new Map();
+  records.forEach(record => {
+    const text = dashText(record.e4).toLowerCase();
+    if (!text) return;
+    const match = buckets.find(([, terms]) => terms.some(term => text.includes(term)));
+    const label = match ? match[0] : 'Other improvement';
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  const top = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+  if (!top) return `<span class="participant-stat"><span class="participant-stat-label">Top written improvement E4</span><span class="participant-stat-value">0% (0/0)</span></span>`;
+  return `<span class="participant-stat"><span class="participant-stat-label">Top written improvement E4: ${dashEscape(top[0])}</span><span class="participant-stat-value">${participantPctCount(top[1], total)}</span></span>`;
+}
+
 function renderParticipantSurveyResults(allSurveys) {
   const target = document.getElementById('dash-participant-results');
   if (!target) return;
-  const rows = dashboardWardRows().map(({ ward, constituency }) => {
-    const records = allSurveys.filter(record => record.ward === ward);
-    const total = records.length;
-    const count = test => records.filter(test).length;
-    const b1WeakSignal = count(record => surveyRatingAtOrBelow(record, 'b1', 2));
-    const b2DroppedOften = count(record => surveyMentions(record, 'b2', ['Often', 'Very often']));
-    const b3SignalLoss = count(record => surveyMentions(record, 'b3', ['Yes']));
-    const b4PlaceNoted = count(record => dashSplitOptions(record.b4).filter(item => !/no problem/i.test(item)).length > 0 || dashText(record.b3_detail));
-    const c1c3PoorVoice = count(record => surveyRatingAtOrBelow(record, 'c1', 2) || surveyRatingAtOrBelow(record, 'c3', 2));
-    const c5SlowData = count(record => surveyRatingAtOrBelow(record, 'c5', 2));
-    const c7DataWorse = count(record => surveyMentions(record, 'c7', ['Yes']));
-    const c8AppIssue = count(record => dashSplitOptions(record.c8).length > 0);
-    const d2Unaffordable = count(record => surveyRatingAtOrBelow(record, 'd2', 2));
-    const d3TopupDifficulty = count(record => surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']));
-    const d4NoHomeWifi = count(record => surveyMentions(record, 'd4', ['No WiFi']));
-    const e1Switched = count(record => surveyMentions(record, 'e1', ['Yes']));
-    const e2QualityDifference = count(record => dashText(record.e2) && !surveyMentions(record, 'e2', ['About the same']));
-    const e3StarlinkAware = count(record => surveyMentions(record, 'e3', ['Yes']));
-    const improvements = records.filter(record => dashText(record.e4)).length;
-    const topOperator = dashTopOptions(records, 'a3', 2).map(([name, n]) => `${dashEscape(name)} (${n})`).join(', ') || '-';
-    return `<tr>
-      <td><strong>${dashEscape(ward)}</strong><span class="analytics-note">${dashEscape(constituency)}</span></td>
-      <td><div class="analytics-metric">${total}</div><span class="analytics-note">responses in ward</span></td>
-      <td>${surveyStatList([
-        ['B1 rated weak signal', b1WeakSignal],
-        ['B2 dropped calls often', b2DroppedOften],
-        ['B3 signal loss reported', b3SignalLoss],
-        ['B4 problem place noted', b4PlaceNoted]
-      ], total)}</td>
-      <td>${surveyStatList([
-        ['C1/C3 poor call rating', c1c3PoorVoice],
-        ['C5 slow data rating', c5SlowData],
-        ['C7 data worse reported', c7DataWorse],
-        ['C8 app issue selected', c8AppIssue]
-      ], total)}</td>
-      <td>${surveyStatList([
-        ['D2 unaffordable rating', d2Unaffordable],
-        ['D3 top-up difficulty', d3TopupDifficulty],
-        ['D4 no home WiFi', d4NoHomeWifi]
-      ], total)}</td>
-      <td>${surveyStatList([
-        ['E1 switched provider', e1Switched],
-        ['E2 quality difference', e2QualityDifference],
-        ['E3 Starlink aware/use', e3StarlinkAware],
-        ['E4 improvement written', improvements]
-      ], total)}</td>
-      <td><strong>${topOperator}</strong><span class="analytics-note">A3 primary operator response</span></td>
-    </tr>`;
+  const constituencies = ['West Honiara', 'Central Honiara', 'East Honiara'];
+  const sections = constituencies.map(constituency => {
+    const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
+    const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
+    const rows = wards.map(ward => {
+      const records = allSurveys.filter(record => record.ward === ward);
+      const total = records.length;
+      const count = test => records.filter(test).length;
+      const weakSignal = count(record => surveyRatingAtOrBelow(record, 'b1', 2));
+      const droppedCalls = count(record => surveyMentions(record, 'b2', ['Sometimes', 'Often', 'Very often']));
+      const signalLoss = count(record => surveyMentions(record, 'b3', ['Yes']));
+      const coveragePlaces = count(record => dashSplitOptions(record.b4).filter(item => !/no problem/i.test(item)).length > 0 || dashText(record.b3_detail));
+      const poorVoice = count(record => surveyRatingAtOrBelow(record, 'c1', 2) || surveyRatingAtOrBelow(record, 'c3', 2));
+      const slowData = count(record => surveyRatingAtOrBelow(record, 'c5', 2));
+      const affordabilityPressure = count(record => surveyRatingAtOrBelow(record, 'd2', 3));
+      const topupDifficulty = count(record => surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']));
+      const heavyHousehold = count(record => surveyMentions(record, 'a6', ['4-5', '6', '6+']));
+      const eveningNightSlow = count(record => surveyMentions(record, 'c6', ['Evening', 'Night']));
+      const dataWorse = count(record => surveyMentions(record, 'c7', ['Yes']));
+      const noHomeWifi = count(record => surveyMentions(record, 'd4', ['No WiFi']));
+      const switchedProvider = count(record => surveyMentions(record, 'e1', ['Yes']));
+      const qualityDifference = count(record => dashText(record.e2) && !surveyMentions(record, 'e2', ['About the same']));
+      const starlinkAware = count(record => surveyMentions(record, 'e3', ['Yes']));
+      const writtenImprovement = count(record => dashText(record.e4));
+      return `<tr>
+        <td><span class="participant-ward-name">${dashEscape(ward)}</span><span class="participant-ward-count">${total} surveys</span></td>
+        <td>${participantMetric('B1 weak signal rating', weakSignal, total)}${participantMetric('B2 dropped calls sometimes/often', droppedCalls, total)}${participantMetric('B3 signal loss reported', signalLoss, total)}${participantMetric('B4 coverage place/problem noted', coveragePlaces, total)}</td>
+        <td>${participantMetric('C1/C3 poor voice/call rating', poorVoice, total)}${participantMetric('C5 slow data rating', slowData, total)}${participantMetric('D2 affordability fair/unaffordable', affordabilityPressure, total)}${participantMetric('D3 top-up difficulty', topupDifficulty, total)}</td>
+        <td>${participantMetric('A6 four or more data users', heavyHousehold, total)}${participantMetric('C6 evening/night slowest data', eveningNightSlow, total)}${participantMetric('C7 data slower over 1-2 years', dataWorse, total)}${participantMetric('D4 no WiFi at home', noHomeWifi, total)}</td>
+        <td>${participantTopOption(records, 'a3')}${participantMetric('E1 switched provider', switchedProvider, total)}${participantMetric('E2 perceived quality difference', qualityDifference, total)}${participantMetric('E3 Starlink aware/use', starlinkAware, total)}</td>
+        <td>${participantMetric('B3/B4 coverage location evidence', Math.max(signalLoss, coveragePlaces), total)}${participantMetric('D3 top-up difficulty', topupDifficulty, total)}${participantMetric('E4 written improvement response', writtenImprovement, total)}${participantTopImprovement(records)}</td>
+      </tr>`;
+    }).join('');
+    return `<section class="participant-constituency-block">
+      <div class="participant-constituency-head">
+        <div class="participant-constituency-title">${dashEscape(constituency)}</div>
+        <div class="participant-constituency-count">${constituencyRecords.length} survey responses</div>
+      </div>
+      <div class="participant-table-wrap">
+        <table class="participant-rq-table">
+          <thead><tr><th>Ward</th><th>RQ1 user-reported coverage B1-B4</th><th>RQ1 user-reported QoS/affordability C/D</th><th>RQ2 user-reported demand pressure A/C/D</th><th>RQ3 user-reported competition/market A/E</th><th>RQ4 user-reported improvement evidence B/D/E</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </section>`;
   }).join('');
   target.innerHTML = `<div class="analytics-card">
     <div class="analytics-card-head">
       <div>
-        <div class="analytics-card-title">Participant Survey Results</div>
-        <div class="analytics-card-sub">Ward-level counts and percentages from participant questionnaire responses</div>
+        <div class="analytics-card-title">Participant Survey Results - User-Reported Evidence</div>
+        <div class="analytics-card-sub">Questionnaire answers only: what participants reported by constituency and ward, mapped to the research questions</div>
       </div>
       <div class="constituency-summary-actions">
         <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-participant-results','honiara-participant-survey-results')" title="Export" aria-label="Export">
@@ -7204,12 +7258,7 @@ function renderParticipantSurveyResults(allSurveys) {
         </button>
       </div>
     </div>
-    <div style="overflow:auto">
-      <table class="analytics-table" style="min-width:1280px">
-        <thead><tr><th>Ward</th><th>Responses</th><th>Coverage B1-B4</th><th>QoS C1-C8</th><th>Affordability D1-D4</th><th>Competition E1-E4</th><th>Operator A3</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
+    <div class="participant-results-body">${sections}</div>
   </div>`;
 }
 
@@ -7236,8 +7285,8 @@ function renderDataReadingResults(allSurveys) {
   target.innerHTML = `<div class="analytics-card">
     <div class="analytics-card-head">
       <div>
-        <div class="analytics-card-title">Data Reading Results</div>
-        <div class="analytics-card-sub">Measured GPS, LTE radio quality, speed, spectrum band and serving-cell evidence</div>
+        <div class="analytics-card-title">Data Reading Results - Measured Field Evidence</div>
+        <div class="analytics-card-sub">NCIL, speed-test and GPS readings only: what the field measurements showed by ward</div>
       </div>
       <div class="constituency-summary-actions">
         <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-data-reading-results','honiara-data-reading-results')" title="Export" aria-label="Export">
