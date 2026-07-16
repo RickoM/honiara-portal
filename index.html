@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-one-card-dashboard-style-v58">
+<meta name="portal-build" content="2026-07-16-ward-counts-gps-detail-v59">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -937,13 +937,15 @@
   .constituency-summary-table td { padding:12px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle; }
   .constituency-summary-table tr:last-child td { border-bottom:0; }
   .constituency-summary-table .const-name { font-size:15px;font-weight:900;color:var(--navy); }
-  .constituency-summary-table .ward-list { display:flex;flex-wrap:wrap;gap:6px; }
-  .constituency-summary-table .ward-pill { border:1px solid var(--border);background:#fff;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;color:var(--navy); }
+  .constituency-summary-table .ward-list { display:flex;flex-wrap:wrap;gap:7px; }
+  .constituency-summary-table .ward-pill { border:1px solid var(--border);background:#fff;border-radius:10px;padding:5px 8px;font-size:11px;font-weight:800;color:var(--navy);line-height:1.15;min-width:72px; }
+  .constituency-summary-table .ward-pill-count { display:block;font-size:10px;font-weight:700;color:var(--gray-600);margin-top:3px; }
   .constituency-summary-table .summary-value { display:inline-flex;align-items:center;justify-content:center;min-width:58px;border-radius:10px;padding:7px 10px;font-size:18px;font-weight:900;background:#f8fafc;border:1px solid var(--border);color:var(--navy); }
   .constituency-summary-table .summary-value.valid { color:var(--green);background:var(--green-light);border-color:#b7d8a4; }
   .constituency-summary-table .summary-value.outside { color:var(--red);background:var(--red-light);border-color:#e7a5a5; }
   .constituency-summary-table .summary-value.other { color:var(--amber);background:var(--amber-light);border-color:#efc77b; }
   .constituency-summary-table .summary-value.completed { color:var(--navy);background:#edf3fb;border-color:#c9d8ea; }
+  .summary-detail { display:block;font-size:9px;color:var(--gray-600);margin-top:4px;line-height:1.25; }
   .constituency-summary-note { font-size:10px;color:var(--gray-600);line-height:1.35;margin-top:8px; }
   @media (max-width: 900px) {
     .dash-header { flex-direction:column; }
@@ -6326,21 +6328,29 @@ function renderConstituencyOverview(allSurveys) {
   const constituencyNames = ['West Honiara', 'Central Honiara', 'East Honiara'];
   const rows = constituencyNames.map(constituency => {
     const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
-    const constituencyTotals = { valid: 0, outsideBoundaryWard: 0, other: 0, total: 0 };
-    wards.forEach(ward => {
+    const constituencyTotals = { valid: 0, outsideBoundaryWard: 0, other: 0, total: 0, outsideStudy: 0, outsideWardBoundary: 0, wardMismatch: 0 };
+    const wardPills = wards.map(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
-      const buckets = dashboardGpsStatusBuckets(records);
-      constituencyTotals.valid += buckets.valid;
-      constituencyTotals.outsideBoundaryWard += buckets.outsideBoundaryWard;
-      constituencyTotals.other += buckets.other;
-      constituencyTotals.total += buckets.total;
+      const stats = dashboardGpsBoundaryStats(records);
+      constituencyTotals.valid += stats.insideBoundary;
+      constituencyTotals.outsideBoundaryWard += stats.outsideBoundary + stats.wardMismatch;
+      constituencyTotals.other += stats.missingOrInvalid;
+      constituencyTotals.total += records.length;
+      constituencyTotals.outsideStudy += stats.outsideStudy;
+      constituencyTotals.outsideWardBoundary += stats.outsideWardBoundary;
+      constituencyTotals.wardMismatch += stats.wardMismatch;
+      return `<span class="ward-pill">${dashEscape(ward)}<span class="ward-pill-count">${records.length} survey${records.length === 1 ? '' : 's'}</span></span>`;
     });
-    const wardPills = wards.map(ward => `<span class="ward-pill">${dashEscape(ward)}</span>`).join('');
+    const outsideDetail = [
+      constituencyTotals.outsideStudy ? `${constituencyTotals.outsideStudy} outside study area` : '',
+      constituencyTotals.outsideWardBoundary ? `${constituencyTotals.outsideWardBoundary} outside ward boundary` : '',
+      constituencyTotals.wardMismatch ? `${constituencyTotals.wardMismatch} ward mismatch` : ''
+    ].filter(Boolean).join('; ') || 'No boundary issue';
     return `<tr>
       <td class="left"><div class="const-name">${dashEscape(constituency)}</div></td>
-      <td class="left"><div class="ward-list">${wardPills}</div></td>
+      <td class="left"><div class="ward-list">${wardPills.join('')}</div></td>
       <td><span class="summary-value valid">${constituencyTotals.valid}</span></td>
-      <td><span class="summary-value outside">${constituencyTotals.outsideBoundaryWard}</span></td>
+      <td><span class="summary-value outside">${constituencyTotals.outsideBoundaryWard}</span><span class="summary-detail">${dashEscape(outsideDetail)}</span></td>
       <td><span class="summary-value other">${constituencyTotals.other}</span></td>
       <td><span class="summary-value completed">${constituencyTotals.total}</span></td>
     </tr>`;
