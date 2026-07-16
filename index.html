@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-structure-centred-longer-lower-arrows-v98">
+<meta name="portal-build" content="2026-07-16-title-cleanup-v99">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1033,6 +1033,9 @@
   .constituency-summary-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden; }
   .constituency-summary-title { font-size:18px;font-weight:900;color:#fff;letter-spacing:-.02em;margin:0;text-align:left; }
   .constituency-summary-head { background:linear-gradient(135deg,var(--navy),#244B78);padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px; }
+  #dash-constituency-overview .constituency-summary-head { position:relative;justify-content:center;text-align:center; }
+  #dash-constituency-overview .constituency-summary-title { text-align:center; }
+  #dash-constituency-overview .constituency-summary-head .constituency-summary-actions { position:absolute;right:18px;top:50%;transform:translateY(-50%); }
   .constituency-summary-sub { font-size:11px;color:rgba(255,255,255,.82);margin-top:3px;line-height:1.35; }
   .constituency-summary-actions { display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;align-items:center; }
   .summary-export-btn { width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.38);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:0;cursor:pointer; }
@@ -6619,8 +6622,7 @@ function renderConstituencyOverview(allSurveys) {
     <div class="constituency-summary-card">
       <div class="constituency-summary-head">
         <div>
-          <div class="constituency-summary-title">Honiara Analytical Dashboard</div>
-          <div class="constituency-summary-sub">Constituency-level survey completion and GPS status</div>
+          <div class="constituency-summary-title">Honiara Survey Results</div>
         </div>
         <div class="constituency-summary-actions">
           <button class="summary-export-btn" type="button" onclick="exportConstituencySummaryImage()" title="Export summary card" aria-label="Export summary card">
@@ -7341,7 +7343,7 @@ function renderResearchEvidenceTree() {
     </div>
     <div class="rq-tree">
       <div class="rq-tree-root">
-        <div class="rq-project-title">Dissertation Project Title</div>
+        <div class="rq-project-title">Project Title</div>
         <div class="rq-project-box">Mobile Network Performance and Competition in Honiara: A Demand-Capacity Assessment under Rapid Urban Growth</div>
         <svg class="rq-flow-svg rq-flow-title-arrow" viewBox="0 0 1000 48" preserveAspectRatio="none" aria-hidden="true">
           <defs><marker id="rqArrowTop" viewBox="0 0 12 12" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L12,6 L0,12 Z" fill="#1f2a44"></path></marker></defs>
