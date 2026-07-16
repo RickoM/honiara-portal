@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-16-constituency-card-row-fit-v54">
+<meta name="portal-build" content="2026-07-16-one-constituency-summary-card-v56">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -926,36 +926,27 @@
   .dash-finding-title { font-size:11px;font-weight:800;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px; }
   .dash-finding-text { font-size:12px;line-height:1.45;color:var(--text); }
   .dash-export-note { font-size:11px;color:var(--gray-600);line-height:1.45;margin-left:auto; }
-  .constituency-dashboard { margin-bottom:18px; }
-  .constituency-dashboard-title { font-size:24px;font-weight:800;color:var(--navy);margin:0 0 5px 0;letter-spacing:-.02em; }
-  .constituency-dashboard-subtitle { font-size:12px;color:var(--gray-600);line-height:1.45;margin-bottom:12px; }
-  .constituency-card-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch;width:100%; }
-  .constituency-card-grid > * { min-width:0; }
-  .constituency-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column; }
-  .constituency-card-head { padding:12px 14px;background:linear-gradient(135deg,var(--navy),#244B78);color:#fff;display:flex;justify-content:space-between;gap:8px;align-items:flex-start; }
-  .constituency-card-title { font-size:16px;font-weight:900;letter-spacing:-.02em; }
-  .constituency-card-total { text-align:right;font-size:11px;opacity:.92; }
-  .constituency-card-total strong { display:block;font-size:22px;line-height:1;color:#fff; }
-  .constituency-card-body { padding:12px 14px;display:grid;gap:10px;flex:1; }
-  .constituency-status-row { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px; }
-  .constituency-status { border:1px solid var(--border);border-radius:9px;padding:8px 6px;background:var(--gray-50);min-width:0; }
-  .constituency-status .value { font-size:20px;font-weight:900;line-height:1; }
-  .constituency-status .label { font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);font-weight:800;margin-top:5px;line-height:1.2; }
-  .constituency-status.valid .value { color:var(--green); }
-  .constituency-status.outside .value { color:var(--red); }
-  .constituency-status.other .value { color:var(--amber); }
-  .constituency-ward-list { display:grid;gap:8px; }
-  .constituency-ward-row { border:1px solid var(--border);border-radius:10px;padding:8px 9px;background:#fff; }
-  .constituency-ward-top { display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:12px;font-weight:800;color:var(--navy); }
-  .constituency-ward-meta { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:8px;font-size:9px;color:var(--gray-600); }
-  .constituency-ward-meta strong { display:block;font-size:13px;color:var(--text); }
-  .constituency-mini-bar { height:6px;background:var(--gray-200);border-radius:999px;overflow:hidden;margin-top:8px; }
-  .constituency-mini-fill { height:100%;background:var(--green);border-radius:999px; }
-  .constituency-card-foot { border-top:1px solid var(--border);padding:10px 16px;background:#fbfcfe;font-size:11px;color:var(--gray-600);line-height:1.4; }
+  .constituency-dashboard { margin-bottom:14px; }
+  .constituency-summary-card { background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px; }
+  .constituency-summary-title { font-size:20px;font-weight:900;color:var(--navy);letter-spacing:-.02em;margin-bottom:8px; }
+  .constituency-summary-table { width:100%;border-collapse:collapse;font-size:13px; }
+  .constituency-summary-table th { padding:9px 10px;border-bottom:2px solid var(--navy);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);text-align:center;white-space:nowrap; }
+  .constituency-summary-table th.left, .constituency-summary-table td.left { text-align:left; }
+  .constituency-summary-table td { padding:11px 10px;border-bottom:1px solid var(--border);text-align:center;vertical-align:top; }
+  .constituency-summary-table tbody tr:hover { background:#f8fbff; }
+  .constituency-summary-table .const-name { font-size:15px;font-weight:900;color:var(--navy); }
+  .constituency-summary-table .ward-list { display:flex;flex-wrap:wrap;gap:5px; }
+  .constituency-summary-table .ward-pill { border:1px solid var(--border);background:#fff;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;color:var(--navy); }
+  .constituency-summary-table .summary-value { display:inline-flex;align-items:center;justify-content:center;min-width:54px;border-radius:9px;padding:7px 10px;font-size:18px;font-weight:900;background:var(--gray-50);border:1px solid var(--border); }
+  .constituency-summary-table .summary-value.valid { color:var(--green);background:var(--green-light);border-color:#b7d8a4; }
+  .constituency-summary-table .summary-value.outside { color:var(--red);background:var(--red-light);border-color:#e7a5a5; }
+  .constituency-summary-table .summary-value.other { color:var(--amber);background:var(--amber-light);border-color:#efc77b; }
+  .constituency-summary-table .summary-value.completed { color:var(--navy);background:#edf3fb;border-color:#c9d8ea; }
+  .constituency-summary-note { font-size:10px;color:var(--gray-600);line-height:1.35;margin-top:8px; }
   @media (max-width: 900px) {
     .dash-header { flex-direction:column; }
     .dash-grid { grid-template-columns:1fr 1fr; }
-    .dash-story, .dash-two-col, .dash-findings-grid, .constituency-card-grid { grid-template-columns:1fr; }
+    .dash-story, .dash-two-col, .dash-findings-grid { grid-template-columns:1fr; }
     .dash-export-note { width:100%;margin-left:0; }
   }
   @media (max-width: 520px) {
@@ -6331,65 +6322,47 @@ function renderConstituencyOverview(allSurveys) {
   const target = document.getElementById('dash-constituency-overview');
   if (!target) return;
   const constituencyNames = ['West Honiara', 'Central Honiara', 'East Honiara'];
-  const cards = constituencyNames.map(constituency => {
+  const rows = constituencyNames.map(constituency => {
     const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
     const constituencyTotals = { valid: 0, outsideBoundaryWard: 0, other: 0, total: 0 };
-    const targetTotal = wards.reduce((sum, ward) => sum + (WARDS[ward]?.target || 0), 0);
-    const wardRows = wards.map(ward => {
+    wards.forEach(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
       const buckets = dashboardGpsStatusBuckets(records);
       constituencyTotals.valid += buckets.valid;
       constituencyTotals.outsideBoundaryWard += buckets.outsideBoundaryWard;
       constituencyTotals.other += buckets.other;
       constituencyTotals.total += buckets.total;
-      const wardTarget = WARDS[ward]?.target || 0;
-      const pct = dashPct(buckets.total, wardTarget);
-      const progressColor = pct >= 100 ? 'var(--green)' : pct >= 70 ? 'var(--amber)' : 'var(--navy)';
-      return `<div class="constituency-ward-row">
-        <div class="constituency-ward-top">
-          <span>${dashEscape(ward)}</span>
-          <span>${buckets.total}/${wardTarget}</span>
-        </div>
-        <div class="constituency-mini-bar"><div class="constituency-mini-fill" style="width:${Math.min(100,pct)}%;background:${progressColor}"></div></div>
-        <div class="constituency-ward-meta">
-          <span><strong>${buckets.valid}</strong>Valid</span>
-          <span><strong>${buckets.outsideBoundaryWard}</strong>Outside</span>
-          <span><strong>${buckets.other}</strong>Other</span>
-          <span><strong>${pct}%</strong>Done</span>
-        </div>
-      </div>`;
-    }).join('');
-    const pctTotal = dashPct(constituencyTotals.total, targetTotal);
-    return `<section class="constituency-card">
-      <div class="constituency-card-head">
-        <div>
-          <div class="constituency-card-title">${dashEscape(constituency)}</div>
-          <div style="font-size:11px;opacity:.88;margin-top:3px">${wards.length} ward${wards.length === 1 ? '' : 's'}</div>
-        </div>
-        <div class="constituency-card-total">
-          <strong>${constituencyTotals.total}</strong>
-          surveys / ${targetTotal}
-        </div>
-      </div>
-      <div class="constituency-card-body">
-        <div class="constituency-status-row">
-          <div class="constituency-status valid"><div class="value">${constituencyTotals.valid}</div><div class="label">Valid GPS</div></div>
-          <div class="constituency-status outside"><div class="value">${constituencyTotals.outsideBoundaryWard}</div><div class="label">Outside boundary ward</div></div>
-          <div class="constituency-status other"><div class="value">${constituencyTotals.other}</div><div class="label">Other GPS issue</div></div>
-        </div>
-        <div>
-          <div class="constituency-ward-top"><span>Survey completion</span><span>${pctTotal}%</span></div>
-          <div class="constituency-mini-bar"><div class="constituency-mini-fill" style="width:${Math.min(100,pctTotal)}%;background:${pctTotal >= 100 ? 'var(--green)' : pctTotal >= 70 ? 'var(--amber)' : 'var(--navy)'}"></div></div>
-        </div>
-        <div class="constituency-ward-list">${wardRows}</div>
-      </div>
-      <div class="constituency-card-foot">Valid GPS supports ward-level mapping. Outside/Other records should be checked before using them in spatial findings.</div>
-    </section>`;
+    });
+    const wardPills = wards.map(ward => `<span class="ward-pill">${dashEscape(ward)}</span>`).join('');
+    return `<tr>
+      <td class="left"><div class="const-name">${dashEscape(constituency)}</div></td>
+      <td class="left"><div class="ward-list">${wardPills}</div></td>
+      <td><span class="summary-value valid">${constituencyTotals.valid}</span></td>
+      <td><span class="summary-value outside">${constituencyTotals.outsideBoundaryWard}</span></td>
+      <td><span class="summary-value other">${constituencyTotals.other}</span></td>
+      <td><span class="summary-value completed">${constituencyTotals.total}</span></td>
+    </tr>`;
   }).join('');
   target.innerHTML = `<div class="constituency-dashboard">
-    <div class="constituency-dashboard-title">Honiara Analytical Dashboard</div>
-    <div class="constituency-dashboard-subtitle">Constituency cards summarise ward coverage, GPS quality and survey completion. Use this as the first analytical snapshot before drilling into ward-level findings.</div>
-    <div class="constituency-card-grid">${cards}</div>
+    <div class="constituency-summary-card">
+      <div class="constituency-summary-title">Constituency Survey Completion and GPS Status</div>
+      <div style="overflow:auto">
+        <table class="constituency-summary-table" style="min-width:880px">
+          <thead>
+            <tr>
+              <th class="left">Constituency</th>
+              <th class="left">Wards</th>
+              <th>Valid GPS</th>
+              <th>Outside Boundary Ward</th>
+              <th>Other</th>
+              <th>Surveys Completed</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="constituency-summary-note">This card summarises completed survey records by constituency. Valid GPS supports ward-level mapping; Outside Boundary Ward and Other should be checked before spatial interpretation.</div>
+    </div>
   </div>`;
 }
 
