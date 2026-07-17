@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-clear-disclosure-arrows-v125">
+<meta name="portal-build" content="2026-07-17-left-side-accordion-icons-v126">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -959,9 +959,9 @@
   .participant-constituency-block > summary, .participant-ward-panel > summary, .reading-constituency-block > summary, .reading-ward-panel > summary { list-style:none;cursor:pointer; }
   .participant-constituency-block > summary::-webkit-details-marker, .participant-ward-panel > summary::-webkit-details-marker, .reading-constituency-block > summary::-webkit-details-marker, .reading-ward-panel > summary::-webkit-details-marker { display:none; }
   .participant-constituency-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:#f8fafc;border-bottom:1px solid var(--border);padding:10px 12px; }
-  .participant-constituency-title { color:var(--navy);font-size:18px;font-weight:950;letter-spacing:-.01em; }
+  .participant-constituency-title { color:var(--navy);font-size:18px;font-weight:950;letter-spacing:-.01em;display:flex;align-items:center; }
   .participant-constituency-count { color:var(--gray-600);font-size:11px;font-weight:800; }
-  .participant-toggle, .reading-toggle { width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #c8d6e6;border-radius:6px;background:#fff;color:var(--navy);margin-left:8px;vertical-align:middle; }
+  .participant-toggle, .reading-toggle { width:22px;height:22px;flex:0 0 22px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #c8d6e6;border-radius:6px;background:#fff;color:var(--navy);margin-right:8px;vertical-align:middle; }
   .participant-toggle::before, .reading-toggle::before { content:"";display:block;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid currentColor;margin-left:2px; }
   details[open] > summary .participant-toggle::before, details[open] > summary .reading-toggle::before { border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid currentColor;border-bottom:0;margin-left:0;margin-top:2px; }
   .participant-context-block { padding:12px;background:linear-gradient(135deg,#f8fbff,#fff);border-bottom:1px solid var(--border); }
@@ -991,7 +991,7 @@
   .participant-ward-compare { display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:5px;margin-top:4px; }
   .participant-ward-compare-item { display:block;border:1px solid #dce7f3;border-radius:8px;background:#f8fbff;padding:5px 6px;color:var(--navy);font-size:10px;font-weight:950;line-height:1.2; }
   .participant-ward-panel-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(135deg,#f8fbff,#eef5ff);border-bottom:1px solid #d8e3ef;padding:11px 13px; }
-  .participant-ward-panel-title { color:var(--navy);font-size:15px;font-weight:950; }
+  .participant-ward-panel-title { color:var(--navy);font-size:15px;font-weight:950;display:flex;align-items:center; }
   .participant-ward-panel-meta { color:#475569;font-size:11px;font-weight:850; }
   .participant-section-grid { display:grid;grid-template-columns:1.05fr 1fr 1fr 1fr;gap:10px;padding:12px;align-items:stretch; }
   .participant-section-card { border:1px solid #dce7f3;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(16,24,40,.04);overflow:hidden;min-height:128px; }
@@ -1040,7 +1040,7 @@
   .reading-results-body { padding:14px;background:#fff;display:grid;gap:14px; }
   .reading-constituency-block { border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 2px 8px rgba(16,24,40,.04); }
   .reading-constituency-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:#f8fafc;border-bottom:1px solid var(--border);padding:10px 12px; }
-  .reading-constituency-title { color:var(--navy);font-size:18px;font-weight:950;letter-spacing:-.01em; }
+  .reading-constituency-title { color:var(--navy);font-size:18px;font-weight:950;letter-spacing:-.01em;display:flex;align-items:center; }
   .reading-constituency-count { color:var(--gray-600);font-size:11px;font-weight:800; }
   .reading-summary { margin:12px 12px 0;border:1px solid #d7e3f2;border-radius:13px;background:linear-gradient(135deg,#f8fbff,#fff);box-shadow:0 3px 10px rgba(16,24,40,.05);padding:11px 12px; }
   .reading-summary h5 { margin:0 0 9px;color:var(--navy);font-size:13px;font-weight:950; }
@@ -1050,7 +1050,7 @@
   .reading-summary-value { display:block;color:var(--navy);font-size:13px;font-weight:950;margin-top:4px;line-height:1.25; }
   .reading-ward-panel { border:1px solid #d8e3ef;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(16,24,40,.06);overflow:hidden;margin:12px; }
   .reading-ward-panel-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(135deg,#f8fbff,#eef5ff);border-bottom:1px solid #d8e3ef;padding:11px 13px; }
-  .reading-ward-panel-title { color:var(--navy);font-size:15px;font-weight:950; }
+  .reading-ward-panel-title { color:var(--navy);font-size:15px;font-weight:950;display:flex;align-items:center; }
   .reading-ward-panel-meta { color:#475569;font-size:11px;font-weight:850; }
   .reading-section-grid { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;padding:12px;align-items:stretch; }
   .reading-section-card { border:1px solid #dce7f3;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(16,24,40,.04);overflow:hidden;min-height:130px; }
@@ -7486,8 +7486,8 @@ function renderParticipantSurveyResults(allSurveys) {
       const wardOpen = constituency === selectedDashboardConstituency && ward === wards[0] ? ' open' : '';
       return `<details class="participant-ward-panel"${wardOpen}>
         <summary class="participant-ward-panel-head">
-          <div class="participant-ward-panel-title">Ward: ${dashEscape(ward)}</div>
-          <div class="participant-ward-panel-meta">${total} survey responses <span class="participant-toggle"></span></div>
+          <div class="participant-ward-panel-title"><span class="participant-toggle"></span>Ward: ${dashEscape(ward)}</div>
+          <div class="participant-ward-panel-meta">${total} survey responses</div>
         </summary>
         <div class="participant-section-grid">
           ${sectionA}
@@ -7502,8 +7502,8 @@ function renderParticipantSurveyResults(allSurveys) {
     const constituencyOpen = constituency === selectedDashboardConstituency ? ' open' : '';
     return `<details class="participant-constituency-block"${constituencyOpen}>
       <summary class="participant-constituency-head">
-        <div class="participant-constituency-title">Constituency: ${dashEscape(constituency)}</div>
-        <div class="participant-constituency-count">${constituencyRecords.length} survey responses <span class="participant-toggle"></span></div>
+        <div class="participant-constituency-title"><span class="participant-toggle"></span>Constituency: ${dashEscape(constituency)}</div>
+        <div class="participant-constituency-count">${constituencyRecords.length} survey responses</div>
       </summary>
       ${summaryStrip}
       ${wardPanels}
@@ -7639,8 +7639,8 @@ function renderDataReadingResults(allSurveys) {
       const wardOpen = constituency === selectedDashboardConstituency && ward === wards[0] ? ' open' : '';
       return `<details class="reading-ward-panel"${wardOpen}>
         <summary class="reading-ward-panel-head">
-          <div class="reading-ward-panel-title">Ward: ${dashEscape(ward)}</div>
-          <div class="reading-ward-panel-meta">${wardReadingBase} measured reading${wardReadingBase === 1 ? '' : 's'} <span class="reading-toggle"></span></div>
+          <div class="reading-ward-panel-title"><span class="reading-toggle"></span>Ward: ${dashEscape(ward)}</div>
+          <div class="reading-ward-panel-meta">${wardReadingBase} measured reading${wardReadingBase === 1 ? '' : 's'}</div>
         </summary>
         <div class="reading-section-grid">
           ${radioCard}
@@ -7654,8 +7654,8 @@ function renderDataReadingResults(allSurveys) {
     const constituencyOpen = constituency === selectedDashboardConstituency ? ' open' : '';
     return `<details class="reading-constituency-block"${constituencyOpen}>
       <summary class="reading-constituency-head">
-        <div class="reading-constituency-title">Constituency: ${dashEscape(constituency)}</div>
-        <div class="reading-constituency-count">${constituencyTotal} measured reading${constituencyTotal === 1 ? '' : 's'} <span class="reading-toggle"></span></div>
+        <div class="reading-constituency-title"><span class="reading-toggle"></span>Constituency: ${dashEscape(constituency)}</div>
+        <div class="reading-constituency-count">${constituencyTotal} measured reading${constituencyTotal === 1 ? '' : 's'}</div>
       </summary>
       ${summaryStrip}
       ${wardPanels}
