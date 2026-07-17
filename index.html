@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-rq-linked-survey-summary-v108">
+<meta name="portal-build" content="2026-07-17-ward-comparison-summary-v109">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -7261,15 +7261,14 @@ function participantSummaryItem(label, value) {
   return `<div class="participant-summary-item"><span class="participant-summary-label">${dashEscape(label)}</span><span class="participant-summary-value">${value}</span></div>`;
 }
 
-function participantWardLeader(wards, allSurveys, metricFn) {
-  const ranked = wards.map(ward => {
+function participantWardComparison(wards, allSurveys, metricFn) {
+  const items = wards.map(ward => {
     const records = allSurveys.filter(record => record.ward === ward);
     const total = records.length;
     const count = records.filter(metricFn).length;
-    return { ward, total, count, rate: total ? dashPct(count, total) : 0 };
-  }).filter(item => item.count > 0).sort((a, b) => b.rate - a.rate || b.count - a.count || a.ward.localeCompare(b.ward));
-  const top = ranked[0];
-  return top ? `${dashEscape(top.ward)} ${participantPctCount(top.count, top.total)}` : 'No reading';
+    return `${dashEscape(ward)} ${participantPctCount(count, total)}`;
+  });
+  return items.join(' | ');
 }
 
 function participantTopImprovement(records) {
@@ -7308,21 +7307,21 @@ function renderParticipantSurveyResults(allSurveys) {
     const topOperator = participantContextValue(constituencyRecords, 'a3');
     const issueOperator = participantContextValue(constituencyRecords, 'a4');
     const householdDemand = constituencyCount(record => surveyMentions(record, 'a6', ['4-5', '6', '6+']));
-    const coverageLeader = participantWardLeader(wards, allSurveys, record =>
+    const coverageComparison = participantWardComparison(wards, allSurveys, record =>
       surveyRatingAtOrBelow(record, 'b1', 2) ||
       surveyMentions(record, 'b2', ['Sometimes', 'Often', 'Very often']) ||
       surveyMentions(record, 'b3', ['Yes']) ||
       dashSplitOptions(record.b4).filter(item => !/no problem/i.test(item)).length > 0 ||
       dashText(record.b3_detail)
     );
-    const qosLeader = participantWardLeader(wards, allSurveys, record =>
+    const qosComparison = participantWardComparison(wards, allSurveys, record =>
       surveyRatingAtOrBelow(record, 'c1', 2) ||
       surveyRatingAtOrBelow(record, 'c3', 2) ||
       surveyRatingAtOrBelow(record, 'c5', 2) ||
       surveyMentions(record, 'c6', ['Evening', 'Night']) ||
       surveyMentions(record, 'c7', ['Yes'])
     );
-    const affordabilityLeader = participantWardLeader(wards, allSurveys, record =>
+    const affordabilityComparison = participantWardComparison(wards, allSurveys, record =>
       surveyRatingAtOrBelow(record, 'd2', 3) ||
       surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']) ||
       surveyMentions(record, 'd4', ['No WiFi'])
@@ -7335,9 +7334,9 @@ function renderParticipantSurveyResults(allSurveys) {
     const summaryStrip = `<div class="participant-constituency-summary">
       <h5>Constituency Summary</h5>
       <div class="participant-summary-grid">
-        ${participantSummaryItem('RQ1 coverage issue leader', coverageLeader)}
-        ${participantSummaryItem('RQ1 QoS issue leader', qosLeader)}
-        ${participantSummaryItem('RQ1/RQ4 affordability issue leader', affordabilityLeader)}
+        ${participantSummaryItem('RQ1 coverage issue by ward', coverageComparison)}
+        ${participantSummaryItem('RQ1 QoS issue by ward', qosComparison)}
+        ${participantSummaryItem('RQ1/RQ4 affordability issue by ward', affordabilityComparison)}
         ${participantSummaryItem('RQ3 market/competition indicator', `${participantPctCount(marketIndicatorCount, constituencyTotal)} report switching, quality difference or Starlink awareness`)}
         ${participantSummaryItem('RQ2 household demand', `${participantPctCount(householdDemand, constituencyTotal)} with 4+ data users`)}
         ${participantSummaryItem('Operator context', `Main: ${topOperator}; issue SIM: ${issueOperator}`)}
