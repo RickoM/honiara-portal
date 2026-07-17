@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-compact-rq3-metric-tiles-v115">
+<meta name="portal-build" content="2026-07-17-rq3-tiles-wrap-v116">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -974,10 +974,10 @@
   .participant-summary-item.wide { grid-column:span 2; }
   .participant-summary-label { display:block;color:#475569;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em; }
   .participant-summary-value { display:block;color:var(--navy);font-size:13px;font-weight:950;margin-top:4px;line-height:1.25; }
-  .participant-market-group { display:grid;grid-template-columns:repeat(5,minmax(92px,1fr));gap:6px;margin-top:5px; }
-  .participant-market-metric { border:1px solid #dce7f3;border-radius:8px;background:#f8fbff;padding:6px 7px;line-height:1.15; }
-  .participant-market-label { display:block;color:#475569;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.03em; }
-  .participant-market-value { display:block;color:var(--navy);font-size:12px;font-weight:950;margin-top:3px; }
+  .participant-market-group { display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:6px;margin-top:5px;max-width:100%;overflow:hidden; }
+  .participant-market-metric { min-width:0;border:1px solid #dce7f3;border-radius:8px;background:#f8fbff;padding:6px 7px;line-height:1.15;overflow:hidden; }
+  .participant-market-label { display:block;color:#475569;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.03em;overflow-wrap:anywhere; }
+  .participant-market-value { display:block;color:var(--navy);font-size:12px;font-weight:950;margin-top:3px;overflow-wrap:anywhere; }
   @media (max-width:720px) { .participant-summary-item.wide { grid-column:auto; } .participant-market-group { grid-template-columns:1fr; } }
   .participant-ward-compare { display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:5px;margin-top:4px; }
   .participant-ward-compare-item { display:block;border:1px solid #dce7f3;border-radius:8px;background:#f8fbff;padding:5px 6px;color:var(--navy);font-size:10px;font-weight:950;line-height:1.2; }
