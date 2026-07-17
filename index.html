@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-constituency-kpi-overview-v131">
+<meta name="portal-build" content="2026-07-17-compact-survey-data-overview-v132">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1192,6 +1192,12 @@
   .overview-kpi.good .overview-kpi-value { color:var(--green); }
   .overview-kpi.warn .overview-kpi-value { color:var(--amber); }
   .overview-kpi.bad .overview-kpi-value { color:var(--red); }
+  .overview-data-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:360px;text-align:left; }
+  .overview-data-card { border:1px solid #d8e3ef;border-radius:10px;background:#fff;padding:8px 9px;line-height:1.2;min-height:74px;box-shadow:0 1px 4px rgba(16,24,40,.04); }
+  .overview-data-card-title { display:block;font-size:9px;text-transform:uppercase;letter-spacing:.04em;color:var(--gray-600);font-weight:950;margin-bottom:5px; }
+  .overview-data-card-value { display:block;font-size:11px;font-weight:850;color:var(--navy);margin-top:3px; }
+  .overview-data-card-note { display:block;font-size:9px;font-weight:700;color:var(--gray-600);margin-top:3px; }
+  .overview-data-card.warn { border-color:#efc77b;background:#fff8eb; }
   .ward-issue-list { display:flex;flex-wrap:wrap;gap:3px;margin-top:5px; }
   .ward-issue-chip { border:1px solid #efc77b;background:var(--amber-light);color:#7a4b08;border-radius:999px;padding:2px 6px;font-size:9px;font-weight:800;cursor:pointer; }
   .ward-issue-chip.bad { border-color:#e7a5a5;background:var(--red-light);color:#7d1f1f; }
@@ -6824,6 +6830,44 @@ function dashboardOverviewKpiBlock(records) {
   </div>`;
 }
 
+function dashboardOverviewConstituencyPlmn(records) {
+  const counts = countValues(records.flatMap(record => {
+    return [
+      { mcc: record.fd_s2a_mcc, mnc: record.fd_s2a_mnc },
+      { mcc: record.fd_s2b_mcc, mnc: record.fd_s2b_mnc }
+    ].map(obs => {
+      const mcc = String(obs.mcc || '').trim();
+      const mnc = String(obs.mnc || '').trim();
+      return mcc && mnc ? `${mcc}-${String(mnc).padStart(2, '0')} ${plmnOperatorName(mcc, mnc)}` : '';
+    });
+  }));
+  if (!counts.length) return '<span class="overview-data-card-value" style="color:var(--gray-600)">No PLMN reading</span>';
+  return counts.slice(0, 3).map(([label, count]) => `<span class="overview-data-card-value">${dashEscape(label)} (${count})</span>`).join('');
+}
+
+function dashboardOverviewConstituencyBands(records) {
+  const counts = countValues(records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean));
+  if (!counts.length) return '<span class="overview-data-card-value" style="color:var(--gray-600)">No band reading</span>';
+  return counts.slice(0, 4).map(([band, count]) => {
+    const info = radioBandInfo(band);
+    return `<span class="overview-data-card-value">${dashEscape(info.label)} - ${dashEscape(info.frequency)} (${count})${info.caution ? '<span class="overview-data-card-note" style="color:var(--amber)">Check screenshot</span>' : ''}</span>`;
+  }).join('');
+}
+
+function dashboardOverviewConstituencyServing(records) {
+  const tech = wardRadioTechnicalSummary(records);
+  if (!records.length) return '<span class="overview-data-card-value" style="color:var(--gray-600)">No readings yet</span>';
+  return `<span class="overview-data-card-value">${tech.servingTowerCount || 0} tower groups</span><span class="overview-data-card-value">${tech.servingCellCount || 0} serving LTE cells</span>`;
+}
+
+function dashboardOverviewDataBlock(records) {
+  return `<div class="overview-data-grid">
+    <div class="overview-data-card"><span class="overview-data-card-title">PLMN / operator</span>${dashboardOverviewConstituencyPlmn(records)}</div>
+    <div class="overview-data-card"><span class="overview-data-card-title">Spectrum bands</span>${dashboardOverviewConstituencyBands(records)}</div>
+    <div class="overview-data-card"><span class="overview-data-card-title">Towers / cells</span>${dashboardOverviewConstituencyServing(records)}</div>
+  </div>`;
+}
+
 function renderConstituencyOverview(allSurveys) {
   const target = document.getElementById('dash-constituency-overview');
   if (!target) return;
@@ -6863,17 +6907,13 @@ function renderConstituencyOverview(allSurveys) {
       <div class="overview-mini-metric good"><strong>${constituencyTotals.valid}</strong><span>GPS valid</span></div>
       <div class="overview-mini-metric ${attentionTotal ? 'warn' : 'good'}"><strong>${attentionTotal}</strong><span>Need check</span></div>
     </div><span class="summary-detail">${dashEscape(outsideDetail)}</span>`;
-    const plmnBlock = dashboardOverviewWardStack(wards, allSurveys, 'plmn');
-    const bandBlock = dashboardOverviewWardStack(wards, allSurveys, 'bands');
-    const servingBlock = dashboardOverviewWardStack(wards, allSurveys, 'serving');
+    const dataBlock = dashboardOverviewDataBlock(constituencyRecords);
     const kpiBlock = dashboardOverviewKpiBlock(constituencyRecords);
     return `<tr>
       <td class="left"><div class="const-name">${dashEscape(constituency)}</div></td>
       <td class="left"><div class="ward-list">${wardPills.join('')}</div></td>
       <td>${surveyGpsBlock}</td>
-      <td>${plmnBlock}</td>
-      <td>${bandBlock}</td>
-      <td>${servingBlock}</td>
+      <td>${dataBlock}</td>
       <td>${kpiBlock}</td>
     </tr>`;
   }).join('');
@@ -6890,16 +6930,14 @@ function renderConstituencyOverview(allSurveys) {
         </div>
       </div>
       <div style="overflow:auto">
-        <table class="constituency-summary-table" style="min-width:1600px">
+        <table class="constituency-summary-table" style="min-width:1180px">
           <thead>
             <tr>
               <th class="left">Constituency</th>
               <th class="left">Wards</th>
               <th>Survey and GPS status</th>
-              <th>PLMN / operators detected</th>
-              <th>Spectrum bands detected</th>
-              <th>Serving tower groups and cells</th>
-              <th>Safely aggregated KPI readings</th>
+              <th>Measured data readings</th>
+              <th>Safe KPI aggregates</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
