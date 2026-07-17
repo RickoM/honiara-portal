@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-compact-operator-market-card-v113">
+<meta name="portal-build" content="2026-07-17-constituency-key-findings-wording-v114">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -7348,13 +7348,13 @@ function renderParticipantSurveyResults(allSurveys) {
       surveyMentions(record, 'd4', ['No WiFi'])
     );
     const summaryStrip = `<div class="participant-constituency-summary">
-      <h5>Constituency Summary</h5>
+      <h5>Constituency-level Key Findings</h5>
       <div class="participant-summary-grid">
-        ${participantSummaryItem('RQ1 coverage issue by ward', coverageComparison)}
-        ${participantSummaryItem('RQ1 QoS issue by ward', qosComparison)}
-        ${participantSummaryItem('RQ1/RQ4 affordability issue by ward', affordabilityComparison)}
-        ${participantSummaryWideItem('RQ3 operator and market context', `<span class="participant-market-group"><span class="participant-market-sub"><strong>Operator context - Section A</strong><span>Primary operator: ${topOperator}</span><span>Problem SIM/operator: ${issueOperator}</span></span><span class="participant-market-sub"><strong>Competition and alternatives - Section E</strong><span>Switched provider: ${participantPctCount(switchedProviderTotal, constituencyTotal)}</span><span>Quality difference: ${participantPctCount(qualityDifferenceTotal, constituencyTotal)}</span><span>Starlink awareness/use: ${participantPctCount(starlinkAwareTotal, constituencyTotal)}</span></span></span>`)}
-        ${participantSummaryItem('RQ2 household data demand', participantCountSentence(householdDemand, constituencyTotal, 'live in households with 4+ regular mobile-data users'))}
+        ${participantSummaryItem('RQ1: User-reported coverage issues by ward', coverageComparison)}
+        ${participantSummaryItem('RQ1: User-reported QoS issues by ward', qosComparison)}
+        ${participantSummaryItem('RQ1/RQ4: Affordability pressure by ward', affordabilityComparison)}
+        ${participantSummaryWideItem('RQ3: Operator use and market choice', `<span class="participant-market-group"><span class="participant-market-sub"><strong>Operator use - Section A</strong><span>Current mobile operator used: ${topOperator}</span><span>Operator/SIM where users reported coverage or speed problems: ${issueOperator}</span></span><span class="participant-market-sub"><strong>Competition and alternatives - Section E</strong><span>Have users switched between Our Telekom and BMobile? Yes: ${participantPctCount(switchedProviderTotal, constituencyTotal)}</span><span>Do users perceive a quality difference between operators? Yes: ${participantPctCount(qualityDifferenceTotal, constituencyTotal)}</span><span>Are users aware of or using Starlink as an alternative? Yes: ${participantPctCount(starlinkAwareTotal, constituencyTotal)}</span></span></span>`)}
+        ${participantSummaryItem('RQ2: Household mobile-data demand', participantCountSentence(householdDemand, constituencyTotal, 'live in households with 4+ regular mobile-data users'))}
       </div>
     </div>`;
     const wardPanels = wards.map(ward => {
