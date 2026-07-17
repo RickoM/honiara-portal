@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-participant-ward-section-cards-v106">
+<meta name="portal-build" content="2026-07-17-constituency-survey-summary-v107">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -967,6 +967,12 @@
   .participant-context-value { color:var(--navy);font-weight:950;text-align:right; }
   .participant-rq-tag { display:inline-flex;margin-top:2px;border-radius:999px;background:#eaf3ff;color:#18375d;font-size:8px;font-weight:900;padding:2px 6px;white-space:nowrap; }
   .participant-ward-panel { border:1px solid #d8e3ef;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(16,24,40,.06);overflow:hidden;margin:12px; }
+  .participant-constituency-summary { margin:12px 12px 0;border:1px solid #d7e3f2;border-radius:13px;background:linear-gradient(135deg,#f8fbff,#fff);box-shadow:0 3px 10px rgba(16,24,40,.05);padding:11px 12px; }
+  .participant-constituency-summary h5 { margin:0 0 9px;color:var(--navy);font-size:13px;font-weight:950; }
+  .participant-summary-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px; }
+  .participant-summary-item { border:1px solid #dce7f3;border-left:4px solid #2f6fbd;border-radius:10px;background:#fff;padding:8px 9px;box-shadow:0 1px 5px rgba(16,24,40,.04); }
+  .participant-summary-label { display:block;color:#475569;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em; }
+  .participant-summary-value { display:block;color:var(--navy);font-size:13px;font-weight:950;margin-top:4px;line-height:1.25; }
   .participant-ward-panel-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(135deg,#f8fbff,#eef5ff);border-bottom:1px solid #d8e3ef;padding:11px 13px; }
   .participant-ward-panel-title { color:var(--navy);font-size:15px;font-weight:950; }
   .participant-ward-panel-meta { color:#475569;font-size:11px;font-weight:850; }
@@ -7251,6 +7257,10 @@ function participantFindingLine(label, count, total) {
   return `<li class="${cls}">${dashEscape(label)}: ${participantPctCount(count, total)}</li>`;
 }
 
+function participantSummaryItem(label, value) {
+  return `<div class="participant-summary-item"><span class="participant-summary-label">${dashEscape(label)}</span><span class="participant-summary-value">${value}</span></div>`;
+}
+
 function participantTopImprovement(records) {
   const total = records.length;
   const buckets = [
@@ -7282,6 +7292,39 @@ function renderParticipantSurveyResults(allSurveys) {
   const sections = constituencies.map(constituency => {
     const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
     const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
+    const constituencyTotal = constituencyRecords.length;
+    const constituencyCount = test => constituencyRecords.filter(test).length;
+    const topOperator = participantContextValue(constituencyRecords, 'a3');
+    const issueOperator = participantContextValue(constituencyRecords, 'a4');
+    const householdDemand = constituencyCount(record => surveyMentions(record, 'a6', ['4-5', '6', '6+']));
+    const constituencyMetrics = [
+      ['Affordability pressure', constituencyCount(record => surveyRatingAtOrBelow(record, 'd2', 3) || surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']))],
+      ['Coverage concern', constituencyCount(record => surveyRatingAtOrBelow(record, 'b1', 2) || surveyMentions(record, 'b2', ['Sometimes', 'Often', 'Very often']) || surveyMentions(record, 'b3', ['Yes']) || dashSplitOptions(record.b4).filter(item => !/no problem/i.test(item)).length > 0 || dashText(record.b3_detail))],
+      ['QoS concern', constituencyCount(record => surveyRatingAtOrBelow(record, 'c1', 2) || surveyRatingAtOrBelow(record, 'c3', 2) || surveyRatingAtOrBelow(record, 'c5', 2) || surveyMentions(record, 'c6', ['Evening', 'Night']) || surveyMentions(record, 'c7', ['Yes']))],
+      ['Market signal', constituencyCount(record => surveyMentions(record, 'e1', ['Yes']) || (dashText(record.e2) && !surveyMentions(record, 'e2', ['About the same'])) || surveyMentions(record, 'e3', ['Yes']))]
+    ].sort((a, b) => b[1] - a[1]);
+    const strongestTheme = constituencyMetrics[0] || ['No theme', 0];
+    const wardPressures = wards.map(ward => {
+      const records = allSurveys.filter(record => record.ward === ward);
+      const total = records.length;
+      const pressure = records.filter(record =>
+        surveyRatingAtOrBelow(record, 'd2', 3) ||
+        surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']) ||
+        surveyMentions(record, 'b2', ['Sometimes', 'Often', 'Very often']) ||
+        surveyRatingAtOrBelow(record, 'c5', 2)
+      ).length;
+      return { ward, total, pressure, rate: total ? dashPct(pressure, total) : 0 };
+    }).sort((a, b) => b.rate - a.rate || b.pressure - a.pressure)[0];
+    const summaryStrip = `<div class="participant-constituency-summary">
+      <h5>Constituency Summary</h5>
+      <div class="participant-summary-grid">
+        ${participantSummaryItem('Main operator reported', topOperator)}
+        ${participantSummaryItem('Most common issue operator', issueOperator)}
+        ${participantSummaryItem('Strongest user-reported theme', `${dashEscape(strongestTheme[0])} ${participantPctCount(strongestTheme[1], constituencyTotal)}`)}
+        ${participantSummaryItem('Highest-pressure ward', wardPressures ? `${dashEscape(wardPressures.ward)} ${participantPctCount(wardPressures.pressure, wardPressures.total)}` : 'No reading')}
+        ${participantSummaryItem('Household demand', `${participantPctCount(householdDemand, constituencyTotal)} with 4+ data users`)}
+      </div>
+    </div>`;
     const wardPanels = wards.map(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
       const total = records.length;
@@ -7358,6 +7401,7 @@ function renderParticipantSurveyResults(allSurveys) {
         <div class="participant-constituency-title">${dashEscape(constituency)}</div>
         <div class="participant-constituency-count">${constituencyRecords.length} survey responses</div>
       </div>
+      ${summaryStrip}
       ${wardPanels}
     </section>`;
   }).join('');
