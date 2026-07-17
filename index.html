@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-overview-story-v138">
+<meta name="portal-build" content="2026-07-17-honiara-overview-analysis-v139">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1237,6 +1237,14 @@
   .overview-story-list { display:flex;flex-direction:column;gap:2px;margin-top:3px; }
   .overview-story-list span { font-size:10px;font-weight:850;color:var(--navy);line-height:1.2; }
   .overview-story-complaint { font-size:12px;font-weight:950;color:var(--navy);line-height:1.25; }
+  .overview-finding-box { margin:0 14px 12px;border:1px solid #d7e3f2;border-left:5px solid var(--navy);border-radius:11px;background:#f8fbff;padding:10px 12px;color:var(--navy); }
+  .overview-finding-title { font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:950;color:var(--gray-600);margin-bottom:4px; }
+  .overview-finding-text { font-size:12px;line-height:1.45;font-weight:750; }
+  .overview-dist-row { display:flex;flex-wrap:wrap;gap:4px;margin-top:5px; }
+  .overview-dist-pill { border-radius:999px;padding:2px 6px;font-size:9px;font-weight:900;border:1px solid #d8e3ef;background:#fff;white-space:nowrap; }
+  .overview-dist-pill.excellent, .overview-dist-pill.good { color:var(--green);background:var(--green-light);border-color:#b7d8a4; }
+  .overview-dist-pill.fair { color:var(--amber);background:var(--amber-light);border-color:#efc77b; }
+  .overview-dist-pill.poor, .overview-dist-pill.very-poor { color:var(--red);background:var(--red-light);border-color:#e7a5a5; }
   .ward-issue-list { display:flex;flex-wrap:wrap;gap:3px;margin-top:5px; }
   .ward-issue-chip { border:1px solid #efc77b;background:var(--amber-light);color:#7a4b08;border-radius:999px;padding:2px 6px;font-size:9px;font-weight:800;cursor:pointer; }
   .ward-issue-chip.bad { border-color:#e7a5a5;background:var(--red-light);color:#7d1f1f; }
@@ -6987,6 +6995,58 @@ function dashboardOverviewPctCount(count, total) {
   return total ? `${dashPct(count, total)}% (${count}/${total})` : '-';
 }
 
+function dashboardMetricValues(records, fields) {
+  return records.map(record => dashMetric(record, fields)).filter(Number.isFinite);
+}
+
+function dashboardMetricStats(records, fields) {
+  const values = dashboardMetricValues(records, fields).sort((a, b) => a - b);
+  if (!values.length) return { count: 0, mean: NaN, median: NaN, min: NaN, max: NaN, sd: NaN };
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const mid = Math.floor(values.length / 2);
+  const median = values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+  const variance = values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / values.length;
+  return { count: values.length, mean, median, min: values[0], max: values[values.length - 1], sd: Math.sqrt(variance) };
+}
+
+function dashboardCoverageDistribution(records) {
+  const rsrpValues = dashboardMetricValues(records, ['rsrp', 'fd_s2a_rsrp', 'fd_s2b_rsrp']);
+  const buckets = { Excellent: 0, Good: 0, Fair: 0, Poor: 0, 'Very Poor': 0 };
+  rsrpValues.forEach(value => {
+    const label = classifyRsrp(value).label;
+    if (buckets[label] !== undefined) buckets[label] += 1;
+  });
+  const cssClass = label => label.toLowerCase().replace(/\s+/g, '-');
+  return `<div class="overview-dist-row">${Object.entries(buckets)
+    .filter(([, count]) => count > 0)
+    .map(([label, count]) => `<span class="overview-dist-pill ${cssClass(label)}">${label}: ${dashboardOverviewPctCount(count, rsrpValues.length)}</span>`)
+    .join('') || '<span class="overview-dist-pill">No RSRP readings</span>'}</div>`;
+}
+
+function dashboardCoverageRating(records) {
+  const rsrp = dashboardMetricStats(records, ['rsrp', 'fd_s2a_rsrp', 'fd_s2b_rsrp']).mean;
+  const rsrq = dashboardMetricStats(records, ['fd_s2a_rsrq', 'fd_s2b_rsrq']).mean;
+  const sinr = dashboardMetricStats(records, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'fd_s2b_rssnr', 'fd_s2b_sinr']).mean;
+  let score = 0;
+  let weight = 0;
+  if (Number.isFinite(rsrp)) {
+    score += (rsrp >= -80 ? 5 : rsrp >= -90 ? 4 : rsrp >= -100 ? 3 : rsrp >= -110 ? 2 : 1) * 0.5;
+    weight += 0.5;
+  }
+  if (Number.isFinite(rsrq)) {
+    score += (rsrq >= -12 ? 4 : rsrq >= -15 ? 3 : 1) * 0.25;
+    weight += 0.25;
+  }
+  if (Number.isFinite(sinr)) {
+    score += (sinr >= 10 ? 5 : sinr >= 5 ? 4 : sinr > 0 ? 3 : 1) * 0.25;
+    weight += 0.25;
+  }
+  if (!weight) return { value: '-', label: 'No rating', tone: '' };
+  const rating = Math.max(1, Math.min(5, Math.round(score / weight)));
+  const label = rating >= 5 ? 'Excellent' : rating >= 4 ? 'Good' : rating >= 3 ? 'Fair' : rating >= 2 ? 'Poor' : 'Very Poor';
+  return { value: `${rating}/5`, label, tone: rating >= 4 ? 'good' : rating >= 3 ? 'warn' : 'bad' };
+}
+
 function dashboardOverviewTopComplaint(records) {
   const total = records.length;
   if (!total) return { label: 'No survey responses yet', value: '-', tone: '' };
@@ -7026,6 +7086,33 @@ function dashboardOverviewOperatorText(records) {
   return counts.length ? `${dashEscape(counts[0][0])} (${counts[0][1]})` : 'No PLMN reading';
 }
 
+function dashboardOverviewOperatorComparison(records) {
+  const groups = new Map();
+  records.forEach(record => {
+    [
+      { mcc: record.fd_s2a_mcc, mnc: record.fd_s2a_mnc, rsrp: record.fd_s2a_rsrp, rsrq: record.fd_s2a_rsrq, sinr: record.fd_s2a_rssnr || record.fd_s2a_sinr },
+      { mcc: record.fd_s2b_mcc, mnc: record.fd_s2b_mnc, rsrp: record.fd_s2b_rsrp, rsrq: record.fd_s2b_rsrq, sinr: record.fd_s2b_rssnr || record.fd_s2b_sinr }
+    ].forEach(obs => {
+      const mcc = String(obs.mcc || '').trim();
+      const mnc = String(obs.mnc || '').trim();
+      if (!mcc || !mnc) return;
+      const key = `${mcc}-${String(mnc).padStart(2, '0')} ${plmnOperatorName(mcc, mnc)}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(obs);
+    });
+  });
+  const rows = [...groups.entries()].map(([operator, items]) => {
+    const avg = field => {
+      const values = items.map(item => parseFloat(item[field])).filter(Number.isFinite);
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : NaN;
+    };
+    return { operator, count: items.length, rsrp: avg('rsrp'), rsrq: avg('rsrq'), sinr: avg('sinr') };
+  }).sort((a, b) => b.count - a.count);
+  if (!rows.length) return 'No operator comparison yet';
+  const best = rows.slice().filter(row => Number.isFinite(row.rsrp)).sort((a, b) => b.rsrp - a.rsrp)[0];
+  return rows.slice(0, 2).map(row => `${dashEscape(row.operator)}: ${row.count}`).join('; ') + (best ? `. Best RSRP: ${dashEscape(best.operator)} ${dashNumber(best.rsrp, 0)} dBm.` : '.');
+}
+
 function dashboardOverviewBandsText(records) {
   const counts = countValues(records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean));
   if (!counts.length) return ['No band reading'];
@@ -7035,22 +7122,40 @@ function dashboardOverviewBandsText(records) {
   });
 }
 
+function dashboardOverviewAutoFinding(constituency, records) {
+  const total = records.length;
+  if (!total) return `${constituency} has no measurements in the current dashboard view.`;
+  const rsrpStats = dashboardMetricStats(records, ['rsrp', 'fd_s2a_rsrp', 'fd_s2b_rsrp']);
+  const dlStats = dashboardMetricStats(records, ['dl', 'download', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl']);
+  const distributionValues = dashboardMetricValues(records, ['rsrp', 'fd_s2a_rsrp', 'fd_s2b_rsrp']);
+  const goodOrBetter = distributionValues.filter(value => value >= -90).length;
+  const goodPct = dashPct(goodOrBetter, distributionValues.length);
+  const tech = wardRadioTechnicalSummary(records);
+  const bandCounts = countValues(records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean));
+  const topBand = bandCounts[0] ? radioBandInfo(bandCounts[0][0]) : null;
+  const complaint = dashboardOverviewTopComplaint(records);
+  const rsrpText = Number.isFinite(rsrpStats.mean) ? `average RSRP ${dashNumber(rsrpStats.mean, 0)} dBm` : 'no average RSRP reading yet';
+  const speedText = Number.isFinite(dlStats.mean) ? `average download ${dashNumber(dlStats.mean, 1)} Mbps` : 'no average download reading yet';
+  return `${dashEscape(constituency)} records ${total} survey points with ${rsrpText} and ${speedText}. ${distributionValues.length ? `${goodPct}% of RSRP readings are Good or Excellent.` : 'RSRP distribution is not yet available.'} ${topBand ? `${dashEscape(topBand.label)} ${dashEscape(topBand.frequency)} is the most frequent LTE band (${bandCounts[0][1]} observations).` : 'LTE band evidence is not yet available.'} ${tech.servingTowerCount || 0} eNB/base-station group${tech.servingTowerCount === 1 ? '' : 's'} and ${tech.servingCellCount || 0} serving LTE cell${tech.servingCellCount === 1 ? '' : 's'} are detected. Top user-reported theme: ${dashEscape(complaint.label)} ${dashEscape(complaint.value)}.`;
+}
+
 function dashboardOverviewStoryCards(records) {
   const total = records.length;
   const gps = dashboardGpsBoundaryStats(records);
-  const avgRsrp = dashAverage(records, ['rsrp', 'fd_s2a_rsrp', 'fd_s2b_rsrp']);
-  const avgRsrq = dashAverage(records, ['fd_s2a_rsrq', 'fd_s2b_rsrq']);
-  const avgSinr = dashAverage(records, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'fd_s2b_rssnr', 'fd_s2b_sinr']);
-  const avgDl = dashAverage(records, ['dl', 'download', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl']);
-  const avgUl = dashAverage(records, ['ul', 'upload', 'fd_s1_ookla_ul', 'fd_s1_ncil_ul', 'fd_s1_nperf_ul_avg', 'fd_s1_nperf_ul']);
+  const rsrpStats = dashboardMetricStats(records, ['rsrp', 'fd_s2a_rsrp', 'fd_s2b_rsrp']);
+  const rsrqStats = dashboardMetricStats(records, ['fd_s2a_rsrq', 'fd_s2b_rsrq']);
+  const sinrStats = dashboardMetricStats(records, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'fd_s2b_rssnr', 'fd_s2b_sinr']);
+  const dlStats = dashboardMetricStats(records, ['dl', 'download', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl']);
+  const ulStats = dashboardMetricStats(records, ['ul', 'upload', 'fd_s1_ookla_ul', 'fd_s1_ncil_ul', 'fd_s1_nperf_ul_avg', 'fd_s1_nperf_ul']);
   const tech = wardRadioTechnicalSummary(records);
+  const rating = dashboardCoverageRating(records);
   const poorSignal = records.filter(record => {
     const rsrp = dashMetric(record, ['rsrp', 'fd_s2a_rsrp', 'fd_s2b_rsrp']);
     return Number.isFinite(rsrp) && rsrp < -100;
   }).length;
   const complaint = dashboardOverviewTopComplaint(records);
   const bandLines = dashboardOverviewBandsText(records);
-  const rsrpClass = classifyRsrp(avgRsrp);
+  const rsrpClass = classifyRsrp(rsrpStats.mean);
   return `<div class="overview-story-grid">
     <div class="overview-story-card">
       <div class="overview-story-label">Survey and GPS</div>
@@ -7058,24 +7163,26 @@ function dashboardOverviewStoryCards(records) {
       <div class="overview-story-note">${gps.validGps} valid GPS; ${gps.outsideWardBoundary} out of boundary; ${gps.wardMismatch + gps.missingOrInvalid + gps.outsideStudy} need fixing.</div>
     </div>
     <div class="overview-story-card ${dashboardOverviewKpiClass(rsrpClass)}">
-      <div class="overview-story-label">Signal quality averages</div>
-      <div class="overview-story-value">${Number.isFinite(avgRsrp) ? `${dashNumber(avgRsrp, 0)} dBm` : '-'}</div>
-      <div class="overview-story-note">RSRP ${rsrpClass.label}; RSRQ ${Number.isFinite(avgRsrq) ? `${dashNumber(avgRsrq, 1)} dB` : '-'}; SINR ${Number.isFinite(avgSinr) ? `${dashNumber(avgSinr, 1)} dB` : '-'}.</div>
+      <div class="overview-story-label">Coverage statistics</div>
+      <div class="overview-story-value">${Number.isFinite(rsrpStats.mean) ? `${dashNumber(rsrpStats.mean, 0)} dBm` : '-'}</div>
+      <div class="overview-story-note">RSRP ${rsrpClass.label}; median ${dashNumber(rsrpStats.median, 0)}; range ${dashNumber(rsrpStats.min, 0)} to ${dashNumber(rsrpStats.max, 0)}; SD ${dashNumber(rsrpStats.sd, 1)}.</div>
+      ${dashboardCoverageDistribution(records)}
     </div>
-    <div class="overview-story-card ${Number.isFinite(avgDl) && avgDl < 1 ? 'bad' : 'good'}">
+    <div class="overview-story-card ${Number.isFinite(dlStats.mean) && dlStats.mean < 1 ? 'bad' : 'good'}">
       <div class="overview-story-label">Speed readings</div>
-      <div class="overview-story-value">${Number.isFinite(avgDl) ? `${dashNumber(avgDl, 1)} Mbps` : '-'}</div>
-      <div class="overview-story-note">Average download; upload ${Number.isFinite(avgUl) ? `${dashNumber(avgUl, 1)} Mbps` : '-'}.</div>
+      <div class="overview-story-value">${Number.isFinite(dlStats.mean) ? `${dashNumber(dlStats.mean, 1)} Mbps` : '-'}</div>
+      <div class="overview-story-note">Mean download; upload ${Number.isFinite(ulStats.mean) ? `${dashNumber(ulStats.mean, 1)} Mbps` : '-'}. DL median ${dashNumber(dlStats.median, 1)}; range ${dashNumber(dlStats.min, 1)} to ${dashNumber(dlStats.max, 1)}.</div>
     </div>
     <div class="overview-story-card">
       <div class="overview-story-label">Operator and spectrum</div>
       <div class="overview-story-value" style="font-size:13px">${dashboardOverviewOperatorText(records)}</div>
       <div class="overview-story-list">${bandLines.map(line => `<span>${line}</span>`).join('')}</div>
+      <div class="overview-story-note">RSRQ mean ${dashNumber(rsrqStats.mean, 1)} dB; RSSNR/SINR mean ${dashNumber(sinrStats.mean, 1)} dB. ${dashboardOverviewOperatorComparison(records)}</div>
     </div>
     <div class="overview-story-card ${poorSignal ? 'bad' : 'good'}">
-      <div class="overview-story-label">Towers, cells and complaint</div>
+      <div class="overview-story-label">Towers, cells and rating</div>
       <div class="overview-story-value">${tech.servingTowerCount || 0} eNB / ${tech.servingCellCount || 0} cells</div>
-      <div class="overview-story-note">${poorSignal} poor/very poor RSRP point${poorSignal === 1 ? '' : 's'}.</div>
+      <div class="overview-story-note">${poorSignal} poor/very poor RSRP point${poorSignal === 1 ? '' : 's'}. Coverage rating ${rating.value} ${rating.label}.</div>
       <div class="overview-story-complaint">${dashEscape(complaint.label)}: ${dashEscape(complaint.value)}</div>
     </div>
   </div>`;
@@ -7111,6 +7218,10 @@ function renderConstituencyOverview(allSurveys) {
         <div class="overview-const-count">${constituencyRecords.length} survey${constituencyRecords.length === 1 ? '' : 's'} recorded</div>
       </div>
       ${dashboardOverviewStoryCards(constituencyRecords)}
+      <div class="overview-finding-box">
+        <div class="overview-finding-title">Automatic analytical finding</div>
+        <div class="overview-finding-text">${dashboardOverviewAutoFinding(constituency, constituencyRecords)}</div>
+      </div>
       <div style="overflow:auto">
         <table class="overview-ward-table">
           <colgroup>
