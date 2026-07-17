@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-ward-comparison-summary-v109">
+<meta name="portal-build" content="2026-07-17-ward-comparison-columns-v111">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -973,6 +973,8 @@
   .participant-summary-item { border:1px solid #dce7f3;border-left:4px solid #2f6fbd;border-radius:10px;background:#fff;padding:8px 9px;box-shadow:0 1px 5px rgba(16,24,40,.04); }
   .participant-summary-label { display:block;color:#475569;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em; }
   .participant-summary-value { display:block;color:var(--navy);font-size:13px;font-weight:950;margin-top:4px;line-height:1.25; }
+  .participant-ward-compare { display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:5px;margin-top:4px; }
+  .participant-ward-compare-item { display:block;border:1px solid #dce7f3;border-radius:8px;background:#f8fbff;padding:5px 6px;color:var(--navy);font-size:10px;font-weight:950;line-height:1.2; }
   .participant-ward-panel-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(135deg,#f8fbff,#eef5ff);border-bottom:1px solid #d8e3ef;padding:11px 13px; }
   .participant-ward-panel-title { color:var(--navy);font-size:15px;font-weight:950; }
   .participant-ward-panel-meta { color:#475569;font-size:11px;font-weight:850; }
@@ -7266,9 +7268,9 @@ function participantWardComparison(wards, allSurveys, metricFn) {
     const records = allSurveys.filter(record => record.ward === ward);
     const total = records.length;
     const count = records.filter(metricFn).length;
-    return `${dashEscape(ward)} ${participantPctCount(count, total)}`;
-  });
-  return items.join(' | ');
+    return { ward, total, count, rate: total ? dashPct(count, total) : 0 };
+  }).sort((a, b) => b.rate - a.rate || b.count - a.count || a.ward.localeCompare(b.ward));
+  return `<span class="participant-ward-compare">${items.map(item => `<span class="participant-ward-compare-item">${dashEscape(item.ward)}<br>${participantPctCount(item.count, item.total)}</span>`).join('')}</span>`;
 }
 
 function participantTopImprovement(records) {
