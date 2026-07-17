@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-constituency-key-findings-wording-v114">
+<meta name="portal-build" content="2026-07-17-compact-rq3-metric-tiles-v115">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -974,10 +974,10 @@
   .participant-summary-item.wide { grid-column:span 2; }
   .participant-summary-label { display:block;color:#475569;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em; }
   .participant-summary-value { display:block;color:var(--navy);font-size:13px;font-weight:950;margin-top:4px;line-height:1.25; }
-  .participant-market-group { display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:5px; }
-  .participant-market-sub { border:1px solid #e2e8f0;border-radius:8px;background:#f8fbff;padding:6px; }
-  .participant-market-sub strong { display:block;color:#18375d;font-size:10px;margin-bottom:4px; }
-  .participant-market-sub span { display:block;color:var(--navy);font-size:10px;font-weight:900;line-height:1.3; }
+  .participant-market-group { display:grid;grid-template-columns:repeat(5,minmax(92px,1fr));gap:6px;margin-top:5px; }
+  .participant-market-metric { border:1px solid #dce7f3;border-radius:8px;background:#f8fbff;padding:6px 7px;line-height:1.15; }
+  .participant-market-label { display:block;color:#475569;font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.03em; }
+  .participant-market-value { display:block;color:var(--navy);font-size:12px;font-weight:950;margin-top:3px; }
   @media (max-width:720px) { .participant-summary-item.wide { grid-column:auto; } .participant-market-group { grid-template-columns:1fr; } }
   .participant-ward-compare { display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:5px;margin-top:4px; }
   .participant-ward-compare-item { display:block;border:1px solid #dce7f3;border-radius:8px;background:#f8fbff;padding:5px 6px;color:var(--navy);font-size:10px;font-weight:950;line-height:1.2; }
@@ -7353,7 +7353,7 @@ function renderParticipantSurveyResults(allSurveys) {
         ${participantSummaryItem('RQ1: User-reported coverage issues by ward', coverageComparison)}
         ${participantSummaryItem('RQ1: User-reported QoS issues by ward', qosComparison)}
         ${participantSummaryItem('RQ1/RQ4: Affordability pressure by ward', affordabilityComparison)}
-        ${participantSummaryWideItem('RQ3: Operator use and market choice', `<span class="participant-market-group"><span class="participant-market-sub"><strong>Operator use - Section A</strong><span>Current mobile operator used: ${topOperator}</span><span>Operator/SIM where users reported coverage or speed problems: ${issueOperator}</span></span><span class="participant-market-sub"><strong>Competition and alternatives - Section E</strong><span>Have users switched between Our Telekom and BMobile? Yes: ${participantPctCount(switchedProviderTotal, constituencyTotal)}</span><span>Do users perceive a quality difference between operators? Yes: ${participantPctCount(qualityDifferenceTotal, constituencyTotal)}</span><span>Are users aware of or using Starlink as an alternative? Yes: ${participantPctCount(starlinkAwareTotal, constituencyTotal)}</span></span></span>`)}
+        ${participantSummaryWideItem('RQ3: Operator use and market choice', `<span class="participant-market-group"><span class="participant-market-metric"><span class="participant-market-label">Current operator</span><span class="participant-market-value">${topOperator}</span></span><span class="participant-market-metric"><span class="participant-market-label">Problem SIM/operator</span><span class="participant-market-value">${issueOperator}</span></span><span class="participant-market-metric"><span class="participant-market-label">Switched provider</span><span class="participant-market-value">${participantPctCount(switchedProviderTotal, constituencyTotal)}</span></span><span class="participant-market-metric"><span class="participant-market-label">Quality difference</span><span class="participant-market-value">${participantPctCount(qualityDifferenceTotal, constituencyTotal)}</span></span><span class="participant-market-metric"><span class="participant-market-label">Starlink aware/use</span><span class="participant-market-value">${participantPctCount(starlinkAwareTotal, constituencyTotal)}</span></span></span>`)}
         ${participantSummaryItem('RQ2: Household mobile-data demand', participantCountSentence(householdDemand, constituencyTotal, 'live in households with 4+ regular mobile-data users'))}
       </div>
     </div>`;
