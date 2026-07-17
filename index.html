@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-fix-data-reading-render-v121">
+<meta name="portal-build" content="2026-07-17-dashboard-accordions-v122">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -956,9 +956,14 @@
   .analytics-stat-value { color:var(--navy);font-weight:900;white-space:nowrap;text-align:right; }
   .participant-results-body { padding:14px;background:#fff;display:grid;gap:14px; }
   .participant-constituency-block { border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 2px 8px rgba(16,24,40,.04); }
+  .participant-constituency-block > summary, .participant-ward-panel > summary, .reading-constituency-block > summary, .reading-ward-panel > summary { list-style:none;cursor:pointer; }
+  .participant-constituency-block > summary::-webkit-details-marker, .participant-ward-panel > summary::-webkit-details-marker, .reading-constituency-block > summary::-webkit-details-marker, .reading-ward-panel > summary::-webkit-details-marker { display:none; }
   .participant-constituency-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:#f8fafc;border-bottom:1px solid var(--border);padding:10px 12px; }
   .participant-constituency-title { color:var(--navy);font-size:18px;font-weight:950;letter-spacing:-.01em; }
   .participant-constituency-count { color:var(--gray-600);font-size:11px;font-weight:800; }
+  .participant-toggle, .reading-toggle { display:inline-flex;align-items:center;gap:7px;color:var(--gray-600);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em; }
+  details[open] .participant-toggle::before, details[open] .reading-toggle::before { content:"Hide"; }
+  details:not([open]) .participant-toggle::before, details:not([open]) .reading-toggle::before { content:"Open"; }
   .participant-context-block { padding:12px;background:linear-gradient(135deg,#f8fbff,#fff);border-bottom:1px solid var(--border); }
   .participant-context-title { color:var(--navy);font-size:13px;font-weight:950;margin-bottom:3px; }
   .participant-context-sub { color:var(--gray-600);font-size:10px;font-weight:700;margin-bottom:9px; }
@@ -7318,6 +7323,23 @@ function participantSummaryWideItem(label, value) {
   return `<div class="participant-summary-item wide"><span class="participant-summary-label">${dashEscape(label)}</span><span class="participant-summary-value">${value}</span></div>`;
 }
 
+function bindDashboardAccordions(rootId, selectors) {
+  const root = document.getElementById(rootId);
+  if (!root) return;
+  selectors.forEach(selector => {
+    root.querySelectorAll(selector).forEach(detail => {
+      detail.addEventListener('toggle', () => {
+        if (!detail.open) return;
+        const parent = detail.parentElement;
+        if (!parent) return;
+        parent.querySelectorAll(`:scope > ${selector}`).forEach(other => {
+          if (other !== detail) other.open = false;
+        });
+      });
+    });
+  });
+}
+
 function participantWardComparison(wards, allSurveys, metricFn) {
   const items = wards.map(ward => {
     const records = allSurveys.filter(record => record.ward === ward);
@@ -7452,11 +7474,12 @@ function renderParticipantSurveyResults(allSurveys) {
         participantFindingLine('RQ3 market/competition signal reported by users', Math.max(switchedProvider, qualityDifference, starlinkAware), total),
         participantFindingLine('RQ2 household demand pressure', heavyHousehold, total)
       ].filter(Boolean).join('') || '<li>No strong participant-reported pattern yet.</li>';
-      return `<article class="participant-ward-panel">
-        <div class="participant-ward-panel-head">
+      const wardOpen = constituency === selectedDashboardConstituency && ward === wards[0] ? ' open' : '';
+      return `<details class="participant-ward-panel"${wardOpen}>
+        <summary class="participant-ward-panel-head">
           <div class="participant-ward-panel-title">Ward: ${dashEscape(ward)}</div>
-          <div class="participant-ward-panel-meta">${total} survey responses</div>
-        </div>
+          <div class="participant-ward-panel-meta">${total} survey responses <span class="participant-toggle"></span></div>
+        </summary>
         <div class="participant-section-grid">
           ${sectionA}
           ${sectionB}
@@ -7465,16 +7488,17 @@ function renderParticipantSurveyResults(allSurveys) {
           ${sectionE}
           <div class="participant-key-findings"><h5>Key Findings</h5><ul class="participant-key-list">${findingLines}</ul></div>
         </div>
-      </article>`;
+      </details>`;
     }).join('');
-    return `<section class="participant-constituency-block">
-      <div class="participant-constituency-head">
+    const constituencyOpen = constituency === selectedDashboardConstituency ? ' open' : '';
+    return `<details class="participant-constituency-block"${constituencyOpen}>
+      <summary class="participant-constituency-head">
         <div class="participant-constituency-title">Constituency: ${dashEscape(constituency)}</div>
-        <div class="participant-constituency-count">${constituencyRecords.length} survey responses</div>
-      </div>
+        <div class="participant-constituency-count">${constituencyRecords.length} survey responses <span class="participant-toggle"></span></div>
+      </summary>
       ${summaryStrip}
       ${wardPanels}
-    </section>`;
+    </details>`;
   }).join('');
   target.innerHTML = `<div class="analytics-card">
     <div class="analytics-card-head">
@@ -7490,6 +7514,7 @@ function renderParticipantSurveyResults(allSurveys) {
     </div>
     <div class="participant-results-body">${sections}</div>
   </div>`;
+  bindDashboardAccordions('dash-participant-results', ['.participant-constituency-block', '.participant-ward-panel']);
 }
 
 function readingPctCount(count, total) {
@@ -7596,11 +7621,12 @@ function renderDataReadingResults(allSurveys) {
         gpsWardAttention ? `<li class="medium">GPS quality control: ${gpsWardAttention} point${gpsWardAttention === 1 ? '' : 's'} need review before using this ward in spatial analysis.</li>` : '',
         tech.servingCellCount ? `<li>RQ2/RQ3 serving-cell evidence: ${tech.servingCellCount} serving LTE cell${tech.servingCellCount === 1 ? '' : 's'} and ${tech.servingTowerCount || 0} tower group${tech.servingTowerCount === 1 ? '' : 's'} detected.</li>` : ''
       ].filter(Boolean).join('') || '<li>No measured reading pattern yet.</li>';
-      return `<article class="reading-ward-panel">
-        <div class="reading-ward-panel-head">
+      const wardOpen = constituency === selectedDashboardConstituency && ward === wards[0] ? ' open' : '';
+      return `<details class="reading-ward-panel"${wardOpen}>
+        <summary class="reading-ward-panel-head">
           <div class="reading-ward-panel-title">Ward: ${dashEscape(ward)}</div>
-          <div class="reading-ward-panel-meta">${wardReadingBase} measured reading${wardReadingBase === 1 ? '' : 's'}</div>
-        </div>
+          <div class="reading-ward-panel-meta">${wardReadingBase} measured reading${wardReadingBase === 1 ? '' : 's'} <span class="reading-toggle"></span></div>
+        </summary>
         <div class="reading-section-grid">
           ${radioCard}
           ${speedCard}
@@ -7608,16 +7634,17 @@ function renderDataReadingResults(allSurveys) {
           ${cellCard}
           <div class="reading-key-findings"><h5>Key Findings</h5><ul class="reading-key-list">${findingLines}</ul></div>
         </div>
-      </article>`;
+      </details>`;
     }).join('');
-    return `<section class="reading-constituency-block">
-      <div class="reading-constituency-head">
+    const constituencyOpen = constituency === selectedDashboardConstituency ? ' open' : '';
+    return `<details class="reading-constituency-block"${constituencyOpen}>
+      <summary class="reading-constituency-head">
         <div class="reading-constituency-title">Constituency: ${dashEscape(constituency)}</div>
-        <div class="reading-constituency-count">${constituencyTotal} measured reading${constituencyTotal === 1 ? '' : 's'}</div>
-      </div>
+        <div class="reading-constituency-count">${constituencyTotal} measured reading${constituencyTotal === 1 ? '' : 's'} <span class="reading-toggle"></span></div>
+      </summary>
       ${summaryStrip}
       ${wardPanels}
-    </section>`;
+    </details>`;
   }).join('');
   target.innerHTML = `<div class="analytics-card">
     <div class="analytics-card-head">
@@ -7633,6 +7660,7 @@ function renderDataReadingResults(allSurveys) {
     </div>
     <div class="reading-results-body">${sections}</div>
   </div>`;
+  bindDashboardAccordions('dash-data-reading-results', ['.reading-constituency-block', '.reading-ward-panel']);
 }
 
 const RESEARCH_EVIDENCE_TREE = [
