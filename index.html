@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-ward-statistical-overview-v135">
+<meta name="portal-build" content="2026-07-17-overview-story-v138">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1211,6 +1211,8 @@
   .overview-ward-sub { display:block;font-size:10px;font-weight:750;color:var(--gray-600);margin-top:2px; }
   .overview-badge-row { display:flex;flex-wrap:wrap;gap:5px; }
   .overview-badge { display:inline-flex;align-items:center;gap:3px;border:1px solid #d8e3ef;background:#f8fbff;border-radius:999px;padding:3px 7px;font-size:10px;font-weight:850;color:var(--navy);white-space:nowrap; }
+  button.overview-badge { cursor:pointer;font-family:inherit; }
+  button.overview-badge:hover { filter:brightness(.96);text-decoration:underline; }
   .overview-badge strong { font-size:12px; }
   .overview-badge.good { background:var(--green-light);border-color:#b7d8a4;color:#245f23; }
   .overview-badge.warn { background:var(--amber-light);border-color:#efc77b;color:#7a4b08; }
@@ -1224,6 +1226,17 @@
   .overview-kpi-chip.good strong { color:var(--green); }
   .overview-kpi-chip.warn strong { color:var(--amber); }
   .overview-kpi-chip.bad strong { color:var(--red); }
+  .overview-story-grid { display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:8px;padding:12px 14px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#f8fbff,#fff); }
+  .overview-story-card { border:1px solid #d7e3f2;background:#fff;border-radius:11px;padding:9px 10px;min-height:78px;box-shadow:0 2px 7px rgba(15,23,42,.04); }
+  .overview-story-card.bad { border-left:4px solid var(--red);background:#fff8f8; }
+  .overview-story-card.warn { border-left:4px solid var(--amber);background:#fffaf0; }
+  .overview-story-card.good { border-left:4px solid var(--green);background:#f8fff6; }
+  .overview-story-label { font-size:9px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-600);font-weight:950;margin-bottom:4px;line-height:1.2; }
+  .overview-story-value { font-size:17px;font-weight:950;color:var(--navy);line-height:1.15; }
+  .overview-story-note { font-size:10px;color:var(--gray-600);line-height:1.25;margin-top:4px; }
+  .overview-story-list { display:flex;flex-direction:column;gap:2px;margin-top:3px; }
+  .overview-story-list span { font-size:10px;font-weight:850;color:var(--navy);line-height:1.2; }
+  .overview-story-complaint { font-size:12px;font-weight:950;color:var(--navy);line-height:1.25; }
   .ward-issue-list { display:flex;flex-wrap:wrap;gap:3px;margin-top:5px; }
   .ward-issue-chip { border:1px solid #efc77b;background:var(--amber-light);color:#7a4b08;border-radius:999px;padding:2px 6px;font-size:9px;font-weight:800;cursor:pointer; }
   .ward-issue-chip.bad { border-color:#e7a5a5;background:var(--red-light);color:#7d1f1f; }
@@ -1247,6 +1260,7 @@
     .dash-story, .dash-two-col, .dash-findings-grid { grid-template-columns:1fr; }
     .dash-export-note { width:100%;margin-left:0; }
     .constituency-summary-footer { grid-template-columns:1fr 1fr; }
+    .overview-story-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   }
   @media (max-width: 520px) {
     .dash-grid { grid-template-columns:1fr; }
@@ -1254,6 +1268,7 @@
     .dash-card { min-height:0; }
     .constituency-summary-footer { grid-template-columns:1fr; }
     .constituency-summary-footer-item { border-right:0;border-bottom:1px solid var(--border); }
+    .overview-story-grid { grid-template-columns:1fr; }
   }
 
   /* -- Ward table -- */
@@ -6952,11 +6967,117 @@ function dashboardOverviewCompactKpis(records) {
 function dashboardOverviewGpsBadges(records) {
   const stats = dashboardGpsBoundaryStats(records);
   const needsFixing = stats.outsideStudy + stats.wardMismatch + stats.missingOrInvalid;
+  const ward = records.find(record => record.ward)?.ward || '';
+  const keysFor = (kinds) => records
+    .filter(record => dashboardGpsIssueKinds(record).some(kind => kinds.includes(kind)))
+    .map(dashboardRecordKey)
+    .filter(Boolean)
+    .join('|');
+  const needsFixingKeys = keysFor(['outside-study', 'ward-mismatch', 'missing-invalid']);
+  const boundaryKeys = keysFor(['outside-ward-boundary']);
   return `<div class="overview-badge-row">
     <span class="overview-badge"><strong>${records.length}</strong> surveys</span>
     <span class="overview-badge good"><strong>${stats.validGps}</strong> GPS valid</span>
-    <span class="overview-badge ${needsFixing ? 'bad' : 'good'}"><strong>${needsFixing}</strong> needs fixing</span>
-    <span class="overview-badge ${stats.outsideWardBoundary ? 'warn' : ''}"><strong>${stats.outsideWardBoundary}</strong> boundary flag</span>
+    ${needsFixing ? `<button type="button" class="overview-badge bad" data-ward="${dashEscape(ward)}" data-kind="all" data-keys="${dashEscape(needsFixingKeys)}" onclick="openDashboardGpsIssueRecords(this.dataset.ward, this.dataset.kind, this.dataset.keys)" title="Open records that need fixing"><strong>${needsFixing}</strong> needs fixing</button>` : `<span class="overview-badge good"><strong>0</strong> needs fixing</span>`}
+    ${stats.outsideWardBoundary ? `<button type="button" class="overview-badge warn" data-ward="${dashEscape(ward)}" data-kind="outside-ward-boundary" data-keys="${dashEscape(boundaryKeys)}" onclick="openDashboardGpsIssueRecords(this.dataset.ward, this.dataset.kind, this.dataset.keys)" title="Open out-of-boundary records"><strong>${stats.outsideWardBoundary}</strong> out of boundary</button>` : `<span class="overview-badge"><strong>0</strong> out of boundary</span>`}
+  </div>`;
+}
+
+function dashboardOverviewPctCount(count, total) {
+  return total ? `${dashPct(count, total)}% (${count}/${total})` : '-';
+}
+
+function dashboardOverviewTopComplaint(records) {
+  const total = records.length;
+  if (!total) return { label: 'No survey responses yet', value: '-', tone: '' };
+  const items = [
+    {
+      label: 'Coverage issue',
+      count: records.filter(record => dashboardSurveyProfile(record).coverageConcern).length,
+      tone: 'warn'
+    },
+    {
+      label: 'QoS issue',
+      count: records.filter(record => dashboardSurveyProfile(record).qosConcern).length,
+      tone: 'bad'
+    },
+    {
+      label: 'Affordability pressure',
+      count: records.filter(record => dashboardSurveyProfile(record).affordabilityPressure).length,
+      tone: 'bad'
+    }
+  ].sort((a, b) => b.count - a.count);
+  const top = items[0];
+  if (!top || !top.count) return { label: 'No dominant complaint yet', value: `0% (0/${total})`, tone: 'good' };
+  return { label: top.label, value: dashboardOverviewPctCount(top.count, total), tone: top.tone };
+}
+
+function dashboardOverviewOperatorText(records) {
+  const counts = countValues(records.flatMap(record => {
+    return [
+      { mcc: record.fd_s2a_mcc, mnc: record.fd_s2a_mnc },
+      { mcc: record.fd_s2b_mcc, mnc: record.fd_s2b_mnc }
+    ].map(obs => {
+      const mcc = String(obs.mcc || '').trim();
+      const mnc = String(obs.mnc || '').trim();
+      return mcc && mnc ? `${mcc}-${String(mnc).padStart(2, '0')} ${plmnOperatorName(mcc, mnc)}` : '';
+    });
+  }));
+  return counts.length ? `${dashEscape(counts[0][0])} (${counts[0][1]})` : 'No PLMN reading';
+}
+
+function dashboardOverviewBandsText(records) {
+  const counts = countValues(records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean));
+  if (!counts.length) return ['No band reading'];
+  return counts.slice(0, 3).map(([band, count]) => {
+    const info = radioBandInfo(band);
+    return `${dashEscape(info.label)} ${dashEscape(info.frequency)} (${count})`;
+  });
+}
+
+function dashboardOverviewStoryCards(records) {
+  const total = records.length;
+  const gps = dashboardGpsBoundaryStats(records);
+  const avgRsrp = dashAverage(records, ['rsrp', 'fd_s2a_rsrp', 'fd_s2b_rsrp']);
+  const avgRsrq = dashAverage(records, ['fd_s2a_rsrq', 'fd_s2b_rsrq']);
+  const avgSinr = dashAverage(records, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'fd_s2b_rssnr', 'fd_s2b_sinr']);
+  const avgDl = dashAverage(records, ['dl', 'download', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl']);
+  const avgUl = dashAverage(records, ['ul', 'upload', 'fd_s1_ookla_ul', 'fd_s1_ncil_ul', 'fd_s1_nperf_ul_avg', 'fd_s1_nperf_ul']);
+  const tech = wardRadioTechnicalSummary(records);
+  const poorSignal = records.filter(record => {
+    const rsrp = dashMetric(record, ['rsrp', 'fd_s2a_rsrp', 'fd_s2b_rsrp']);
+    return Number.isFinite(rsrp) && rsrp < -100;
+  }).length;
+  const complaint = dashboardOverviewTopComplaint(records);
+  const bandLines = dashboardOverviewBandsText(records);
+  const rsrpClass = classifyRsrp(avgRsrp);
+  return `<div class="overview-story-grid">
+    <div class="overview-story-card">
+      <div class="overview-story-label">Survey and GPS</div>
+      <div class="overview-story-value">${total}</div>
+      <div class="overview-story-note">${gps.validGps} valid GPS; ${gps.outsideWardBoundary} out of boundary; ${gps.wardMismatch + gps.missingOrInvalid + gps.outsideStudy} need fixing.</div>
+    </div>
+    <div class="overview-story-card ${dashboardOverviewKpiClass(rsrpClass)}">
+      <div class="overview-story-label">Signal quality averages</div>
+      <div class="overview-story-value">${Number.isFinite(avgRsrp) ? `${dashNumber(avgRsrp, 0)} dBm` : '-'}</div>
+      <div class="overview-story-note">RSRP ${rsrpClass.label}; RSRQ ${Number.isFinite(avgRsrq) ? `${dashNumber(avgRsrq, 1)} dB` : '-'}; SINR ${Number.isFinite(avgSinr) ? `${dashNumber(avgSinr, 1)} dB` : '-'}.</div>
+    </div>
+    <div class="overview-story-card ${Number.isFinite(avgDl) && avgDl < 1 ? 'bad' : 'good'}">
+      <div class="overview-story-label">Speed readings</div>
+      <div class="overview-story-value">${Number.isFinite(avgDl) ? `${dashNumber(avgDl, 1)} Mbps` : '-'}</div>
+      <div class="overview-story-note">Average download; upload ${Number.isFinite(avgUl) ? `${dashNumber(avgUl, 1)} Mbps` : '-'}.</div>
+    </div>
+    <div class="overview-story-card">
+      <div class="overview-story-label">Operator and spectrum</div>
+      <div class="overview-story-value" style="font-size:13px">${dashboardOverviewOperatorText(records)}</div>
+      <div class="overview-story-list">${bandLines.map(line => `<span>${line}</span>`).join('')}</div>
+    </div>
+    <div class="overview-story-card ${poorSignal ? 'bad' : 'good'}">
+      <div class="overview-story-label">Towers, cells and complaint</div>
+      <div class="overview-story-value">${tech.servingTowerCount || 0} eNB / ${tech.servingCellCount || 0} cells</div>
+      <div class="overview-story-note">${poorSignal} poor/very poor RSRP point${poorSignal === 1 ? '' : 's'}.</div>
+      <div class="overview-story-complaint">${dashEscape(complaint.label)}: ${dashEscape(complaint.value)}</div>
+    </div>
   </div>`;
 }
 
@@ -6989,6 +7110,7 @@ function renderConstituencyOverview(allSurveys) {
         <div class="overview-const-name">Constituency: ${dashEscape(constituency)}</div>
         <div class="overview-const-count">${constituencyRecords.length} survey${constituencyRecords.length === 1 ? '' : 's'} recorded</div>
       </div>
+      ${dashboardOverviewStoryCards(constituencyRecords)}
       <div style="overflow:auto">
         <table class="overview-ward-table">
           <colgroup>
