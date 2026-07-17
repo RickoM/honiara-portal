@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-data-reading-ward-cards-v120">
+<meta name="portal-build" content="2026-07-17-fix-data-reading-render-v121">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -7533,7 +7533,8 @@ function readingWardComparison(wards, allSurveys, predicate) {
 function renderDataReadingResults(allSurveys) {
   const target = document.getElementById('dash-data-reading-results');
   if (!target) return;
-  const sections = Object.entries(CONSTITUENCY_WARDS).map(([constituency, wards]) => {
+  const sections = ['West Honiara', 'Central Honiara', 'East Honiara'].map(constituency => {
+    const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
     const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
     const readingRecords = constituencyRecords.filter(record => dashboardReadingProfile(record).hasReading);
     const constituencyTotal = readingRecords.length;
