@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-ward-comparison-columns-v111">
+<meta name="portal-build" content="2026-07-17-clear-market-demand-summary-v112">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -7218,6 +7218,12 @@ function participantPctCount(count, total) {
   return `${dashPct(count, base)}% (${count}/${base})`;
 }
 
+function participantCountSentence(count, total, suffix) {
+  const base = Number.isFinite(total) && total > 0 ? total : 0;
+  if (!base) return `0 of 0 respondents`;
+  return `${count} of ${base} respondents (${dashPct(count, base)}%)${suffix ? ` ${suffix}` : ''}`;
+}
+
 function participantMetric(label, count, total) {
   if (!count) return '';
   const pct = total ? dashPct(count, total) : 0;
@@ -7309,6 +7315,9 @@ function renderParticipantSurveyResults(allSurveys) {
     const topOperator = participantContextValue(constituencyRecords, 'a3');
     const issueOperator = participantContextValue(constituencyRecords, 'a4');
     const householdDemand = constituencyCount(record => surveyMentions(record, 'a6', ['4-5', '6', '6+']));
+    const switchedProviderTotal = constituencyCount(record => surveyMentions(record, 'e1', ['Yes']));
+    const qualityDifferenceTotal = constituencyCount(record => dashText(record.e2) && !surveyMentions(record, 'e2', ['About the same']));
+    const starlinkAwareTotal = constituencyCount(record => surveyMentions(record, 'e3', ['Yes']));
     const coverageComparison = participantWardComparison(wards, allSurveys, record =>
       surveyRatingAtOrBelow(record, 'b1', 2) ||
       surveyMentions(record, 'b2', ['Sometimes', 'Often', 'Very often']) ||
@@ -7328,20 +7337,18 @@ function renderParticipantSurveyResults(allSurveys) {
       surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']) ||
       surveyMentions(record, 'd4', ['No WiFi'])
     );
-    const marketIndicatorCount = constituencyCount(record =>
-      surveyMentions(record, 'e1', ['Yes']) ||
-      (dashText(record.e2) && !surveyMentions(record, 'e2', ['About the same'])) ||
-      surveyMentions(record, 'e3', ['Yes'])
-    );
     const summaryStrip = `<div class="participant-constituency-summary">
       <h5>Constituency Summary</h5>
       <div class="participant-summary-grid">
         ${participantSummaryItem('RQ1 coverage issue by ward', coverageComparison)}
         ${participantSummaryItem('RQ1 QoS issue by ward', qosComparison)}
         ${participantSummaryItem('RQ1/RQ4 affordability issue by ward', affordabilityComparison)}
-        ${participantSummaryItem('RQ3 market/competition indicator', `${participantPctCount(marketIndicatorCount, constituencyTotal)} report switching, quality difference or Starlink awareness`)}
-        ${participantSummaryItem('RQ2 household demand', `${participantPctCount(householdDemand, constituencyTotal)} with 4+ data users`)}
-        ${participantSummaryItem('Operator context', `Main: ${topOperator}; issue SIM: ${issueOperator}`)}
+        ${participantSummaryItem('RQ3 primary operator used', topOperator)}
+        ${participantSummaryItem('RQ1/RQ3 problem SIM/operator', issueOperator)}
+        ${participantSummaryItem('RQ3 switched provider before', participantPctCount(switchedProviderTotal, constituencyTotal))}
+        ${participantSummaryItem('RQ3 perceived operator quality difference', participantPctCount(qualityDifferenceTotal, constituencyTotal))}
+        ${participantSummaryItem('RQ3/RQ4 Starlink awareness/use', participantPctCount(starlinkAwareTotal, constituencyTotal))}
+        ${participantSummaryItem('RQ2 household data demand', participantCountSentence(householdDemand, constituencyTotal, 'live in households with 4+ regular mobile-data users'))}
       </div>
     </div>`;
     const wardPanels = wards.map(ward => {
