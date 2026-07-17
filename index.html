@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-constituency-survey-summary-v107">
+<meta name="portal-build" content="2026-07-17-rq-linked-survey-summary-v108">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -7261,6 +7261,17 @@ function participantSummaryItem(label, value) {
   return `<div class="participant-summary-item"><span class="participant-summary-label">${dashEscape(label)}</span><span class="participant-summary-value">${value}</span></div>`;
 }
 
+function participantWardLeader(wards, allSurveys, metricFn) {
+  const ranked = wards.map(ward => {
+    const records = allSurveys.filter(record => record.ward === ward);
+    const total = records.length;
+    const count = records.filter(metricFn).length;
+    return { ward, total, count, rate: total ? dashPct(count, total) : 0 };
+  }).filter(item => item.count > 0).sort((a, b) => b.rate - a.rate || b.count - a.count || a.ward.localeCompare(b.ward));
+  const top = ranked[0];
+  return top ? `${dashEscape(top.ward)} ${participantPctCount(top.count, top.total)}` : 'No reading';
+}
+
 function participantTopImprovement(records) {
   const total = records.length;
   const buckets = [
@@ -7297,32 +7308,39 @@ function renderParticipantSurveyResults(allSurveys) {
     const topOperator = participantContextValue(constituencyRecords, 'a3');
     const issueOperator = participantContextValue(constituencyRecords, 'a4');
     const householdDemand = constituencyCount(record => surveyMentions(record, 'a6', ['4-5', '6', '6+']));
-    const constituencyMetrics = [
-      ['Affordability pressure', constituencyCount(record => surveyRatingAtOrBelow(record, 'd2', 3) || surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']))],
-      ['Coverage concern', constituencyCount(record => surveyRatingAtOrBelow(record, 'b1', 2) || surveyMentions(record, 'b2', ['Sometimes', 'Often', 'Very often']) || surveyMentions(record, 'b3', ['Yes']) || dashSplitOptions(record.b4).filter(item => !/no problem/i.test(item)).length > 0 || dashText(record.b3_detail))],
-      ['QoS concern', constituencyCount(record => surveyRatingAtOrBelow(record, 'c1', 2) || surveyRatingAtOrBelow(record, 'c3', 2) || surveyRatingAtOrBelow(record, 'c5', 2) || surveyMentions(record, 'c6', ['Evening', 'Night']) || surveyMentions(record, 'c7', ['Yes']))],
-      ['Market signal', constituencyCount(record => surveyMentions(record, 'e1', ['Yes']) || (dashText(record.e2) && !surveyMentions(record, 'e2', ['About the same'])) || surveyMentions(record, 'e3', ['Yes']))]
-    ].sort((a, b) => b[1] - a[1]);
-    const strongestTheme = constituencyMetrics[0] || ['No theme', 0];
-    const wardPressures = wards.map(ward => {
-      const records = allSurveys.filter(record => record.ward === ward);
-      const total = records.length;
-      const pressure = records.filter(record =>
-        surveyRatingAtOrBelow(record, 'd2', 3) ||
-        surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']) ||
-        surveyMentions(record, 'b2', ['Sometimes', 'Often', 'Very often']) ||
-        surveyRatingAtOrBelow(record, 'c5', 2)
-      ).length;
-      return { ward, total, pressure, rate: total ? dashPct(pressure, total) : 0 };
-    }).sort((a, b) => b.rate - a.rate || b.pressure - a.pressure)[0];
+    const coverageLeader = participantWardLeader(wards, allSurveys, record =>
+      surveyRatingAtOrBelow(record, 'b1', 2) ||
+      surveyMentions(record, 'b2', ['Sometimes', 'Often', 'Very often']) ||
+      surveyMentions(record, 'b3', ['Yes']) ||
+      dashSplitOptions(record.b4).filter(item => !/no problem/i.test(item)).length > 0 ||
+      dashText(record.b3_detail)
+    );
+    const qosLeader = participantWardLeader(wards, allSurveys, record =>
+      surveyRatingAtOrBelow(record, 'c1', 2) ||
+      surveyRatingAtOrBelow(record, 'c3', 2) ||
+      surveyRatingAtOrBelow(record, 'c5', 2) ||
+      surveyMentions(record, 'c6', ['Evening', 'Night']) ||
+      surveyMentions(record, 'c7', ['Yes'])
+    );
+    const affordabilityLeader = participantWardLeader(wards, allSurveys, record =>
+      surveyRatingAtOrBelow(record, 'd2', 3) ||
+      surveyMentions(record, 'd3', ['Rarely', 'Sometimes', 'Often']) ||
+      surveyMentions(record, 'd4', ['No WiFi'])
+    );
+    const marketIndicatorCount = constituencyCount(record =>
+      surveyMentions(record, 'e1', ['Yes']) ||
+      (dashText(record.e2) && !surveyMentions(record, 'e2', ['About the same'])) ||
+      surveyMentions(record, 'e3', ['Yes'])
+    );
     const summaryStrip = `<div class="participant-constituency-summary">
       <h5>Constituency Summary</h5>
       <div class="participant-summary-grid">
-        ${participantSummaryItem('Main operator reported', topOperator)}
-        ${participantSummaryItem('Most common issue operator', issueOperator)}
-        ${participantSummaryItem('Strongest user-reported theme', `${dashEscape(strongestTheme[0])} ${participantPctCount(strongestTheme[1], constituencyTotal)}`)}
-        ${participantSummaryItem('Highest-pressure ward', wardPressures ? `${dashEscape(wardPressures.ward)} ${participantPctCount(wardPressures.pressure, wardPressures.total)}` : 'No reading')}
-        ${participantSummaryItem('Household demand', `${participantPctCount(householdDemand, constituencyTotal)} with 4+ data users`)}
+        ${participantSummaryItem('RQ1 coverage issue leader', coverageLeader)}
+        ${participantSummaryItem('RQ1 QoS issue leader', qosLeader)}
+        ${participantSummaryItem('RQ1/RQ4 affordability issue leader', affordabilityLeader)}
+        ${participantSummaryItem('RQ3 market/competition indicator', `${participantPctCount(marketIndicatorCount, constituencyTotal)} report switching, quality difference or Starlink awareness`)}
+        ${participantSummaryItem('RQ2 household demand', `${participantPctCount(householdDemand, constituencyTotal)} with 4+ data users`)}
+        ${participantSummaryItem('Operator context', `Main: ${topOperator}; issue SIM: ${issueOperator}`)}
       </div>
     </div>`;
     const wardPanels = wards.map(ward => {
@@ -7375,11 +7393,11 @@ function renderParticipantSurveyResults(allSurveys) {
         participantLine('Improvement suggested', participantPctCount(writtenImprovement, total))
       ]);
       const findingLines = [
-        participantFindingLine('Coverage concern reported', Math.max(droppedCalls, signalLoss, coveragePlaces, weakSignal), total),
-        participantFindingLine('QoS concern reported', Math.max(poorVoice, slowData, eveningNightSlow, dataWorse), total),
-        participantFindingLine('Affordability pressure reported', Math.max(affordabilityPressure, topupDifficulty, noHomeWifi), total),
-        participantFindingLine('Competition or market signal reported', Math.max(switchedProvider, qualityDifference, starlinkAware), total),
-        participantFindingLine('Household demand pressure', heavyHousehold, total)
+        participantFindingLine('RQ1 coverage issue reported by users', Math.max(droppedCalls, signalLoss, coveragePlaces, weakSignal), total),
+        participantFindingLine('RQ1 QoS issue reported by users', Math.max(poorVoice, slowData, eveningNightSlow, dataWorse), total),
+        participantFindingLine('RQ1/RQ4 affordability pressure reported by users', Math.max(affordabilityPressure, topupDifficulty, noHomeWifi), total),
+        participantFindingLine('RQ3 market/competition signal reported by users', Math.max(switchedProvider, qualityDifference, starlinkAware), total),
+        participantFindingLine('RQ2 household demand pressure', heavyHousehold, total)
       ].filter(Boolean).join('') || '<li>No strong participant-reported pattern yet.</li>';
       return `<article class="participant-ward-panel">
         <div class="participant-ward-panel-head">
