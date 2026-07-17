@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-left-side-accordion-icons-v126">
+<meta name="portal-build" content="2026-07-17-dashboard-default-collapsed-v129">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -7326,19 +7326,7 @@ function participantSummaryWideItem(label, value) {
 function bindDashboardAccordions(rootId, selectors) {
   const root = document.getElementById(rootId);
   if (!root) return;
-  selectors.forEach(selector => {
-    root.querySelectorAll(selector).forEach(detail => {
-      detail.addEventListener('toggle', () => {
-        if (root.dataset.accordionBulk === '1') return;
-        if (!detail.open) return;
-        const parent = detail.parentElement;
-        if (!parent) return;
-        parent.querySelectorAll(`:scope > ${selector}`).forEach(other => {
-          if (other !== detail) other.open = false;
-        });
-      });
-    });
-  });
+  root.dataset.independentAccordions = '1';
 }
 
 function setDashboardAccordionState(rootId, open) {
@@ -7483,7 +7471,7 @@ function renderParticipantSurveyResults(allSurveys) {
         participantFindingLine('RQ3 market/competition signal reported by users', Math.max(switchedProvider, qualityDifference, starlinkAware), total),
         participantFindingLine('RQ2 household demand pressure', heavyHousehold, total)
       ].filter(Boolean).join('') || '<li>No strong participant-reported pattern yet.</li>';
-      const wardOpen = constituency === selectedDashboardConstituency && ward === wards[0] ? ' open' : '';
+      const wardOpen = '';
       return `<details class="participant-ward-panel"${wardOpen}>
         <summary class="participant-ward-panel-head">
           <div class="participant-ward-panel-title"><span class="participant-toggle"></span>Ward: ${dashEscape(ward)}</div>
@@ -7499,7 +7487,7 @@ function renderParticipantSurveyResults(allSurveys) {
         </div>
       </details>`;
     }).join('');
-    const constituencyOpen = constituency === selectedDashboardConstituency ? ' open' : '';
+    const constituencyOpen = '';
     return `<details class="participant-constituency-block"${constituencyOpen}>
       <summary class="participant-constituency-head">
         <div class="participant-constituency-title"><span class="participant-toggle"></span>Constituency: ${dashEscape(constituency)}</div>
@@ -7516,12 +7504,6 @@ function renderParticipantSurveyResults(allSurveys) {
         <div class="analytics-card-sub">Questionnaire answers only: what participants reported by constituency and ward, mapped to the research questions</div>
       </div>
       <div class="constituency-summary-actions">
-        <button class="summary-export-btn" type="button" onclick="setDashboardAccordionState('dash-participant-results', true)" title="Expand all" aria-label="Expand all">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l5-5 5 5"/><path d="M12 3v18"/><path d="M7 16l5 5 5-5"/></svg>
-        </button>
-        <button class="summary-export-btn" type="button" onclick="setDashboardAccordionState('dash-participant-results', false)" title="Collapse all" aria-label="Collapse all">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l5 5 5-5"/><path d="M12 9v6"/><path d="M7 20l5-5 5 5"/></svg>
-        </button>
         <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-participant-results','honiara-participant-survey-results')" title="Export" aria-label="Export">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
         </button>
@@ -7636,7 +7618,7 @@ function renderDataReadingResults(allSurveys) {
         gpsWardAttention ? `<li class="medium">GPS quality control: ${gpsWardAttention} point${gpsWardAttention === 1 ? '' : 's'} need review before using this ward in spatial analysis.</li>` : '',
         tech.servingCellCount ? `<li>RQ2/RQ3 serving-cell evidence: ${tech.servingCellCount} serving LTE cell${tech.servingCellCount === 1 ? '' : 's'} and ${tech.servingTowerCount || 0} tower group${tech.servingTowerCount === 1 ? '' : 's'} detected.</li>` : ''
       ].filter(Boolean).join('') || '<li>No measured reading pattern yet.</li>';
-      const wardOpen = constituency === selectedDashboardConstituency && ward === wards[0] ? ' open' : '';
+      const wardOpen = '';
       return `<details class="reading-ward-panel"${wardOpen}>
         <summary class="reading-ward-panel-head">
           <div class="reading-ward-panel-title"><span class="reading-toggle"></span>Ward: ${dashEscape(ward)}</div>
@@ -7651,7 +7633,7 @@ function renderDataReadingResults(allSurveys) {
         </div>
       </details>`;
     }).join('');
-    const constituencyOpen = constituency === selectedDashboardConstituency ? ' open' : '';
+    const constituencyOpen = '';
     return `<details class="reading-constituency-block"${constituencyOpen}>
       <summary class="reading-constituency-head">
         <div class="reading-constituency-title"><span class="reading-toggle"></span>Constituency: ${dashEscape(constituency)}</div>
@@ -7668,12 +7650,6 @@ function renderDataReadingResults(allSurveys) {
         <div class="analytics-card-sub">NCIL, speed-test and GPS readings only: what the field measurements showed by constituency and ward</div>
       </div>
       <div class="constituency-summary-actions">
-        <button class="summary-export-btn" type="button" onclick="setDashboardAccordionState('dash-data-reading-results', true)" title="Expand all" aria-label="Expand all">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8l5-5 5 5"/><path d="M12 3v18"/><path d="M7 16l5 5 5-5"/></svg>
-        </button>
-        <button class="summary-export-btn" type="button" onclick="setDashboardAccordionState('dash-data-reading-results', false)" title="Collapse all" aria-label="Collapse all">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l5 5 5-5"/><path d="M12 9v6"/><path d="M7 20l5-5 5 5"/></svg>
-        </button>
         <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-data-reading-results','honiara-data-reading-results')" title="Export" aria-label="Export">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
         </button>
