@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-large-constituency-heading-v119">
+<meta name="portal-build" content="2026-07-17-data-reading-ward-cards-v120">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -936,6 +936,8 @@
   #dash-research-tree .analytics-card-head .constituency-summary-actions { position:absolute;right:18px;top:50%;transform:translateY(-50%); }
   #dash-participant-results .analytics-card-head { position:relative;justify-content:center;text-align:center; }
   #dash-participant-results .analytics-card-head .constituency-summary-actions { position:absolute;right:18px;top:50%;transform:translateY(-50%); }
+  #dash-data-reading-results .analytics-card-head { position:relative;justify-content:center;text-align:center; }
+  #dash-data-reading-results .analytics-card-head .constituency-summary-actions { position:absolute;right:18px;top:50%;transform:translateY(-50%); }
   .analytics-card-sub { color:rgba(255,255,255,.82);font-size:11px;margin-top:3px;line-height:1.35; }
   .analytics-table { width:100%;border-collapse:collapse;font-size:12px;color:var(--text); }
   .analytics-table th { padding:10px 12px;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-600);text-align:left;white-space:nowrap;font-weight:900;background:#f8fafc; }
@@ -1030,6 +1032,41 @@
   .participant-stat-label { display:block;color:#334155;font-weight:900;font-size:9px;overflow-wrap:anywhere; }
   .participant-stat-value { display:block;color:var(--navy);font-size:13px;font-weight:950;margin-top:3px; }
   .participant-top-value { color:var(--navy);font-weight:900; }
+  .reading-results-body { padding:14px;background:#fff;display:grid;gap:14px; }
+  .reading-constituency-block { border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;box-shadow:0 2px 8px rgba(16,24,40,.04); }
+  .reading-constituency-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:#f8fafc;border-bottom:1px solid var(--border);padding:10px 12px; }
+  .reading-constituency-title { color:var(--navy);font-size:18px;font-weight:950;letter-spacing:-.01em; }
+  .reading-constituency-count { color:var(--gray-600);font-size:11px;font-weight:800; }
+  .reading-summary { margin:12px 12px 0;border:1px solid #d7e3f2;border-radius:13px;background:linear-gradient(135deg,#f8fbff,#fff);box-shadow:0 3px 10px rgba(16,24,40,.05);padding:11px 12px; }
+  .reading-summary h5 { margin:0 0 9px;color:var(--navy);font-size:13px;font-weight:950; }
+  .reading-summary-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px; }
+  .reading-summary-item { border:1px solid #dce7f3;border-left:4px solid #2f6fbd;border-radius:10px;background:#fff;padding:8px 9px;box-shadow:0 1px 5px rgba(16,24,40,.04); }
+  .reading-summary-label { display:block;color:#475569;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em; }
+  .reading-summary-value { display:block;color:var(--navy);font-size:13px;font-weight:950;margin-top:4px;line-height:1.25; }
+  .reading-ward-panel { border:1px solid #d8e3ef;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(16,24,40,.06);overflow:hidden;margin:12px; }
+  .reading-ward-panel-head { display:flex;justify-content:space-between;align-items:center;gap:12px;background:linear-gradient(135deg,#f8fbff,#eef5ff);border-bottom:1px solid #d8e3ef;padding:11px 13px; }
+  .reading-ward-panel-title { color:var(--navy);font-size:15px;font-weight:950; }
+  .reading-ward-panel-meta { color:#475569;font-size:11px;font-weight:850; }
+  .reading-section-grid { display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;padding:12px;align-items:stretch; }
+  .reading-section-card { border:1px solid #dce7f3;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(16,24,40,.04);overflow:hidden;min-height:130px; }
+  .reading-section-card h5 { margin:0;padding:8px 10px;background:#18375d;color:#fff;font-size:12px;font-weight:950;letter-spacing:.01em; }
+  .reading-section-card.radio h5 { background:#1d4e89; }
+  .reading-section-card.speed h5 { background:#0f766e; }
+  .reading-section-card.gps h5 { background:#b45309; }
+  .reading-section-card.cell h5 { background:#6d28d9; }
+  .reading-section-list { padding:9px 10px;display:grid;gap:7px; }
+  .reading-section-line { display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed rgba(15,35,60,.12);padding-bottom:6px;line-height:1.2; }
+  .reading-section-line:last-child { border-bottom:0;padding-bottom:0; }
+  .reading-section-label { color:#475569;font-size:10px;font-weight:850; }
+  .reading-section-value { color:var(--navy);font-size:11px;font-weight:950;text-align:right; }
+  .reading-key-findings { grid-column:1 / -1;border:1px solid #d8e3ef;border-radius:12px;background:linear-gradient(135deg,#f8fafc,#fff);box-shadow:0 2px 8px rgba(16,24,40,.04);overflow:hidden; }
+  .reading-key-findings h5 { margin:0;padding:8px 10px;background:#0f233c;color:#fff;font-size:12px;font-weight:950; }
+  .reading-key-list { padding:10px 12px;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:7px;list-style:none; }
+  .reading-key-list li { color:#0f233c;font-size:11px;line-height:1.35;font-weight:800;border-left:4px solid #2f6fbd;background:#fff;border-radius:8px;padding:7px 8px;box-shadow:0 1px 4px rgba(16,24,40,.04); }
+  .reading-key-list li.high { border-left-color:#b42318;background:#fff7f7; }
+  .reading-key-list li.medium { border-left-color:#c17a13;background:#fffaf2; }
+  @media (max-width:1100px) { .reading-section-grid { grid-template-columns:1fr 1fr; } }
+  @media (max-width:720px) { .reading-section-grid { grid-template-columns:1fr; } }
   .rq-tree { padding:16px 18px 18px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);overflow:visible; }
   .rq-tree-root { width:100%;background:transparent;padding:4px 6px 16px;position:relative; }
   .rq-project-title { text-align:center;color:var(--navy);font-size:18px;font-weight:900;margin:2px 0 8px;letter-spacing:-.015em; }
@@ -7455,31 +7492,137 @@ function renderParticipantSurveyResults(allSurveys) {
   </div>`;
 }
 
+function readingPctCount(count, total) {
+  return `${dashPct(count, total)}% (${count}/${total || 0})`;
+}
+
+function readingLine(label, value) {
+  if (value == null || value === '' || value === '-') return '';
+  return `<div class="reading-section-line"><span class="reading-section-label">${dashEscape(label)}</span><span class="reading-section-value">${dashEscape(String(value))}</span></div>`;
+}
+
+function readingSectionCard(cls, title, lines) {
+  const body = lines.filter(Boolean).join('') || '<div class="reading-section-line"><span class="reading-section-label">No readings entered</span><span class="reading-section-value">-</span></div>';
+  return `<div class="reading-section-card ${dashEscape(cls)}"><h5>${dashEscape(title)}</h5><div class="reading-section-list">${body}</div></div>`;
+}
+
+function readingSummaryItem(label, value) {
+  return `<div class="reading-summary-item"><span class="reading-summary-label">${dashEscape(label)}</span><span class="reading-summary-value">${value}</span></div>`;
+}
+
+function readingFindingLine(label, count, total) {
+  if (!total) return '';
+  const rate = dashPct(count, total);
+  const cls = rate >= 50 ? 'high' : rate >= 25 ? 'medium' : '';
+  return `<li class="${cls}">${dashEscape(label)}: ${readingPctCount(count, total)}</li>`;
+}
+
+function readingWardComparison(wards, allSurveys, predicate) {
+  const rows = wards.map(ward => {
+    const records = allSurveys.filter(record => record.ward === ward);
+    const readingRecords = records.filter(record => dashboardReadingProfile(record).hasReading);
+    const count = readingRecords.filter(predicate).length;
+    return { ward, total: readingRecords.length, count, pct: dashPct(count, readingRecords.length) };
+  }).filter(row => row.total && row.count)
+    .sort((a, b) => b.pct - a.pct || b.count - a.count || a.ward.localeCompare(b.ward))
+    .slice(0, 3);
+  if (!rows.length) return 'No measured issue detected';
+  return `<span class="participant-ward-compare">${rows.map(row => `<span class="participant-ward-compare-item">${dashEscape(row.ward)}<br>${row.pct}% (${row.count}/${row.total})</span>`).join('')}</span>`;
+}
+
 function renderDataReadingResults(allSurveys) {
   const target = document.getElementById('dash-data-reading-results');
   if (!target) return;
-  const rows = dashboardWardRows().map(({ ward, constituency }) => {
-    const records = allSurveys.filter(record => record.ward === ward);
-    const tech = wardRadioTechnicalSummary(records);
-    const gpsOk = tech.gps.boundaryReady ? Math.max(0, tech.gps.insideBoundary - tech.gps.wardMismatch) : tech.gps.insideBoundary;
-    const gpsAttention = tech.gps.outsideBoundary + tech.gps.wardMismatch + tech.gps.missingOrInvalid;
-    return `<tr>
-      <td><strong>${dashEscape(ward)}</strong><span class="analytics-note">${dashEscape(constituency)}</span></td>
-      <td><div class="analytics-metric">${records.length}</div><span class="analytics-note">reading records in ward</span></td>
-      <td><span class="analytics-pill ${gpsAttention ? 'warn' : 'good'}">${gpsOk} OK / ${gpsAttention} check</span><span class="analytics-note">GPS ward/boundary status</span></td>
-      <td><strong style="color:${tech.rsrpClass.color}">${dashNumber(tech.avgRsrp,0)} dBm</strong><span class="analytics-note">${dashEscape(tech.rsrpClass.label)} RSRP</span></td>
-      <td><strong style="color:${tech.rsrqClass.color}">${dashNumber(tech.avgRsrq,1)} dB</strong><span class="analytics-note">${dashEscape(tech.rsrqClass.label)} RSRQ</span></td>
-      <td><strong style="color:${tech.rssnrClass.color}">${dashNumber(tech.avgRssnr,1)} dB</strong><span class="analytics-note">${dashEscape(tech.rssnrClass.label)} RSSNR/SINR</span></td>
-      <td><strong>${dashNumber(tech.avgDl,1)} Mbps</strong><span class="analytics-note">avg DL; ping ${dashNumber(tech.avgPing,0)} ms</span></td>
-      <td><strong>${dashEscape(tech.bandText)}</strong><span class="analytics-note">${dashEscape(tech.plmnText)}</span></td>
-      <td><strong>${tech.servingTowerCount || 0}</strong> tower groups<span class="analytics-note">${tech.servingCellCount || 0} serving LTE cells</span></td>
-    </tr>`;
+  const sections = Object.entries(CONSTITUENCY_WARDS).map(([constituency, wards]) => {
+    const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
+    const readingRecords = constituencyRecords.filter(record => dashboardReadingProfile(record).hasReading);
+    const constituencyTotal = readingRecords.length;
+    const weakCoverage = readingRecords.filter(record => dashboardReadingProfile(record).poorSignal).length;
+    const poorQuality = readingRecords.filter(record => dashboardReadingProfile(record).poorQuality).length;
+    const poorSpeed = readingRecords.filter(record => dashboardReadingProfile(record).poorSpeed).length;
+    const gpsStats = dashboardGpsBoundaryStats(constituencyRecords);
+    const gpsOk = gpsStats.boundaryReady ? Math.max(0, gpsStats.insideBoundary - gpsStats.wardMismatch) : gpsStats.insideBoundary;
+    const gpsAttention = gpsStats.outsideBoundary + gpsStats.wardMismatch + gpsStats.missingOrInvalid;
+    const constituencyTech = wardRadioTechnicalSummary(constituencyRecords);
+    const summaryStrip = `<div class="reading-summary">
+      <h5>Constituency-level Measured Findings</h5>
+      <div class="reading-summary-grid">
+        ${readingSummaryItem('RQ1: weak coverage by ward', readingWardComparison(wards, allSurveys, record => dashboardReadingProfile(record).poorSignal))}
+        ${readingSummaryItem('RQ1: degraded quality by ward', readingWardComparison(wards, allSurveys, record => dashboardReadingProfile(record).poorQuality))}
+        ${readingSummaryItem('RQ1/RQ2: low speed or latency by ward', readingWardComparison(wards, allSurveys, record => dashboardReadingProfile(record).poorSpeed))}
+        ${readingSummaryItem('RQ2/RQ3: operator and spectrum context', `PLMN: ${dashEscape(constituencyTech.plmnText || '-')}<br>Bands: ${dashEscape(constituencyTech.bandText || '-')}<br>Serving cells: ${constituencyTech.servingCellCount || 0}`)}
+      </div>
+    </div>`;
+    const wardPanels = wards.map(ward => {
+      const records = allSurveys.filter(record => record.ward === ward);
+      const tech = wardRadioTechnicalSummary(records);
+      const profiles = records.map(record => dashboardReadingProfile(record));
+      const wardReadingBase = profiles.filter(profile => profile.hasReading).length;
+      const wardWeakCoverage = profiles.filter(profile => profile.poorSignal).length;
+      const wardPoorQuality = profiles.filter(profile => profile.poorQuality).length;
+      const wardPoorSpeed = profiles.filter(profile => profile.poorSpeed).length;
+      const avgUpload = dashAverage(records, ['ul', 'fd_s1_ookla_ul', 'fd_s1_ncil_ul', 'fd_s1_nperf_ul_avg', 'fd_s1_nperf_ul']);
+      const gpsWardOk = tech.gps.boundaryReady ? Math.max(0, tech.gps.insideBoundary - tech.gps.wardMismatch) : tech.gps.insideBoundary;
+      const gpsWardAttention = tech.gps.outsideBoundary + tech.gps.wardMismatch + tech.gps.missingOrInvalid;
+      const radioCard = readingSectionCard('radio', 'NCIL Radio Readings', [
+        readingLine('Average RSRP', `${dashNumber(tech.avgRsrp, 0)} dBm (${tech.rsrpClass.label})`),
+        readingLine('Average RSRQ', `${dashNumber(tech.avgRsrq, 1)} dB (${tech.rsrqClass.label})`),
+        readingLine('Average RSSNR/SINR', `${dashNumber(tech.avgRssnr, 1)} dB (${tech.rssnrClass.label})`),
+        readingLine('Weak radio readings', readingPctCount(Math.max(wardWeakCoverage, wardPoorQuality), wardReadingBase))
+      ]);
+      const speedCard = readingSectionCard('speed', 'Speed-Test Readings', [
+        readingLine('Average download', `${dashNumber(tech.avgDl, 1)} Mbps`),
+        readingLine('Average upload', `${dashNumber(avgUpload, 1)} Mbps`),
+        readingLine('Average ping', `${dashNumber(tech.avgPing, 0)} ms`),
+        readingLine('Speed/latency concern', readingPctCount(wardPoorSpeed, wardReadingBase))
+      ]);
+      const gpsCard = readingSectionCard('gps', 'GPS Status', [
+        readingLine('Valid and correct ward', `${gpsWardOk}`),
+        readingLine('Needs attention', `${gpsWardAttention}`),
+        readingLine('Outside boundary', `${tech.gps.outsideBoundary}`),
+        readingLine('Ward mismatch', `${tech.gps.wardMismatch}`)
+      ]);
+      const cellCard = readingSectionCard('cell', 'Cell / Band Context', [
+        readingLine('PLMN / operator', tech.plmnText || '-'),
+        readingLine('Bands observed', tech.bandText || '-'),
+        readingLine('Serving tower groups', `${tech.servingTowerCount || 0}`),
+        readingLine('Serving LTE cells', `${tech.servingCellCount || 0}`)
+      ]);
+      const findingLines = [
+        readingFindingLine('RQ1 measured weak coverage', wardWeakCoverage, wardReadingBase),
+        readingFindingLine('RQ1 measured signal-quality risk', wardPoorQuality, wardReadingBase),
+        readingFindingLine('RQ1/RQ2 measured speed or latency risk', wardPoorSpeed, wardReadingBase),
+        gpsWardAttention ? `<li class="medium">GPS quality control: ${gpsWardAttention} point${gpsWardAttention === 1 ? '' : 's'} need review before using this ward in spatial analysis.</li>` : '',
+        tech.servingCellCount ? `<li>RQ2/RQ3 serving-cell evidence: ${tech.servingCellCount} serving LTE cell${tech.servingCellCount === 1 ? '' : 's'} and ${tech.servingTowerCount || 0} tower group${tech.servingTowerCount === 1 ? '' : 's'} detected.</li>` : ''
+      ].filter(Boolean).join('') || '<li>No measured reading pattern yet.</li>';
+      return `<article class="reading-ward-panel">
+        <div class="reading-ward-panel-head">
+          <div class="reading-ward-panel-title">Ward: ${dashEscape(ward)}</div>
+          <div class="reading-ward-panel-meta">${wardReadingBase} measured reading${wardReadingBase === 1 ? '' : 's'}</div>
+        </div>
+        <div class="reading-section-grid">
+          ${radioCard}
+          ${speedCard}
+          ${gpsCard}
+          ${cellCard}
+          <div class="reading-key-findings"><h5>Key Findings</h5><ul class="reading-key-list">${findingLines}</ul></div>
+        </div>
+      </article>`;
+    }).join('');
+    return `<section class="reading-constituency-block">
+      <div class="reading-constituency-head">
+        <div class="reading-constituency-title">Constituency: ${dashEscape(constituency)}</div>
+        <div class="reading-constituency-count">${constituencyTotal} measured reading${constituencyTotal === 1 ? '' : 's'}</div>
+      </div>
+      ${summaryStrip}
+      ${wardPanels}
+    </section>`;
   }).join('');
   target.innerHTML = `<div class="analytics-card">
     <div class="analytics-card-head">
       <div>
         <div class="analytics-card-title">Data Reading Results - Measured Field Evidence</div>
-        <div class="analytics-card-sub">NCIL, speed-test and GPS readings only: what the field measurements showed by ward</div>
+        <div class="analytics-card-sub">NCIL, speed-test and GPS readings only: what the field measurements showed by constituency and ward</div>
       </div>
       <div class="constituency-summary-actions">
         <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-data-reading-results','honiara-data-reading-results')" title="Export" aria-label="Export">
@@ -7487,12 +7630,7 @@ function renderDataReadingResults(allSurveys) {
         </button>
       </div>
     </div>
-    <div style="overflow:auto">
-      <table class="analytics-table" style="min-width:1180px">
-        <thead><tr><th>Ward</th><th>Records</th><th>GPS</th><th>RSRP</th><th>RSRQ</th><th>RSSNR/SINR</th><th>Speed</th><th>Band / PLMN</th><th>Serving cells</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
+    <div class="reading-results-body">${sections}</div>
   </div>`;
 }
 
