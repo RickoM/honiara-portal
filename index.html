@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v145">
+<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v149">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1074,6 +1074,7 @@
   .cell-summary-chip { border:1px solid #d8e3ef;border-radius:10px;background:#fff;padding:7px 8px;line-height:1.15; }
   .cell-summary-chip span { display:block;color:#64748b;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.04em; }
   .cell-summary-chip strong { display:block;color:var(--navy);font-size:14px;font-weight:950;margin-top:3px;overflow-wrap:anywhere;line-height:1.15; }
+  .cell-summary-chip small { display:block;color:#475569;font-size:10px;font-weight:800;line-height:1.25;margin-top:5px;overflow-wrap:anywhere; }
   .cell-card-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;padding:12px; }
   .cell-card { border:1px solid #d8e3ef;border-radius:13px;background:#fff;box-shadow:0 2px 9px rgba(16,24,40,.05);overflow:hidden;min-width:0; }
   .cell-card-head { background:linear-gradient(135deg,#f8fbff,#eef5ff);border-bottom:1px solid #d8e3ef;padding:9px 10px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start; }
@@ -6833,11 +6834,11 @@ function dashboardOverviewWardPlmn(records) {
 }
 
 function dashboardOverviewWardBands(records) {
-  const counts = countValues(records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean));
+  const counts = dashboardPrimaryBandCounts(records);
   if (!counts.length) return dashboardOverviewEmpty('No band reading');
   return counts.slice(0, 4).map(([band, count]) => {
     const info = radioBandInfo(band);
-    return `<span class="overview-ward-readout-value">${dashEscape(info.label)} - ${dashEscape(info.frequency)} (${count})${info.caution ? '<span class="overview-ward-readout-note" style="color:var(--amber)">Check screenshot</span>' : ''}</span>`;
+    return `<span class="overview-ward-readout-value">${dashEscape(info.label)} - ${dashEscape(info.frequency)}: ${count} reading${count === 1 ? '' : 's'}${info.caution ? '<span class="overview-ward-readout-note" style="color:var(--amber)">Check screenshot</span>' : ''}</span>`;
   }).join('');
 }
 
@@ -6933,11 +6934,11 @@ function dashboardOverviewConstituencyPlmn(records) {
 }
 
 function dashboardOverviewConstituencyBands(records) {
-  const counts = countValues(records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean));
+  const counts = dashboardPrimaryBandCounts(records);
   if (!counts.length) return '<span class="overview-data-card-value" style="color:var(--gray-600)">No band reading</span>';
   return counts.slice(0, 4).map(([band, count]) => {
     const info = radioBandInfo(band);
-    return `<span class="overview-data-card-value">${dashEscape(info.label)} - ${dashEscape(info.frequency)} (${count})${info.caution ? '<span class="overview-data-card-note" style="color:var(--amber)">Check screenshot</span>' : ''}</span>`;
+    return `<span class="overview-data-card-value">${dashEscape(info.label)} - ${dashEscape(info.frequency)}: ${count} reading${count === 1 ? '' : 's'}${info.caution ? '<span class="overview-data-card-note" style="color:var(--amber)">Check screenshot</span>' : ''}</span>`;
   }).join('');
 }
 
@@ -6970,12 +6971,18 @@ function dashboardOverviewCompactPlmn(records) {
   return counts.slice(0, 3).map(([label, count]) => `<span class="overview-list-line">${dashEscape(label)} (${count})</span>`).join('');
 }
 
+function dashboardPrimaryBandCounts(records) {
+  return countValues(records.map(record =>
+    normaliseRadioBand(record.fd_s2a_band || record.band || record.fd_s2b_band)
+  ).filter(Boolean));
+}
+
 function dashboardOverviewCompactBands(records) {
-  const counts = countValues(records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean));
+  const counts = dashboardPrimaryBandCounts(records);
   if (!counts.length) return '<span class="overview-list-line" style="color:var(--gray-600)">No band reading</span>';
   return counts.slice(0, 4).map(([band, count]) => {
     const info = radioBandInfo(band);
-    return `<span class="overview-list-line">${dashEscape(info.label)} ${dashEscape(info.frequency)} (${count})</span>${info.caution ? '<span class="overview-list-note">Check screenshot</span>' : ''}`;
+    return `<span class="overview-list-line">${dashEscape(info.label)} ${dashEscape(info.frequency)}: ${count} reading${count === 1 ? '' : 's'}</span>${info.caution ? '<span class="overview-list-note">Check screenshot</span>' : ''}`;
   }).join('');
 }
 
@@ -7039,7 +7046,7 @@ function dashboardOverviewNetworkId(records) {
 }
 
 function dashboardOverviewBandField(records) {
-  const bands = records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean).map(band => {
+  const bands = records.map(record => normaliseRadioBand(record.fd_s2a_band || record.band || record.fd_s2b_band)).filter(Boolean).map(band => {
     const info = radioBandInfo(band);
     return `${info.label} - ${info.frequency}`;
   });
@@ -7218,11 +7225,11 @@ function dashboardOverviewOperatorComparison(records) {
 }
 
 function dashboardOverviewBandsText(records) {
-  const counts = countValues(records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean));
+  const counts = dashboardPrimaryBandCounts(records);
   if (!counts.length) return ['No band reading'];
   return counts.slice(0, 3).map(([band, count]) => {
     const info = radioBandInfo(band);
-    return `${dashEscape(info.label)} ${dashEscape(info.frequency)} (${count})`;
+    return `${dashEscape(info.label)} ${dashEscape(info.frequency)}: ${count} reading${count === 1 ? '' : 's'}`;
   });
 }
 
@@ -7235,12 +7242,12 @@ function dashboardOverviewAutoFinding(constituency, records) {
   const goodOrBetter = distributionValues.filter(value => value >= -90).length;
   const goodPct = dashPct(goodOrBetter, distributionValues.length);
   const tech = wardRadioTechnicalSummary(records);
-  const bandCounts = countValues(records.flatMap(record => [normaliseRadioBand(record.fd_s2a_band), normaliseRadioBand(record.fd_s2b_band)]).filter(Boolean));
+  const bandCounts = dashboardPrimaryBandCounts(records);
   const topBand = bandCounts[0] ? radioBandInfo(bandCounts[0][0]) : null;
   const complaint = dashboardOverviewTopComplaint(records);
   const rsrpText = Number.isFinite(rsrpStats.mean) ? `average RSRP ${dashNumber(rsrpStats.mean, 0)} dBm` : 'no average RSRP reading yet';
   const speedText = Number.isFinite(dlStats.mean) ? `average download ${dashNumber(dlStats.mean, 1)} Mbps` : 'no average download reading yet';
-  return `${dashEscape(constituency)} records ${total} survey points with ${rsrpText} and ${speedText}. ${distributionValues.length ? `${goodPct}% of RSRP readings are Good or Excellent.` : 'RSRP distribution is not yet available.'} ${topBand ? `${dashEscape(topBand.label)} ${dashEscape(topBand.frequency)} is the most frequent LTE band (${bandCounts[0][1]} observations).` : 'LTE band evidence is not yet available.'} ${tech.servingTowerCount || 0} eNB/base-station group${tech.servingTowerCount === 1 ? '' : 's'} and ${tech.servingCellCount || 0} serving LTE cell${tech.servingCellCount === 1 ? '' : 's'} are detected. Top user-reported theme: ${dashEscape(complaint.label)} ${dashEscape(complaint.value)}.`;
+  return `${dashEscape(constituency)} records ${total} survey points with ${rsrpText} and ${speedText}. ${distributionValues.length ? `${goodPct}% of RSRP readings are Good or Excellent.` : 'RSRP distribution is not yet available.'} ${topBand ? `${dashEscape(topBand.label)} ${dashEscape(topBand.frequency)} is the most frequent LTE band (${bandCounts[0][1]} reading${bandCounts[0][1] === 1 ? '' : 's'}).` : 'LTE band evidence is not yet available.'} ${tech.servingTowerCount || 0} eNB/base-station group${tech.servingTowerCount === 1 ? '' : 's'} and ${tech.servingCellCount || 0} serving LTE cell${tech.servingCellCount === 1 ? '' : 's'} are detected. Top user-reported theme: ${dashEscape(complaint.label)} ${dashEscape(complaint.value)}.`;
 }
 
 function dashboardOverviewStoryCards(records) {
@@ -8201,6 +8208,19 @@ function cellCountTexts(records, fields, formatter = value => value) {
     .map(([label, count]) => `${label} (${count})`);
 }
 
+function cellBandCountsFromRecords(records) {
+  const counts = new Map();
+  records.forEach(record => {
+    const rawBand = cellFirstText([record], ['fd_s2a_band', 'band']);
+    const label = cellBandText(rawBand);
+    if (!label) return;
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([label, count]) => `${label}: ${count} reading${count === 1 ? '' : 's'}`);
+}
+
 function cellBandText(band) {
   const clean = String(band || '').trim().toUpperCase().replace(/^BAND\s*/i, 'B');
   const num = clean.replace(/^B/i, '');
@@ -8344,17 +8364,33 @@ function renderDataReadingResults(allSurveys) {
     const constituencyCells = wards.flatMap(ward => buildWardCellGroups(allSurveys.filter(record => record.ward === ward)));
     const constituencyEnbs = new Set(constituencyCells.map(cell => cell.enb).filter(Boolean));
     const constituencyEcis = new Set(constituencyCells.map(cell => cell.eci).filter(Boolean));
+    const wardEnbBreakdown = wards.map(ward => {
+      const wardCells = buildWardCellGroups(allSurveys.filter(record => record.ward === ward));
+      const wardEnbs = new Set(wardCells.map(cell => cell.enb).filter(Boolean));
+      return { ward, count: wardEnbs.size };
+    }).filter(item => item.count > 0);
+    const wardEnbText = wardEnbBreakdown.length
+      ? wardEnbBreakdown.map(item => `${item.ward}: ${item.count}`).join('; ')
+      : 'No ward eNB IDs recorded';
+    const wardEciBreakdown = wards.map(ward => {
+      const wardCells = buildWardCellGroups(allSurveys.filter(record => record.ward === ward));
+      const wardEcis = new Set(wardCells.map(cell => cell.eci).filter(Boolean));
+      return { ward, count: wardEcis.size };
+    }).filter(item => item.count > 0);
+    const wardEciText = wardEciBreakdown.length
+      ? wardEciBreakdown.map(item => `${item.ward}: ${item.count}`).join('; ')
+      : 'No ward Cell IDs recorded';
     const directPlmns = new Map();
     readingRecords.forEach(record => {
       const plmn = cellPlmnText(record.fd_s2a_mcc, record.fd_s2a_mnc);
       if (plmn) directPlmns.set(plmn, (directPlmns.get(plmn) || 0) + 1);
     });
     const plmnText = Array.from(directPlmns.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => `${label} (${count})`).join('; ') || 'No operator reading';
-    const bandText = cellCountTexts(readingRecords, ['fd_s2a_band', 'band'], cellBandText).slice(0, 4).join('; ') || 'No band reading';
+    const bandText = cellBandCountsFromRecords(readingRecords).slice(0, 4).join('; ') || 'No band reading';
     const constituencySummary = `<div class="cell-ward-summary">
       <div class="cell-summary-chip"><span>Measured readings</span><strong>${constituencyTotal}</strong></div>
-      <div class="cell-summary-chip"><span>eNB tower IDs picked up</span><strong>${constituencyEnbs.size}</strong></div>
-      <div class="cell-summary-chip"><span>Cell IDs / ECI picked up</span><strong>${constituencyEcis.size}</strong></div>
+      <div class="cell-summary-chip"><span>Unique eNB tower IDs picked up</span><strong>${constituencyEnbs.size}</strong><small>${dashEscape(wardEnbText)}</small></div>
+      <div class="cell-summary-chip"><span>Unique Cell IDs / ECI picked up</span><strong>${constituencyEcis.size}</strong><small>${dashEscape(wardEciText)}</small></div>
       <div class="cell-summary-chip"><span>Operator / PLMN</span><strong>${dashEscape(plmnText)}</strong></div>
       <div class="cell-summary-chip"><span>Bands identified</span><strong>${dashEscape(bandText)}</strong></div>
     </div>`;
