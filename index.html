@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-17-ward-data-reading-summary-v140">
+<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v141">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1070,6 +1070,36 @@
   .reading-key-list li { color:#0f233c;font-size:11px;line-height:1.35;font-weight:800;border-left:4px solid #2f6fbd;background:#fff;border-radius:8px;padding:7px 8px;box-shadow:0 1px 4px rgba(16,24,40,.04); }
   .reading-key-list li.high { border-left-color:#b42318;background:#fff7f7; }
   .reading-key-list li.medium { border-left-color:#c17a13;background:#fffaf2; }
+  .cell-ward-summary { display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:7px;padding:10px 12px;background:#fbfdff;border-bottom:1px solid #d8e3ef; }
+  .cell-summary-chip { border:1px solid #d8e3ef;border-radius:10px;background:#fff;padding:7px 8px;line-height:1.15; }
+  .cell-summary-chip span { display:block;color:#64748b;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.04em; }
+  .cell-summary-chip strong { display:block;color:var(--navy);font-size:14px;font-weight:950;margin-top:3px;overflow-wrap:anywhere;line-height:1.15; }
+  .cell-card-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;padding:12px; }
+  .cell-card { border:1px solid #d8e3ef;border-radius:13px;background:#fff;box-shadow:0 2px 9px rgba(16,24,40,.05);overflow:hidden;min-width:0; }
+  .cell-card-head { background:linear-gradient(135deg,#f8fbff,#eef5ff);border-bottom:1px solid #d8e3ef;padding:9px 10px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start; }
+  .cell-card-title { color:var(--navy);font-size:13px;font-weight:950;line-height:1.2; }
+  .cell-card-sub { color:#475569;font-size:9px;font-weight:850;line-height:1.25;margin-top:3px; }
+  .cell-reading-count { border:1px solid #c8d6e6;border-radius:999px;background:#fff;padding:4px 7px;color:var(--navy);font-size:9px;font-weight:950;white-space:nowrap; }
+  .cell-card-body { padding:10px;display:grid;gap:9px; }
+  .cell-id-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px; }
+  .cell-id-box { border:1px solid #e1e9f3;border-radius:9px;background:#fbfdff;padding:6px;min-width:0; }
+  .cell-id-label { display:block;color:#64748b;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.04em; }
+  .cell-id-value { display:block;color:var(--navy);font-size:11px;font-weight:950;margin-top:3px;overflow-wrap:anywhere; }
+  .cell-kpi-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px; }
+  .cell-kpi { border:1px solid #d8e3ef;border-left:4px solid #94a3b8;border-radius:10px;background:#fff;padding:7px;min-width:0; }
+  .cell-kpi.good { border-left-color:#2b6f1f;background:#f8fff6; }
+  .cell-kpi.warn { border-left-color:#b7791f;background:#fffaf0; }
+  .cell-kpi.bad { border-left-color:#b42318;background:#fff7f7; }
+  .cell-kpi-label { display:block;color:#64748b;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.04em; }
+  .cell-kpi-value { display:block;color:var(--navy);font-size:15px;font-weight:950;margin-top:3px; }
+  .cell-kpi-note { display:block;color:#475569;font-size:9px;font-weight:850;margin-top:2px;line-height:1.2; }
+  .cell-speed-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px; }
+  .cell-speed-box { border:1px solid #e1e9f3;border-radius:9px;background:#fbfdff;padding:6px;min-width:0; }
+  .cell-speed-label { display:block;color:#64748b;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.04em; }
+  .cell-speed-value { display:block;color:var(--navy);font-size:11px;font-weight:950;margin-top:3px; }
+  .cell-nperf-row { border:1px solid #e7d8ff;border-radius:9px;background:#fbf8ff;padding:7px 8px;color:var(--navy);font-size:10px;font-weight:900;line-height:1.25; }
+  .cell-empty { padding:12px;color:#64748b;font-size:11px;font-weight:800; }
+  @media (max-width:720px) { .cell-card-grid { grid-template-columns:1fr;padding:10px; } .cell-id-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .cell-kpi-grid, .cell-speed-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media (max-width:1100px) { .reading-section-grid { grid-template-columns:1fr 1fr; } }
   @media (max-width:720px) { .reading-section-grid { grid-template-columns:1fr; } }
   .rq-tree { padding:16px 18px 18px;background:linear-gradient(180deg,#fff 0%,#fbfdff 100%);overflow:visible; }
@@ -8120,6 +8150,189 @@ function readingWardComparison(wards, allSurveys, predicate) {
   return `<span class="participant-ward-compare">${rows.map(row => `<span class="participant-ward-compare-item">${dashEscape(row.ward)}<br>${row.pct}% (${row.count}/${row.total})</span>`).join('')}</span>`;
 }
 
+function cellMetricNumber(record, field, kind = '') {
+  const raw = record?.[field];
+  if (raw == null || raw === '') return NaN;
+  const text = String(raw).trim();
+  if (!text) return NaN;
+  const value = parseFloat(text);
+  if (!Number.isFinite(value)) return NaN;
+  if (kind === 'speed' && /\bkbps\b/i.test(text)) return value / 1000;
+  return value;
+}
+
+function cellMetricAverage(values) {
+  const nums = values.filter(Number.isFinite);
+  return nums.length ? nums.reduce((sum, value) => sum + value, 0) / nums.length : NaN;
+}
+
+function cellRecordAverage(record, fields, kind = '') {
+  return cellMetricAverage(fields.map(field => cellMetricNumber(record, field, kind)));
+}
+
+function cellRecordsAverage(records, fields, kind = '') {
+  return cellMetricAverage(records.map(record => cellRecordAverage(record, fields, kind)));
+}
+
+function cellFirstText(records, fields) {
+  for (const record of records) {
+    for (const field of fields) {
+      const value = record?.[field];
+      if (value != null && String(value).trim()) return String(value).trim();
+    }
+  }
+  return '';
+}
+
+function cellCountTexts(records, fields, formatter = value => value) {
+  const counts = new Map();
+  records.forEach(record => {
+    fields.forEach(field => {
+      const value = record?.[field];
+      const text = value == null ? '' : String(value).trim();
+      if (!text) return;
+      const label = formatter(text);
+      if (!label) return;
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+  });
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([label, count]) => `${label} (${count})`);
+}
+
+function cellBandText(band) {
+  const clean = String(band || '').trim().toUpperCase().replace(/^BAND\s*/i, 'B');
+  const num = clean.replace(/^B/i, '');
+  const lookup = {
+    '1': 'B1 - 2100 MHz LTE FDD',
+    '3': 'B3 - 1800 MHz LTE FDD',
+    '28': 'B28 - 700 MHz LTE FDD',
+    '41': 'B41 - 2500 MHz LTE TDD',
+    '43': 'B43 - 3600 MHz LTE TDD',
+  };
+  return lookup[num] || (clean ? `${clean} - frequency not mapped` : '');
+}
+
+function cellPlmnText(mcc, mnc) {
+  const cleanMcc = String(mcc || '').trim();
+  const cleanMnc = String(mnc || '').trim();
+  if (!cleanMcc || !cleanMnc) return '';
+  return `${cleanMcc}-${cleanMnc.padStart(2, '0')} ${plmnOperatorName(cleanMcc, cleanMnc)}`;
+}
+
+function cellRatingRsrp(value) {
+  if (!Number.isFinite(value)) return { label: 'No reading', cls: '' };
+  if (value >= -80) return { label: 'Excellent', cls: 'good' };
+  if (value >= -90) return { label: 'Good', cls: 'good' };
+  if (value >= -100) return { label: 'Fair', cls: 'warn' };
+  if (value >= -110) return { label: 'Poor', cls: 'bad' };
+  return { label: 'Very Poor', cls: 'bad' };
+}
+
+function cellRatingRsrq(value) {
+  if (!Number.isFinite(value)) return { label: 'No reading', cls: '' };
+  if (value >= -10) return { label: 'Excellent quality', cls: 'good' };
+  if (value >= -12) return { label: 'Good quality', cls: 'good' };
+  if (value >= -15) return { label: 'Fair quality', cls: 'warn' };
+  return { label: 'Degraded / congested', cls: 'bad' };
+}
+
+function cellRatingSinr(value) {
+  if (!Number.isFinite(value)) return { label: 'No reading', cls: '' };
+  if (value > 20) return { label: 'Excellent', cls: 'good' };
+  if (value >= 13) return { label: 'Good', cls: 'good' };
+  if (value >= 0) return { label: 'Fair', cls: 'warn' };
+  return { label: 'Poor / noisy', cls: 'bad' };
+}
+
+function cellFormatNumber(value, digits = 1, suffix = '') {
+  return Number.isFinite(value) ? `${value.toFixed(digits)}${suffix}` : '-';
+}
+
+function buildWardCellGroups(records) {
+  const groups = new Map();
+  records.forEach(record => {
+    const enb = String(record.fd_s2a_enb || String(record.enb || '').split('-')[0] || '').trim();
+    const lcid = String(record.fd_s2a_lcid || '').trim();
+    const eci = String(record.fd_s2a_eci || '').trim();
+    const tac = String(record.fd_s2a_tac || '').trim();
+    const pci = String(record.fd_s2a_pci || '').trim();
+    const mcc = String(record.fd_s2a_mcc || '').trim();
+    const mnc = String(record.fd_s2a_mnc || '').trim();
+    if (!enb && !lcid && !eci && !pci) return;
+    const key = eci ? `eci:${mcc}-${mnc}-${eci}` : `cell:${mcc}-${mnc}-${enb}-${lcid}-${pci}`;
+    if (!groups.has(key)) {
+      groups.set(key, { key, enb, lcid, eci, tac, pci, mcc, mnc, records: [] });
+    }
+    groups.get(key).records.push(record);
+  });
+  return Array.from(groups.values()).sort((a, b) =>
+    String(a.enb || '').localeCompare(String(b.enb || ''), undefined, { numeric: true }) ||
+    String(a.lcid || '').localeCompare(String(b.lcid || ''), undefined, { numeric: true }) ||
+    String(a.eci || '').localeCompare(String(b.eci || ''), undefined, { numeric: true })
+  );
+}
+
+function buildCellCard(group) {
+  const records = group.records || [];
+  const mcc = cellFirstText(records, ['fd_s2a_mcc']) || group.mcc;
+  const mnc = cellFirstText(records, ['fd_s2a_mnc']) || group.mnc;
+  const enb = cellFirstText(records, ['fd_s2a_enb', 'enb']) || group.enb;
+  const lcid = cellFirstText(records, ['fd_s2a_lcid']) || group.lcid;
+  const tac = cellFirstText(records, ['fd_s2a_tac']) || group.tac;
+  const eci = cellFirstText(records, ['fd_s2a_eci']) || group.eci;
+  const pci = cellFirstText(records, ['fd_s2a_pci']) || group.pci;
+  const plmn = cellPlmnText(mcc, mnc) || cellFirstText(records, ['fd_s1_op', 'operator', 'op']) || 'Operator not recorded';
+  const rsrp = cellRecordsAverage(records, ['fd_s2a_rsrp', 'rsrp']);
+  const rsrq = cellRecordsAverage(records, ['fd_s2a_rsrq', 'rsrq']);
+  const sinr = cellRecordsAverage(records, ['fd_s2a_rssnr', 'rssnr', 'sinr']);
+  const dl = cellRecordsAverage(records, ['fd_s1_ncil_dl', 'fd_s1_ookla_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl', 'dl', 'download'], 'speed');
+  const ul = cellRecordsAverage(records, ['fd_s1_ncil_ul', 'fd_s1_ookla_ul', 'fd_s1_nperf_ul_avg', 'fd_s1_nperf_ul', 'ul', 'upload'], 'speed');
+  const ping = cellRecordsAverage(records, ['fd_s1_ncil_ping', 'fd_s1_ookla_ping', 'fd_s1_nperf_lat_avg', 'fd_s1_nperf_ping', 'ping']);
+  const jitter = cellRecordsAverage(records, ['fd_s1_ncil_jitter', 'fd_s1_ookla_jitter', 'fd_s1_nperf_jitter', 'jitter']);
+  const browse = cellRecordsAverage(records, ['fd_s1_nperf_browse', 'browsing']);
+  const stream = cellRecordsAverage(records, ['fd_s1_nperf_stream', 'streaming']);
+  const rsrpRating = cellRatingRsrp(rsrp);
+  const rsrqRating = cellRatingRsrq(rsrq);
+  const sinrRating = cellRatingSinr(sinr);
+  const idBox = (label, value) => `<div class="cell-id-box"><span class="cell-id-label">${label}</span><span class="cell-id-value">${dashEscape(value || '-')}</span></div>`;
+  const kpiBox = (label, value, note, cls) => `<div class="cell-kpi ${cls || ''}"><span class="cell-kpi-label">${label}</span><span class="cell-kpi-value">${dashEscape(value)}</span><span class="cell-kpi-note">${dashEscape(note)}</span></div>`;
+  const speedBox = (label, value) => `<div class="cell-speed-box"><span class="cell-speed-label">${label}</span><span class="cell-speed-value">${dashEscape(value)}</span></div>`;
+  const nperf = (Number.isFinite(browse) || Number.isFinite(stream))
+    ? `<div class="cell-nperf-row">nPerf browsing / streaming: ${dashEscape(cellFormatNumber(browse, 0, '%'))} / ${dashEscape(cellFormatNumber(stream, 0, '%'))}</div>`
+    : '';
+  return `<div class="cell-card">
+    <div class="cell-card-head">
+      <div>
+        <div class="cell-card-title">eNB ${dashEscape(enb || '-')} | LCID ${dashEscape(lcid || '-')}</div>
+        <div class="cell-card-sub">${dashEscape(plmn)}${eci ? ` | ECI ${dashEscape(eci)}` : ''}</div>
+      </div>
+      <span class="cell-reading-count">${records.length} reading${records.length === 1 ? '' : 's'}</span>
+    </div>
+    <div class="cell-card-body">
+      <div class="cell-id-grid">
+        ${idBox('TAC', tac)}
+        ${idBox('ECI', eci)}
+        ${idBox('PCI', pci)}
+        ${idBox('PLMN', cellPlmnText(mcc, mnc) || '-')}
+      </div>
+      <div class="cell-kpi-grid">
+        ${kpiBox('Average RSRP', `${cellFormatNumber(rsrp, 0, ' dBm')}`, rsrpRating.label, rsrpRating.cls)}
+        ${kpiBox('Average RSRQ', `${cellFormatNumber(rsrq, 1, ' dB')}`, rsrqRating.label, rsrqRating.cls)}
+        ${kpiBox('Average RSSNR / SINR', `${cellFormatNumber(sinr, 1, ' dB')}`, sinrRating.label, sinrRating.cls)}
+      </div>
+      <div class="cell-speed-grid">
+        ${speedBox('Download', cellFormatNumber(dl, 1, ' Mbps'))}
+        ${speedBox('Upload', cellFormatNumber(ul, 1, ' Mbps'))}
+        ${speedBox('Ping', cellFormatNumber(ping, 0, ' ms'))}
+        ${speedBox('Jitter', cellFormatNumber(jitter, 0, ' ms'))}
+      </div>
+      ${nperf}
+    </div>
+  </div>`;
+}
+
 function renderDataReadingResults(allSurveys) {
   const target = document.getElementById('dash-data-reading-results');
   if (!target) return;
@@ -8128,77 +8341,63 @@ function renderDataReadingResults(allSurveys) {
     const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
     const readingRecords = constituencyRecords.filter(record => dashboardReadingProfile(record).hasReading);
     const constituencyTotal = readingRecords.length;
-    const weakCoverage = readingRecords.filter(record => dashboardReadingProfile(record).poorSignal).length;
-    const poorQuality = readingRecords.filter(record => dashboardReadingProfile(record).poorQuality).length;
-    const poorSpeed = readingRecords.filter(record => dashboardReadingProfile(record).poorSpeed).length;
-    const gpsStats = dashboardGpsBoundaryStats(constituencyRecords);
-    const gpsOk = gpsStats.boundaryReady ? Math.max(0, gpsStats.insideBoundary - gpsStats.wardMismatch) : gpsStats.insideBoundary;
-    const gpsAttention = gpsStats.outsideBoundary + gpsStats.wardMismatch + gpsStats.missingOrInvalid;
-    const constituencyTech = wardRadioTechnicalSummary(constituencyRecords);
-    const summaryStrip = `<div class="reading-summary">
-      <h5>Constituency-level Measured Findings</h5>
-      <div class="reading-summary-grid">
-        ${readingSummaryItem('RQ1: weak coverage by ward', readingWardComparison(wards, allSurveys, record => dashboardReadingProfile(record).poorSignal))}
-        ${readingSummaryItem('RQ1: degraded quality by ward', readingWardComparison(wards, allSurveys, record => dashboardReadingProfile(record).poorQuality))}
-        ${readingSummaryItem('RQ1/RQ2: low speed or latency by ward', readingWardComparison(wards, allSurveys, record => dashboardReadingProfile(record).poorSpeed))}
-        ${readingSummaryItem('RQ2/RQ3: operator and spectrum context', `PLMN: ${dashEscape(constituencyTech.plmnText || '-')}<br>Bands: ${dashEscape(constituencyTech.bandText || '-')}<br>Serving cells: ${constituencyTech.servingCellCount || 0}`)}
-      </div>
+    const constituencyCells = wards.flatMap(ward => buildWardCellGroups(allSurveys.filter(record => record.ward === ward)));
+    const constituencyEnbs = new Set(constituencyCells.map(cell => cell.enb).filter(Boolean));
+    const constituencyBands = cellCountTexts(readingRecords, ['fd_s2a_band', 'band'], cellBandText);
+    const constituencyPlmns = cellCountTexts(readingRecords, ['fd_s2a_mcc'], () => '').length;
+    const operatorText = cellCountTexts(readingRecords, ['fd_s2a_mcc'], () => '').length;
+    const plmnCounts = cellCountTexts(readingRecords, ['fd_s2a_mcc'], () => '');
+    const constituencyOperators = cellCountTexts(readingRecords, ['fd_s1_op', 'operator', 'op']);
+    const directPlmns = new Map();
+    readingRecords.forEach(record => {
+      const plmn = cellPlmnText(record.fd_s2a_mcc, record.fd_s2a_mnc);
+      if (plmn) directPlmns.set(plmn, (directPlmns.get(plmn) || 0) + 1);
+    });
+    const plmnText = Array.from(directPlmns.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => `${label} (${count})`).join('; ') || constituencyOperators.slice(0, 2).join('; ') || 'No operator reading';
+    const summaryStrip = `<div class="cell-ward-summary">
+      <div class="cell-summary-chip"><span>Measured readings</span><strong>${constituencyTotal}</strong></div>
+      <div class="cell-summary-chip"><span>Wards with readings</span><strong>${wards.filter(ward => allSurveys.some(record => record.ward === ward && dashboardReadingProfile(record).hasReading)).length}/${wards.length}</strong></div>
+      <div class="cell-summary-chip"><span>eNB tower IDs</span><strong>${constituencyEnbs.size}</strong></div>
+      <div class="cell-summary-chip"><span>Serving cells</span><strong>${constituencyCells.length}</strong></div>
+      <div class="cell-summary-chip"><span>PLMN / operator</span><strong>${dashEscape(plmnText)}</strong></div>
+      <div class="cell-summary-chip"><span>Bands detected</span><strong>${dashEscape(constituencyBands.slice(0, 3).join('; ') || 'No band reading')}</strong></div>
     </div>`;
     const wardPanels = wards.map(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
       const tech = wardRadioTechnicalSummary(records);
-      const profiles = records.map(record => dashboardReadingProfile(record));
-      const wardReadingBase = profiles.filter(profile => profile.hasReading).length;
-      const wardWeakCoverage = profiles.filter(profile => profile.poorSignal).length;
-      const wardPoorQuality = profiles.filter(profile => profile.poorQuality).length;
-      const wardPoorSpeed = profiles.filter(profile => profile.poorSpeed).length;
-      const avgUpload = dashAverage(records, ['ul', 'fd_s1_ookla_ul', 'fd_s1_ncil_ul', 'fd_s1_nperf_ul_avg', 'fd_s1_nperf_ul']);
+      const wardReadingBase = records.filter(record => dashboardReadingProfile(record).hasReading).length;
       const gpsWardOk = tech.gps.boundaryReady ? Math.max(0, tech.gps.insideBoundary - tech.gps.wardMismatch) : tech.gps.insideBoundary;
       const gpsWardAttention = tech.gps.outsideBoundary + tech.gps.wardMismatch + tech.gps.missingOrInvalid;
-      const radioCard = readingSectionCard('radio', 'NCIL Radio Readings', [
-        readingLine('Average RSRP', `${dashNumber(tech.avgRsrp, 0)} dBm (${tech.rsrpClass.label})`),
-        readingLine('Average RSRQ', `${dashNumber(tech.avgRsrq, 1)} dB (${tech.rsrqClass.label})`),
-        readingLine('Average RSSNR/SINR', `${dashNumber(tech.avgRssnr, 1)} dB (${tech.rssnrClass.label})`),
-        readingLine('Weak radio readings', readingPctCount(Math.max(wardWeakCoverage, wardPoorQuality), wardReadingBase))
-      ]);
-      const speedCard = readingSectionCard('speed', 'Speed-Test Readings', [
-        readingLine('Average download', `${dashNumber(tech.avgDl, 1)} Mbps`),
-        readingLine('Average upload', `${dashNumber(avgUpload, 1)} Mbps`),
-        readingLine('Average ping', `${dashNumber(tech.avgPing, 0)} ms`),
-        readingLine('Speed/latency concern', readingPctCount(wardPoorSpeed, wardReadingBase))
-      ]);
-      const gpsCard = readingSectionCard('gps', 'GPS Status', [
-        readingLine('Valid and correct ward', `${gpsWardOk}`),
-        readingLine('Needs attention', `${gpsWardAttention}`),
-        readingLine('Outside boundary', `${tech.gps.outsideBoundary}`),
-        readingLine('Ward mismatch', `${tech.gps.wardMismatch}`)
-      ]);
-      const cellCard = readingSectionCard('cell', 'Cell / Band Context', [
-        readingLine('PLMN / operator', tech.plmnText || '-'),
-        readingLine('Bands observed', tech.bandText || '-'),
-        readingLine('Serving tower groups', `${tech.servingTowerCount || 0}`),
-        readingLine('Serving LTE cells', `${tech.servingCellCount || 0}`)
-      ]);
-      const findingLines = [
-        readingFindingLine('RQ1 measured weak coverage', wardWeakCoverage, wardReadingBase),
-        readingFindingLine('RQ1 measured signal-quality risk', wardPoorQuality, wardReadingBase),
-        readingFindingLine('RQ1/RQ2 measured speed or latency risk', wardPoorSpeed, wardReadingBase),
-        gpsWardAttention ? `<li class="medium">GPS quality control: ${gpsWardAttention} point${gpsWardAttention === 1 ? '' : 's'} need review before using this ward in spatial analysis.</li>` : '',
-        tech.servingCellCount ? `<li>RQ2/RQ3 serving-cell evidence: ${tech.servingCellCount} serving LTE cell${tech.servingCellCount === 1 ? '' : 's'} and ${tech.servingTowerCount || 0} tower group${tech.servingTowerCount === 1 ? '' : 's'} detected.</li>` : ''
-      ].filter(Boolean).join('') || '<li>No measured reading pattern yet.</li>';
+      const cellGroups = buildWardCellGroups(records);
+      const wardEnbs = new Set(cellGroups.map(cell => cell.enb).filter(Boolean));
+      const wardOperators = (() => {
+        const counts = new Map();
+        records.forEach(record => {
+          const plmn = cellPlmnText(record.fd_s2a_mcc, record.fd_s2a_mnc);
+          if (plmn) counts.set(plmn, (counts.get(plmn) || 0) + 1);
+        });
+        return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => `${label} (${count})`).join('; ') || 'No operator reading';
+      })();
+      const wardBands = cellCountTexts(records, ['fd_s2a_band', 'band'], cellBandText).slice(0, 4).join('; ') || 'No band reading';
+      const wardSummary = `<div class="cell-ward-summary">
+        <div class="cell-summary-chip"><span>Field readings</span><strong>${wardReadingBase}</strong></div>
+        <div class="cell-summary-chip"><span>GPS valid</span><strong>${gpsWardOk}</strong></div>
+        <div class="cell-summary-chip"><span>Out of boundary</span><strong>${tech.gps.outsideBoundary}</strong></div>
+        <div class="cell-summary-chip"><span>Need fixing</span><strong>${tech.gps.wardMismatch + tech.gps.missingOrInvalid}</strong></div>
+        <div class="cell-summary-chip"><span>eNB tower IDs</span><strong>${wardEnbs.size}</strong></div>
+        <div class="cell-summary-chip"><span>Serving cells</span><strong>${cellGroups.length}</strong></div>
+        <div class="cell-summary-chip"><span>PLMN / operator</span><strong>${dashEscape(wardOperators)}</strong></div>
+        <div class="cell-summary-chip"><span>Bands</span><strong>${dashEscape(wardBands)}</strong></div>
+      </div>`;
+      const cellCards = cellGroups.length ? `<div class="cell-card-grid">${cellGroups.map(buildCellCard).join('')}</div>` : '<div class="cell-empty">No serving-cell identity recorded for this ward yet.</div>';
       const wardOpen = '';
       return `<details class="reading-ward-panel"${wardOpen}>
         <summary class="reading-ward-panel-head">
           <div class="reading-ward-panel-title"><span class="reading-toggle"></span>Ward: ${dashEscape(ward)}</div>
           <div class="reading-ward-panel-meta">${wardReadingBase} measured reading${wardReadingBase === 1 ? '' : 's'}</div>
         </summary>
-        <div class="reading-section-grid">
-          ${radioCard}
-          ${speedCard}
-          ${gpsCard}
-          ${cellCard}
-          <div class="reading-key-findings"><h5>Key Findings</h5><ul class="reading-key-list">${findingLines}</ul></div>
-        </div>
+        ${wardSummary}
+        ${cellCards}
       </details>`;
     }).join('');
     const constituencyOpen = '';
@@ -8215,7 +8414,7 @@ function renderDataReadingResults(allSurveys) {
     <div class="analytics-card-head">
       <div>
         <div class="analytics-card-title">Data Reading Results - Measured Field Evidence</div>
-        <div class="analytics-card-sub">NCIL, speed-test and GPS readings only: what the field measurements showed by constituency and ward</div>
+        <div class="analytics-card-sub">NCIL, speed-test and GPS readings only: cell-level evidence grouped by constituency and ward</div>
       </div>
       <div class="constituency-summary-actions">
         <button class="summary-export-btn" type="button" onclick="exportAnalyticsCardImage('dash-data-reading-results','honiara-data-reading-results')" title="Export" aria-label="Export">
