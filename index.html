@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v154">
+<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v156">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1252,8 +1252,8 @@
   .overview-badge.good { background:var(--green-light);border-color:#b7d8a4;color:#245f23; }
   .overview-badge.warn { background:var(--amber-light);border-color:#efc77b;color:#7a4b08; }
   .overview-badge.bad { background:var(--red-light);border-color:#e7a5a5;color:#7d1f1f; }
-  #dash-constituency-overview .overview-badge { padding:7px 13px;min-width:56px;justify-content:center;font-size:12px;border-radius:13px; }
-  #dash-constituency-overview .overview-badge strong { font-size:20px;line-height:1;font-weight:950; }
+  #dash-constituency-overview .overview-badge { padding:6px 11px;min-width:48px;justify-content:center;font-size:11px;border-radius:12px; }
+  #dash-constituency-overview .overview-badge strong { font-size:18px;line-height:1;font-weight:950; }
   #dash-constituency-overview .overview-kpi-note { font-size:11px;font-weight:800;margin-top:6px;color:#334155;line-height:1.25; }
   #dash-constituency-overview .constituency-summary-table td { padding:16px 12px; }
   #dash-constituency-overview .const-name { font-size:18px; }
@@ -1312,8 +1312,8 @@
   .constituency-summary-footer-label { font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-600);font-weight:900;margin-bottom:4px; }
   .constituency-summary-footer-value { font-size:18px;font-weight:900;color:var(--navy);line-height:1.15; }
   .constituency-summary-footer-note { font-size:10px;color:var(--gray-600);margin-top:3px;line-height:1.25; }
-  #dash-constituency-overview .constituency-summary-footer-item:last-child { background:#f8fbff; }
-  #dash-constituency-overview .constituency-summary-footer-item:last-child .constituency-summary-footer-value { font-size:24px;font-weight:950; }
+  #dash-constituency-overview .constituency-summary-footer-item:last-child { background:#f8fbff;text-align:right;padding-right:28px; }
+  #dash-constituency-overview .constituency-summary-footer-item:last-child .constituency-summary-footer-value { font-size:26px;font-weight:950; }
   @media (max-width: 900px) {
     .dash-header { flex-direction:column; }
     .dash-grid { grid-template-columns:1fr 1fr; }
@@ -6781,12 +6781,35 @@ function recordMatchesDashboardGpsIssue(record, filter) {
   return kinds.includes(filter.kind);
 }
 
+function dashboardReviewAlertText(records, kind) {
+  const counts = new Map();
+  records.forEach(record => {
+    dashboardGpsIssueKinds(record).forEach(issueKind => {
+      if (issueKind === 'ward-mismatch') counts.set('Ward mismatch', (counts.get('Ward mismatch') || 0) + 1);
+      if (issueKind === 'missing-invalid') counts.set('Missing/invalid GPS', (counts.get('Missing/invalid GPS') || 0) + 1);
+      if (issueKind === 'outside-ward-boundary') counts.set('Out of boundary', (counts.get('Out of boundary') || 0) + 1);
+      if (issueKind === 'outside-study') counts.set('Outside study area', (counts.get('Outside study area') || 0) + 1);
+    });
+    dataReadingReviewIssueLabels(record).forEach(label => {
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+  });
+  const issueLines = Array.from(counts.entries())
+    .filter(([, count]) => count > 0)
+    .map(([label, count]) => `- ${label}: ${count}`);
+  const heading = kind === 'records-needing-review' ? 'Records needing fix / review' : dashboardGpsIssueLabel(kind);
+  if (!issueLines.length) return `${heading}\n\nNo specific review issue is currently detected for the selected records.`;
+  return `${heading}\n\n${records.length} record${records.length === 1 ? '' : 's'} selected.\n\nIssues found:\n${issueLines.join('\n')}\n\nClick OK to open these records in Data Table.`;
+}
+
 function openDashboardGpsIssueRecords(ward, kind, encodedKeys = '') {
   const passedKeys = String(encodedKeys || '').split('|').map(value => value.trim()).filter(Boolean);
   const recordKeys = passedKeys.length ? passedKeys : points
     .filter(record => record.type === 'survey' && record.ward === ward && recordMatchesDashboardGpsIssue(record, { ward, kind }))
     .map(dashboardRecordKey)
     .filter(Boolean);
+  const selectedRecords = points.filter(record => record.type === 'survey' && recordKeys.includes(dashboardRecordKey(record)));
+  if (selectedRecords.length) alert(dashboardReviewAlertText(selectedRecords, kind));
   dashboardGpsIssueFilter = { ward, kind, recordKeys };
   const wardSelect = document.getElementById('dt-ward');
   const typeSelect = document.getElementById('dt-type');
@@ -7385,7 +7408,7 @@ function renderConstituencyOverview(allSurveys) {
               <th class="left">Constituency</th>
               <th class="left">Wards</th>
               <th>GPS valid and correct ward</th>
-              <th>GPS survey points that need fixing</th>
+              <th>Records needing fix / review</th>
               <th>Surveys completed</th>
             </tr>
           </thead>
@@ -8418,18 +8441,27 @@ function dataReadingReviewSummary(records) {
 }
 
 function dataReadingRecordNeedsReview(record) {
-  if (!dashboardReadingProfile(record).hasReading) return false;
+  return dataReadingReviewIssueLabels(record).length > 0;
+}
+
+function dataReadingReviewIssueLabels(record) {
+  if (!dashboardReadingProfile(record).hasReading) return [];
   const knownBands = new Set(['1', '3', '28', '41', '43']);
   const hasText = value => String(value || '').trim() !== '';
+  const issues = [];
   const band = normaliseRadioBand(record.fd_s2a_band || record.band || record.fd_s2b_band);
-  if (!band || !knownBands.has(band)) return true;
-  if (!hasText(record.fd_s2a_mcc) || !hasText(record.fd_s2a_mnc)) return true;
-  if (!hasText(record.fd_s2a_enb) && !hasText(record.enb)) return true;
-  if (!hasText(record.fd_s2a_lcid) || !hasText(record.fd_s2a_eci) || !hasText(record.fd_s2a_tac) || !hasText(record.fd_s2a_pci)) return true;
-  if (!Number.isFinite(dashMetric(record, ['fd_s2a_rsrp', 'rsrp']))) return true;
-  if (!Number.isFinite(dashMetric(record, ['fd_s2a_rsrq', 'rsrq']))) return true;
-  if (!Number.isFinite(dashMetric(record, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'sinr', 'rssnr']))) return true;
-  return false;
+  if (!band) issues.push('No band');
+  else if (!knownBands.has(band)) issues.push(`Band not recognised: ${band}`);
+  if (!hasText(record.fd_s2a_mcc) || !hasText(record.fd_s2a_mnc)) issues.push('No MCC/MNC');
+  if (!hasText(record.fd_s2a_enb) && !hasText(record.enb)) issues.push('No eNB');
+  if (!hasText(record.fd_s2a_lcid)) issues.push('No LCID');
+  if (!hasText(record.fd_s2a_eci)) issues.push('No ECI');
+  if (!hasText(record.fd_s2a_tac)) issues.push('No TAC');
+  if (!hasText(record.fd_s2a_pci)) issues.push('No PCI');
+  if (!Number.isFinite(dashMetric(record, ['fd_s2a_rsrp', 'rsrp']))) issues.push('No RSRP');
+  if (!Number.isFinite(dashMetric(record, ['fd_s2a_rsrq', 'rsrq']))) issues.push('No RSRQ');
+  if (!Number.isFinite(dashMetric(record, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'sinr', 'rssnr']))) issues.push('No RSSNR/SINR');
+  return issues;
 }
 
 function renderDataReadingResults(allSurveys) {
@@ -9671,9 +9703,24 @@ function renderDataTable() {
   if (dashboardGpsIssueFilter) {
     document.getElementById('data-count').textContent +=
       `  - filtered: ${dashboardGpsIssueLabel(dashboardGpsIssueFilter.kind)}${dashboardGpsIssueFilter.ward ? ` in ${dashboardGpsIssueFilter.ward}` : ''}`;
+    const reviewCounts = new Map();
+    rows.forEach(record => {
+      dashboardGpsIssueKinds(record).forEach(kind => {
+        if (kind === 'ward-mismatch') reviewCounts.set('Ward mismatch', (reviewCounts.get('Ward mismatch') || 0) + 1);
+        if (kind === 'missing-invalid') reviewCounts.set('Missing/invalid GPS', (reviewCounts.get('Missing/invalid GPS') || 0) + 1);
+      });
+      dataReadingReviewIssueLabels(record).forEach(label => {
+        reviewCounts.set(label, (reviewCounts.get(label) || 0) + 1);
+      });
+    });
+    const reviewText = Array.from(reviewCounts.entries()).map(([label, count]) => `${label}: ${count}`).join('; ');
+    if (reviewText) document.getElementById('data-count').textContent += `  - review: ${reviewText}`;
   }
   const clearGpsIssueFilterBtn = document.getElementById('dt-clear-gps-issue-filter');
-  if (clearGpsIssueFilterBtn) clearGpsIssueFilterBtn.style.display = dashboardGpsIssueFilter ? 'inline-flex' : 'none';
+  if (clearGpsIssueFilterBtn) {
+    clearGpsIssueFilterBtn.textContent = dashboardGpsIssueFilter?.kind === 'records-needing-review' ? 'Clear review filter' : 'Clear GPS issue filter';
+    clearGpsIssueFilterBtn.style.display = dashboardGpsIssueFilter ? 'inline-flex' : 'none';
+  }
 
   const tbody = document.getElementById('dt-body');
   if (!rows.length) {
