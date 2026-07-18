@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v144">
+<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v145">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -8341,6 +8341,23 @@ function renderDataReadingResults(allSurveys) {
     const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
     const readingRecords = constituencyRecords.filter(record => dashboardReadingProfile(record).hasReading);
     const constituencyTotal = readingRecords.length;
+    const constituencyCells = wards.flatMap(ward => buildWardCellGroups(allSurveys.filter(record => record.ward === ward)));
+    const constituencyEnbs = new Set(constituencyCells.map(cell => cell.enb).filter(Boolean));
+    const constituencyEcis = new Set(constituencyCells.map(cell => cell.eci).filter(Boolean));
+    const directPlmns = new Map();
+    readingRecords.forEach(record => {
+      const plmn = cellPlmnText(record.fd_s2a_mcc, record.fd_s2a_mnc);
+      if (plmn) directPlmns.set(plmn, (directPlmns.get(plmn) || 0) + 1);
+    });
+    const plmnText = Array.from(directPlmns.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => `${label} (${count})`).join('; ') || 'No operator reading';
+    const bandText = cellCountTexts(readingRecords, ['fd_s2a_band', 'band'], cellBandText).slice(0, 4).join('; ') || 'No band reading';
+    const constituencySummary = `<div class="cell-ward-summary">
+      <div class="cell-summary-chip"><span>Measured readings</span><strong>${constituencyTotal}</strong></div>
+      <div class="cell-summary-chip"><span>eNB tower IDs picked up</span><strong>${constituencyEnbs.size}</strong></div>
+      <div class="cell-summary-chip"><span>Cell IDs / ECI picked up</span><strong>${constituencyEcis.size}</strong></div>
+      <div class="cell-summary-chip"><span>Operator / PLMN</span><strong>${dashEscape(plmnText)}</strong></div>
+      <div class="cell-summary-chip"><span>Bands identified</span><strong>${dashEscape(bandText)}</strong></div>
+    </div>`;
     const wardPanels = wards.map(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
       const wardReadingBase = records.filter(record => dashboardReadingProfile(record).hasReading).length;
@@ -8361,6 +8378,7 @@ function renderDataReadingResults(allSurveys) {
         <div class="reading-constituency-title"><span class="reading-toggle"></span>Constituency: ${dashEscape(constituency)}</div>
         <div class="reading-constituency-count">${constituencyTotal} measured reading${constituencyTotal === 1 ? '' : 's'}</div>
       </summary>
+      ${constituencySummary}
       ${wardPanels}
     </details>`;
   }).join('');
