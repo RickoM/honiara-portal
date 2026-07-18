@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v153">
+<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v154">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1252,8 +1252,8 @@
   .overview-badge.good { background:var(--green-light);border-color:#b7d8a4;color:#245f23; }
   .overview-badge.warn { background:var(--amber-light);border-color:#efc77b;color:#7a4b08; }
   .overview-badge.bad { background:var(--red-light);border-color:#e7a5a5;color:#7d1f1f; }
-  #dash-constituency-overview .overview-badge { padding:9px 15px;min-width:64px;justify-content:center;font-size:13px;border-radius:14px; }
-  #dash-constituency-overview .overview-badge strong { font-size:24px;line-height:1;font-weight:950; }
+  #dash-constituency-overview .overview-badge { padding:7px 13px;min-width:56px;justify-content:center;font-size:12px;border-radius:13px; }
+  #dash-constituency-overview .overview-badge strong { font-size:20px;line-height:1;font-weight:950; }
   #dash-constituency-overview .overview-kpi-note { font-size:11px;font-weight:800;margin-top:6px;color:#334155;line-height:1.25; }
   #dash-constituency-overview .constituency-summary-table td { padding:16px 12px; }
   #dash-constituency-overview .const-name { font-size:18px; }
@@ -1312,6 +1312,8 @@
   .constituency-summary-footer-label { font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-600);font-weight:900;margin-bottom:4px; }
   .constituency-summary-footer-value { font-size:18px;font-weight:900;color:var(--navy);line-height:1.15; }
   .constituency-summary-footer-note { font-size:10px;color:var(--gray-600);margin-top:3px;line-height:1.25; }
+  #dash-constituency-overview .constituency-summary-footer-item:last-child { background:#f8fbff; }
+  #dash-constituency-overview .constituency-summary-footer-item:last-child .constituency-summary-footer-value { font-size:24px;font-weight:950; }
   @media (max-width: 900px) {
     .dash-header { flex-direction:column; }
     .dash-grid { grid-template-columns:1fr 1fr; }
@@ -6764,15 +6766,18 @@ function dashboardGpsIssueLabel(kind) {
     'outside-study': 'Outside study area',
     'outside-ward-boundary': 'Outside ward boundary',
     'ward-mismatch': 'Ward mismatch',
-    'missing-invalid': 'Missing/invalid GPS'
+    'missing-invalid': 'Missing/invalid GPS',
+    'records-needing-review': 'Records needing review'
   }[kind] || 'GPS issue';
 }
 
 function recordMatchesDashboardGpsIssue(record, filter) {
   if (!filter) return true;
   if (filter.ward && record.ward !== filter.ward) return false;
+  if (filter.recordKeys && filter.recordKeys.length) return filter.recordKeys.includes(dashboardRecordKey(record));
   const kinds = dashboardGpsIssueKinds(record);
   if (filter.kind === 'all') return kinds.length > 0;
+  if (filter.kind === 'records-needing-review') return true;
   return kinds.includes(filter.kind);
 }
 
@@ -7324,9 +7329,14 @@ function renderConstituencyOverview(allSurveys) {
     const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
     const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
     const stats = dashboardGpsBoundaryStats(constituencyRecords);
-    const needsAttention = stats.wardMismatch + stats.missingOrInvalid;
-    const attentionKeys = constituencyRecords
-      .filter(record => dashboardGpsIssueKinds(record).some(kind => ['ward-mismatch', 'missing-invalid'].includes(kind)))
+    const fixRecords = constituencyRecords.filter(record =>
+      dashboardGpsIssueKinds(record).some(kind => ['ward-mismatch', 'missing-invalid'].includes(kind)) ||
+      dataReadingRecordNeedsReview(record)
+    );
+    const needsAttention = fixRecords.length;
+    const gpsFixCount = constituencyRecords.filter(record => dashboardGpsIssueKinds(record).some(kind => ['ward-mismatch', 'missing-invalid'].includes(kind))).length;
+    const dataReviewCount = constituencyRecords.filter(dataReadingRecordNeedsReview).length;
+    const attentionKeys = fixRecords
       .map(dashboardRecordKey)
       .filter(Boolean)
       .join('|');
@@ -7339,7 +7349,7 @@ function renderConstituencyOverview(allSurveys) {
       </span>`;
     }).join('');
     const attention = needsAttention
-      ? `<button type="button" class="overview-badge bad" data-ward="" data-kind="all" data-keys="${dashEscape(attentionKeys)}" onclick="openDashboardGpsIssueRecords('', this.dataset.kind, this.dataset.keys)" title="Open records that need fixing"><strong>${needsAttention}</strong></button><div class="overview-kpi-note">${stats.wardMismatch ? `${stats.wardMismatch} ward mismatch` : ''}${stats.wardMismatch && stats.missingOrInvalid ? '; ' : ''}${stats.missingOrInvalid ? `${stats.missingOrInvalid} missing/invalid GPS` : ''}</div>`
+      ? `<button type="button" class="overview-badge bad" data-ward="" data-kind="records-needing-review" data-keys="${dashEscape(attentionKeys)}" onclick="openDashboardGpsIssueRecords('', this.dataset.kind, this.dataset.keys)" title="Open records that need fixing or review"><strong>${needsAttention}</strong></button><div class="overview-kpi-note">${gpsFixCount ? `${gpsFixCount} GPS fix` : ''}${gpsFixCount && dataReviewCount ? '; ' : ''}${dataReviewCount ? `${dataReviewCount} data review` : ''}</div>`
       : `<span class="overview-badge good"><strong>0</strong></span><div class="overview-kpi-note">No fix required</div>`;
     return `<tr>
       <td class="left"><div class="const-name">${dashEscape(constituency)}</div></td>
@@ -8405,6 +8415,21 @@ function dataReadingReviewSummary(records) {
     text: issues.map(([label, count]) => `${label}: ${count}`).join('; '),
     cls: 'review'
   };
+}
+
+function dataReadingRecordNeedsReview(record) {
+  if (!dashboardReadingProfile(record).hasReading) return false;
+  const knownBands = new Set(['1', '3', '28', '41', '43']);
+  const hasText = value => String(value || '').trim() !== '';
+  const band = normaliseRadioBand(record.fd_s2a_band || record.band || record.fd_s2b_band);
+  if (!band || !knownBands.has(band)) return true;
+  if (!hasText(record.fd_s2a_mcc) || !hasText(record.fd_s2a_mnc)) return true;
+  if (!hasText(record.fd_s2a_enb) && !hasText(record.enb)) return true;
+  if (!hasText(record.fd_s2a_lcid) || !hasText(record.fd_s2a_eci) || !hasText(record.fd_s2a_tac) || !hasText(record.fd_s2a_pci)) return true;
+  if (!Number.isFinite(dashMetric(record, ['fd_s2a_rsrp', 'rsrp']))) return true;
+  if (!Number.isFinite(dashMetric(record, ['fd_s2a_rsrq', 'rsrq']))) return true;
+  if (!Number.isFinite(dashMetric(record, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'sinr', 'rssnr']))) return true;
+  return false;
 }
 
 function renderDataReadingResults(allSurveys) {
@@ -9607,7 +9632,7 @@ function renderDataTable() {
   if (dashboardGpsIssueFilter) rows = rows.filter(p => recordMatchesDashboardGpsIssue(p, dashboardGpsIssueFilter));
   if (dashboardGpsIssueFilter && !rows.length) {
     const resolvedFilter = dashboardGpsIssueFilter;
-    const label = `${dashboardGpsIssueLabel(resolvedFilter.kind)} in ${resolvedFilter.ward}`;
+    const label = `${dashboardGpsIssueLabel(resolvedFilter.kind)}${resolvedFilter.ward ? ` in ${resolvedFilter.ward}` : ''}`;
     addGpsIssueAudit('gps_issue_worklist_resolved', `${label} has no remaining matching records; filter cleared in Data Table.`, {});
     clearDashboardGpsIssueFilter(true);
     fw = document.getElementById('dt-ward').value;
@@ -9645,7 +9670,7 @@ function renderDataTable() {
   }
   if (dashboardGpsIssueFilter) {
     document.getElementById('data-count').textContent +=
-      `  - filtered: ${dashboardGpsIssueLabel(dashboardGpsIssueFilter.kind)} in ${dashboardGpsIssueFilter.ward}`;
+      `  - filtered: ${dashboardGpsIssueLabel(dashboardGpsIssueFilter.kind)}${dashboardGpsIssueFilter.ward ? ` in ${dashboardGpsIssueFilter.ward}` : ''}`;
   }
   const clearGpsIssueFilterBtn = document.getElementById('dt-clear-gps-issue-filter');
   if (clearGpsIssueFilterBtn) clearGpsIssueFilterBtn.style.display = dashboardGpsIssueFilter ? 'inline-flex' : 'none';
