@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v150">
+<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v152">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -7309,54 +7309,34 @@ function renderConstituencyOverview(allSurveys) {
   const durationDays = startDate && latestDate
     ? Math.max(1, Math.round((latestDate - startDate) / 86400000) + 1)
     : 0;
-  const sections = constituencyNames.map(constituency => {
+  const rows = constituencyNames.map(constituency => {
     const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
     const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
-    const wardRows = wards.map(ward => {
+    const stats = dashboardGpsBoundaryStats(constituencyRecords);
+    const needsAttention = stats.wardMismatch + stats.missingOrInvalid;
+    const attentionKeys = constituencyRecords
+      .filter(record => dashboardGpsIssueKinds(record).some(kind => ['ward-mismatch', 'missing-invalid'].includes(kind)))
+      .map(dashboardRecordKey)
+      .filter(Boolean)
+      .join('|');
+    const wardPills = wards.map(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
-      return `<tr>
-        <td><div class="overview-ward-name-cell">${dashEscape(ward)}<span class="overview-ward-sub">${records.length} survey${records.length === 1 ? '' : 's'}</span></div></td>
-        <td>${dashboardOverviewGpsBadges(records)}</td>
-        <td>${dashboardOverviewNetworkId(records)}</td>
-        <td>${dashboardOverviewBandField(records)}</td>
-        <td>${dashboardOverviewSignalField(records)}</td>
-        <td>${dashboardOverviewTowerIdentity(records)}</td>
-      </tr>`;
+      return `<span class="ward-pill">
+        ${dashEscape(ward)}
+        <span class="ward-pill-count">${records.length} survey${records.length === 1 ? '' : 's'}</span>
+        ${dashboardWardIssueChips(ward, records)}
+      </span>`;
     }).join('');
-    return `<div class="overview-const-section">
-      <div class="overview-const-head">
-        <div class="overview-const-name">Constituency: ${dashEscape(constituency)}</div>
-        <div class="overview-const-count">${constituencyRecords.length} survey${constituencyRecords.length === 1 ? '' : 's'} recorded</div>
-      </div>
-      ${dashboardOverviewStoryCards(constituencyRecords)}
-      <div class="overview-finding-box">
-        <div class="overview-finding-title">Automatic analytical finding</div>
-        <div class="overview-finding-text">${dashboardOverviewAutoFinding(constituency, constituencyRecords)}</div>
-      </div>
-      <div style="overflow:auto">
-        <table class="overview-ward-table">
-          <colgroup>
-            <col style="width:12%">
-            <col style="width:16%">
-            <col style="width:19%">
-            <col style="width:17%">
-            <col style="width:22%">
-            <col style="width:14%">
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Ward</th>
-              <th>Survey/GPS</th>
-              <th>Network identification</th>
-              <th>Band</th>
-              <th>Signal strength key readings</th>
-              <th>Tower identity for mapping</th>
-            </tr>
-          </thead>
-          <tbody>${wardRows}</tbody>
-        </table>
-      </div>
-    </div>`;
+    const attention = needsAttention
+      ? `<button type="button" class="overview-badge bad" data-ward="" data-kind="all" data-keys="${dashEscape(attentionKeys)}" onclick="openDashboardGpsIssueRecords('', this.dataset.kind, this.dataset.keys)" title="Open records that need fixing"><strong>${needsAttention}</strong></button><div class="overview-kpi-note">${stats.wardMismatch ? `${stats.wardMismatch} ward mismatch` : ''}${stats.wardMismatch && stats.missingOrInvalid ? '; ' : ''}${stats.missingOrInvalid ? `${stats.missingOrInvalid} missing/invalid GPS` : ''}</div>`
+      : `<span class="overview-badge good"><strong>0</strong></span><div class="overview-kpi-note">No fix required</div>`;
+    return `<tr>
+      <td class="left"><div class="const-name">${dashEscape(constituency)}</div></td>
+      <td class="left"><div class="ward-list">${wardPills}</div></td>
+      <td><span class="overview-badge good"><strong>${stats.insideBoundary}</strong></span><div class="overview-kpi-note">GPS valid and correct ward</div></td>
+      <td>${attention}</td>
+      <td><span class="overview-badge"><strong>${constituencyRecords.length}</strong></span></td>
+    </tr>`;
   }).join('');
   target.innerHTML = `<div class="constituency-dashboard">
     <div class="constituency-summary-card">
@@ -7370,7 +7350,27 @@ function renderConstituencyOverview(allSurveys) {
           </button>
         </div>
       </div>
-      <div>${sections}</div>
+      <div style="overflow:auto">
+        <table class="constituency-summary-table">
+          <colgroup>
+            <col style="width:12%">
+            <col style="width:36%">
+            <col style="width:18%">
+            <col style="width:22%">
+            <col style="width:12%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="left">Constituency</th>
+              <th class="left">Wards</th>
+              <th>GPS valid and correct ward</th>
+              <th>GPS survey points that need fixing</th>
+              <th>Surveys completed</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
       <div class="constituency-summary-footer">
         <div class="constituency-summary-footer-item">
           <div class="constituency-summary-footer-label">Start date first recorded</div>
@@ -8389,8 +8389,8 @@ function renderDataReadingResults(allSurveys) {
     const bandText = cellBandCountsFromRecords(readingRecords).slice(0, 4).join('; ') || 'No band reading';
     const constituencySummary = `<div class="cell-ward-summary">
       <div class="cell-summary-chip"><span>Measured readings</span><strong>${constituencyTotal}</strong></div>
-      <div class="cell-summary-chip"><span>Unique eNB tower IDs picked up</span><strong>${constituencyEnbs.size}</strong><small>${dashEscape(wardEnbText)}</small></div>
-      <div class="cell-summary-chip"><span>Unique Cell IDs / ECI picked up</span><strong>${constituencyEcis.size}</strong><small>${dashEscape(wardEciText)}</small></div>
+      <div class="cell-summary-chip"><span>Unique eNB tower IDs in constituency</span><strong>${constituencyEnbs.size}</strong><small>Ward detections: ${dashEscape(wardEnbText)}. Ward detections may overlap.</small></div>
+      <div class="cell-summary-chip"><span>Unique Cell IDs / ECI in constituency</span><strong>${constituencyEcis.size}</strong><small>Ward detections: ${dashEscape(wardEciText)}. Same cell can appear in more than one ward.</small></div>
       <div class="cell-summary-chip"><span>Operator / PLMN</span><strong>${dashEscape(plmnText)}</strong></div>
       <div class="cell-summary-chip"><span>Bands identified</span><strong>${dashEscape(bandText)}</strong></div>
     </div>`;
