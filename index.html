@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v142">
+<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v144">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -8341,54 +8341,10 @@ function renderDataReadingResults(allSurveys) {
     const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
     const readingRecords = constituencyRecords.filter(record => dashboardReadingProfile(record).hasReading);
     const constituencyTotal = readingRecords.length;
-    const constituencyCells = wards.flatMap(ward => buildWardCellGroups(allSurveys.filter(record => record.ward === ward)));
-    const constituencyEnbs = new Set(constituencyCells.map(cell => cell.enb).filter(Boolean));
-    const constituencyBands = cellCountTexts(readingRecords, ['fd_s2a_band', 'band'], cellBandText);
-    const constituencyPlmns = cellCountTexts(readingRecords, ['fd_s2a_mcc'], () => '').length;
-    const operatorText = cellCountTexts(readingRecords, ['fd_s2a_mcc'], () => '').length;
-    const plmnCounts = cellCountTexts(readingRecords, ['fd_s2a_mcc'], () => '');
-    const constituencyOperators = cellCountTexts(readingRecords, ['fd_s1_op', 'operator', 'op']);
-    const directPlmns = new Map();
-    readingRecords.forEach(record => {
-      const plmn = cellPlmnText(record.fd_s2a_mcc, record.fd_s2a_mnc);
-      if (plmn) directPlmns.set(plmn, (directPlmns.get(plmn) || 0) + 1);
-    });
-    const plmnText = Array.from(directPlmns.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => `${label} (${count})`).join('; ') || constituencyOperators.slice(0, 2).join('; ') || 'No operator reading';
-    const summaryStrip = `<div class="cell-ward-summary">
-      <div class="cell-summary-chip"><span>Measured readings</span><strong>${constituencyTotal}</strong></div>
-      <div class="cell-summary-chip"><span>Wards with readings</span><strong>${wards.filter(ward => allSurveys.some(record => record.ward === ward && dashboardReadingProfile(record).hasReading)).length}/${wards.length}</strong></div>
-      <div class="cell-summary-chip"><span>eNB tower IDs</span><strong>${constituencyEnbs.size}</strong></div>
-      <div class="cell-summary-chip"><span>Serving cells</span><strong>${constituencyCells.length}</strong></div>
-      <div class="cell-summary-chip"><span>PLMN / operator</span><strong>${dashEscape(plmnText)}</strong></div>
-      <div class="cell-summary-chip"><span>Bands detected</span><strong>${dashEscape(constituencyBands.slice(0, 3).join('; ') || 'No band reading')}</strong></div>
-    </div>`;
     const wardPanels = wards.map(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
-      const tech = wardRadioTechnicalSummary(records);
       const wardReadingBase = records.filter(record => dashboardReadingProfile(record).hasReading).length;
-      const gpsWardOk = tech.gps.boundaryReady ? Math.max(0, tech.gps.insideBoundary - tech.gps.wardMismatch) : tech.gps.insideBoundary;
-      const gpsWardAttention = tech.gps.outsideBoundary + tech.gps.wardMismatch + tech.gps.missingOrInvalid;
       const cellGroups = buildWardCellGroups(records);
-      const wardEnbs = new Set(cellGroups.map(cell => cell.enb).filter(Boolean));
-      const wardOperators = (() => {
-        const counts = new Map();
-        records.forEach(record => {
-          const plmn = cellPlmnText(record.fd_s2a_mcc, record.fd_s2a_mnc);
-          if (plmn) counts.set(plmn, (counts.get(plmn) || 0) + 1);
-        });
-        return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => `${label} (${count})`).join('; ') || 'No operator reading';
-      })();
-      const wardBands = cellCountTexts(records, ['fd_s2a_band', 'band'], cellBandText).slice(0, 4).join('; ') || 'No band reading';
-      const wardSummary = `<div class="cell-ward-summary">
-        <div class="cell-summary-chip"><span>Field readings</span><strong>${wardReadingBase}</strong></div>
-        <div class="cell-summary-chip"><span>GPS valid</span><strong>${gpsWardOk}</strong></div>
-        <div class="cell-summary-chip"><span>Out of boundary</span><strong>${tech.gps.outsideBoundary}</strong></div>
-        <div class="cell-summary-chip"><span>Need fixing</span><strong>${tech.gps.wardMismatch + tech.gps.missingOrInvalid}</strong></div>
-        <div class="cell-summary-chip"><span>eNB tower IDs</span><strong>${wardEnbs.size}</strong></div>
-        <div class="cell-summary-chip"><span>Serving cells</span><strong>${cellGroups.length}</strong></div>
-        <div class="cell-summary-chip"><span>PLMN / operator</span><strong>${dashEscape(wardOperators)}</strong></div>
-        <div class="cell-summary-chip"><span>Bands</span><strong>${dashEscape(wardBands)}</strong></div>
-      </div>`;
       const cellCards = cellGroups.length ? `<div class="cell-card-grid">${cellGroups.map(buildCellCard).join('')}</div>` : '<div class="cell-empty">No serving-cell identity recorded for this ward yet.</div>';
       const wardOpen = '';
       return `<details class="reading-ward-panel"${wardOpen}>
@@ -8396,7 +8352,6 @@ function renderDataReadingResults(allSurveys) {
           <div class="reading-ward-panel-title"><span class="reading-toggle"></span>Ward: ${dashEscape(ward)}</div>
           <div class="reading-ward-panel-meta">${wardReadingBase} measured reading${wardReadingBase === 1 ? '' : 's'}</div>
         </summary>
-        ${wardSummary}
         ${cellCards}
       </details>`;
     }).join('');
@@ -8406,7 +8361,6 @@ function renderDataReadingResults(allSurveys) {
         <div class="reading-constituency-title"><span class="reading-toggle"></span>Constituency: ${dashEscape(constituency)}</div>
         <div class="reading-constituency-count">${constituencyTotal} measured reading${constituencyTotal === 1 ? '' : 's'}</div>
       </summary>
-      ${summaryStrip}
       ${wardPanels}
     </details>`;
   }).join('');
@@ -9058,6 +9012,14 @@ function renderDashboard() {
   renderResearchEvidenceTree();
   renderParticipantSurveyResults(allSurveys);
   renderDataReadingResults(allSurveys);
+  ['dash-findings-pack','dash-metrics','dash-zone-bars','dash-flags','dash-experience-correlation','dash-dissertation-insights','dash-questionnaire-results','dash-spectrum-config','dash-ward-detail'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+  });
+  document.querySelectorAll('#view-dashboard .dash-export-bar, #view-dashboard .dash-story').forEach(el => {
+    el.style.display = 'none';
+  });
+  return;
   const selectedWards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === selectedDashboardConstituency);
   const selectedTarget = selectedWards.reduce((sum, ward) => sum + WARDS[ward].target, 0);
   const surv = allSurveys.filter(p => p.constituency === selectedDashboardConstituency || selectedWards.includes(p.ward));
