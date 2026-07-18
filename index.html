@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v141">
+<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v142">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -9053,7 +9053,8 @@ function renderDashboard() {
   if (!constituencyNames.includes(selectedDashboardConstituency)) selectedDashboardConstituency = 'West Honiara';
   const src = day ? points.filter(p => p.date <= day) : points;
   const allSurveys = src.filter(p => p.type === 'survey');
-  renderConstituencyOverview(allSurveys);
+  const oldOverviewTarget = document.getElementById('dash-constituency-overview');
+  if (oldOverviewTarget) oldOverviewTarget.innerHTML = '';
   renderResearchEvidenceTree();
   renderParticipantSurveyResults(allSurveys);
   renderDataReadingResults(allSurveys);
