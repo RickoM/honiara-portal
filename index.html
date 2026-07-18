@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v152">
+<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v153">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1075,6 +1075,10 @@
   .cell-summary-chip span { display:block;color:#64748b;font-size:8px;font-weight:950;text-transform:uppercase;letter-spacing:.04em; }
   .cell-summary-chip strong { display:block;color:var(--navy);font-size:14px;font-weight:950;margin-top:3px;overflow-wrap:anywhere;line-height:1.15; }
   .cell-summary-chip small { display:block;color:#475569;font-size:10px;font-weight:800;line-height:1.25;margin-top:5px;overflow-wrap:anywhere; }
+  .cell-summary-chip.review { border-color:#efc77b;background:#fff8eb; }
+  .cell-summary-chip.review strong { color:#8a4b05; }
+  .cell-summary-chip.ok { border-color:#b7d8a4;background:#f4fbef; }
+  .cell-summary-chip.ok strong { color:#245f23; }
   .cell-card-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;padding:12px; }
   .cell-card { border:1px solid #d8e3ef;border-radius:13px;background:#fff;box-shadow:0 2px 9px rgba(16,24,40,.05);overflow:hidden;min-width:0; }
   .cell-card-head { background:linear-gradient(135deg,#f8fbff,#eef5ff);border-bottom:1px solid #d8e3ef;padding:9px 10px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start; }
@@ -1248,6 +1252,13 @@
   .overview-badge.good { background:var(--green-light);border-color:#b7d8a4;color:#245f23; }
   .overview-badge.warn { background:var(--amber-light);border-color:#efc77b;color:#7a4b08; }
   .overview-badge.bad { background:var(--red-light);border-color:#e7a5a5;color:#7d1f1f; }
+  #dash-constituency-overview .overview-badge { padding:9px 15px;min-width:64px;justify-content:center;font-size:13px;border-radius:14px; }
+  #dash-constituency-overview .overview-badge strong { font-size:24px;line-height:1;font-weight:950; }
+  #dash-constituency-overview .overview-kpi-note { font-size:11px;font-weight:800;margin-top:6px;color:#334155;line-height:1.25; }
+  #dash-constituency-overview .constituency-summary-table td { padding:16px 12px; }
+  #dash-constituency-overview .const-name { font-size:18px; }
+  #dash-constituency-overview .ward-pill { font-size:12px;min-width:88px;padding:8px 10px; }
+  #dash-constituency-overview .ward-pill-count { font-size:11px; }
   .overview-list-line { display:block;font-size:11px;font-weight:800;color:var(--navy);line-height:1.3;margin-bottom:3px; }
   .overview-list-note { display:block;font-size:9px;font-weight:750;color:var(--amber);line-height:1.25; }
   .overview-field-stack { display:flex;flex-direction:column;gap:6px; }
@@ -8353,6 +8364,49 @@ function buildCellCard(group) {
   </div>`;
 }
 
+function dataReadingReviewSummary(records) {
+  const readingRecords = records.filter(record => dashboardReadingProfile(record).hasReading);
+  const knownBands = new Set(['1', '3', '28', '41', '43']);
+  const countIf = predicate => readingRecords.filter(predicate).length;
+  const bandOf = record => normaliseRadioBand(record.fd_s2a_band || record.band || record.fd_s2b_band);
+  const hasText = value => String(value || '').trim() !== '';
+  const missingBand = countIf(record => !bandOf(record));
+  const unmappedBand = countIf(record => {
+    const band = bandOf(record);
+    return band && !knownBands.has(band);
+  });
+  const missingPlmn = countIf(record => !hasText(record.fd_s2a_mcc) || !hasText(record.fd_s2a_mnc));
+  const missingEnb = countIf(record => !hasText(record.fd_s2a_enb) && !hasText(record.enb));
+  const missingLcid = countIf(record => !hasText(record.fd_s2a_lcid));
+  const missingEci = countIf(record => !hasText(record.fd_s2a_eci));
+  const missingTac = countIf(record => !hasText(record.fd_s2a_tac));
+  const missingPci = countIf(record => !hasText(record.fd_s2a_pci));
+  const missingRsrp = countIf(record => !Number.isFinite(dashMetric(record, ['fd_s2a_rsrp', 'rsrp'])));
+  const missingRsrq = countIf(record => !Number.isFinite(dashMetric(record, ['fd_s2a_rsrq', 'rsrq'])));
+  const missingSinr = countIf(record => !Number.isFinite(dashMetric(record, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'sinr', 'rssnr'])));
+  const issues = [
+    ['No band', missingBand],
+    ['Band not recognised', unmappedBand],
+    ['No MCC/MNC', missingPlmn],
+    ['No eNB', missingEnb],
+    ['No LCID', missingLcid],
+    ['No ECI', missingEci],
+    ['No TAC', missingTac],
+    ['No PCI', missingPci],
+    ['No RSRP', missingRsrp],
+    ['No RSRQ', missingRsrq],
+    ['No RSSNR/SINR', missingSinr],
+  ].filter(([, count]) => count > 0);
+  if (!readingRecords.length) return { total: 0, count: 0, text: 'No measured readings to review', cls: 'review' };
+  if (!issues.length) return { total: readingRecords.length, count: 0, text: 'No missing or unrecognised measured fields', cls: 'ok' };
+  return {
+    total: readingRecords.length,
+    count: issues.reduce((sum, [, count]) => sum + count, 0),
+    text: issues.map(([label, count]) => `${label}: ${count}`).join('; '),
+    cls: 'review'
+  };
+}
+
 function renderDataReadingResults(allSurveys) {
   const target = document.getElementById('dash-data-reading-results');
   if (!target) return;
@@ -8387,12 +8441,14 @@ function renderDataReadingResults(allSurveys) {
     });
     const plmnText = Array.from(directPlmns.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => `${label} (${count})`).join('; ') || 'No operator reading';
     const bandText = cellBandCountsFromRecords(readingRecords).slice(0, 4).join('; ') || 'No band reading';
+    const reviewSummary = dataReadingReviewSummary(readingRecords);
     const constituencySummary = `<div class="cell-ward-summary">
       <div class="cell-summary-chip"><span>Measured readings</span><strong>${constituencyTotal}</strong></div>
       <div class="cell-summary-chip"><span>Unique eNB tower IDs in constituency</span><strong>${constituencyEnbs.size}</strong><small>Ward detections: ${dashEscape(wardEnbText)}. Ward detections may overlap.</small></div>
       <div class="cell-summary-chip"><span>Unique Cell IDs / ECI in constituency</span><strong>${constituencyEcis.size}</strong><small>Ward detections: ${dashEscape(wardEciText)}. Same cell can appear in more than one ward.</small></div>
       <div class="cell-summary-chip"><span>Operator / PLMN</span><strong>${dashEscape(plmnText)}</strong></div>
       <div class="cell-summary-chip"><span>Bands identified</span><strong>${dashEscape(bandText)}</strong></div>
+      <div class="cell-summary-chip ${reviewSummary.cls}"><span>Data fields needing review</span><strong>${reviewSummary.count}</strong><small>${dashEscape(reviewSummary.text)}</small></div>
     </div>`;
     const wardPanels = wards.map(ward => {
       const records = allSurveys.filter(record => record.ward === ward);
