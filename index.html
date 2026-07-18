@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-cell-level-field-evidence-v156">
+<meta name="portal-build" content="2026-07-18-tower-save-evidence-fix-v158">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2789,6 +2789,24 @@
                   <option value="Google Maps blue dot">Google Maps blue dot</option>
                   <option value="NCIL Map tab">NCIL Map tab</option>
                   <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="sf-fcell">
+                <label>Tower ward</label>
+                <select id="fd-s7-ward" style="width:100%;margin-top:2px">
+                  <option value="">- select tower ward -</option>
+                  <option value="Nggossi">Nggossi</option>
+                  <option value="Mbumburu">Mbumburu</option>
+                  <option value="Rove/Lengakiki">Rove/Lengakiki</option>
+                  <option value="Cruz">Cruz</option>
+                  <option value="Vavaea">Vavaea</option>
+                  <option value="Vuhokesa">Vuhokesa</option>
+                  <option value="Mataniko">Mataniko</option>
+                  <option value="Kola'a">Kola'a</option>
+                  <option value="Kukum">Kukum</option>
+                  <option value="Naha">Naha</option>
+                  <option value="Vura">Vura</option>
+                  <option value="Panatina">Panatina</option>
                 </select>
               </div>
             </div>
@@ -10994,10 +11012,11 @@ function towerGetData() {
   const rsrq = g('fd-s7-rsrq');
   const rssnr = g('fd-s7-rssnr');
   const towerKey = `${parseCoordinate(g('fd-s7-tlat')) || 'LAT'}-${parseCoordinate(g('fd-s7-tlon')) || 'LON'}`.replace(/[^a-zA-Z0-9_-]/g, '-');
-  const towerWard = wardContainingCoordinate(g('fd-s7-tlat'), g('fd-s7-tlon'));
+  const detectedWard = wardContainingCoordinate(g('fd-s7-tlat'), g('fd-s7-tlon'));
+  const towerWard = detectedWard || g('fd-s7-ward');
   const towerConstituency = WARDS[towerWard]?.constituency || '';
   return {
-    record_type: 'tower', type: 'tower',
+    record_type: 'tower', type: 'cell',
     respondentId: `TOWER-${operator || 'OP'}-${enb || towerKey || Date.now()}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
     date: g('sf-date') || today,
     time: new Date().toTimeString().slice(0, 5),
@@ -11010,7 +11029,7 @@ function towerGetData() {
     fd_s2a_rsrp: rsrp, fd_s2a_rsrq: rsrq, fd_s2a_rssnr: rssnr,
     enb, taceci: tac && eci ? `${tac}-${eci}` : eci, band, rsrp,
     lat: g('fd-s7-tlat'), lng: g('fd-s7-tlon'),
-    fd_s7_tlat: g('fd-s7-tlat'), fd_s7_tlon: g('fd-s7-tlon'),
+    fd_s7_tlat: g('fd-s7-tlat'), fd_s7_tlon: g('fd-s7-tlon'), fd_s7_ward: towerWard,
     fd_s7_top: operator, fd_s7_ttype: g('fd-s7-ttype'),
     fd_s7_mcc: mcc, fd_s7_mnc: mnc, fd_s7_enb: enb, fd_s7_eci: eci,
     fd_s7_pci: pci, fd_s7_tac: tac, fd_s7_band: band,
@@ -11027,6 +11046,7 @@ async function towerSubmit() {
   const btn = document.getElementById('tower-submit-btn');
   const lat = document.getElementById('fd-s7-tlat')?.value;
   const lon = document.getElementById('fd-s7-tlon')?.value;
+  const selectedWard = document.getElementById('fd-s7-ward')?.value;
   const operator = document.getElementById('fd-s7-top')?.value;
   const mcc = document.getElementById('fd-s7-mcc')?.value;
   const mnc = document.getElementById('fd-s7-mnc')?.value;
@@ -11038,9 +11058,12 @@ async function towerSubmit() {
   const rsrp = document.getElementById('fd-s7-rsrp')?.value;
   const rsrq = document.getElementById('fd-s7-rsrq')?.value;
   const rssnr = document.getElementById('fd-s7-rssnr')?.value;
+  await loadWardBoundaryIndex();
+  const detectedWard = wardContainingCoordinate(lat, lon);
   const missingRequired = [];
   if (!lat) missingRequired.push('tower latitude');
   if (!lon) missingRequired.push('tower longitude');
+  if (lat && lon && !detectedWard && !selectedWard) missingRequired.push('tower ward');
   if (!operator) missingRequired.push('operator');
   if (!mcc) missingRequired.push('MCC from NCIL');
   if (!mnc) missingRequired.push('MNC from NCIL');
@@ -11057,7 +11080,6 @@ async function towerSubmit() {
     return;
   }
   if (btn) { btn.textContent = 'Uploading tower evidence...'; btn.disabled = true; }
-  await loadWardBoundaryIndex();
   try { await uploadSurveyScreenshots(TOWER_SCREENSHOT_FIELDS); }
   catch (err) {
     alert('Tower submission stopped while uploading Step 7 evidence: ' + err.message);
@@ -11078,7 +11100,11 @@ async function towerSubmit() {
     const res = await apiCall('POST', '/api/surveys', data);
     if (!res) return;
     const result = await res.json();
-    if (!res.ok) { alert('Tower submission failed: ' + (result.error || result.message || 'Unknown error')); return; }
+    if (!res.ok) {
+      console.error('Tower save rejected:', res.status, result, data);
+      alert('Tower submission failed: ' + (result.error || result.message || 'Failed to save survey') + '\n\nCheck Step 7: tower ward, latitude/longitude, operator, MCC/MNC, eNB, ECI, PCI, TAC, band, RSRP, RSRQ and RSSNR.');
+      return;
+    }
     document.getElementById('tower-form-host').style.display = 'none';
     document.getElementById('tower-success').classList.add('show');
     document.getElementById('tower-success-txt').textContent = `Tower ${data.enb} saved. Matching participant readings will now show as linked on the map.`;
@@ -11606,6 +11632,7 @@ function sfRestoreDraft() {
       lat: 'sf-lat', lng: 'sf-lon', 
       // Tower
       fd_s7_tlat: 'fd-s7-tlat', fd_s7_tlon: 'fd-s7-tlon',
+      fd_s7_ward: 'fd-s7-ward',
       fd_s7_top: 'fd-s7-top', fd_s7_ttype: 'fd-s7-ttype',
       fd_s7_mcc: 'fd-s7-mcc', fd_s7_mnc: 'fd-s7-mnc', fd_s7_enb: 'fd-s7-enb',
       fd_s7_eci: 'fd-s7-eci', fd_s7_pci: 'fd-s7-pci',
