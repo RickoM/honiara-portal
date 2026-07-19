@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-19-tower-table-actions-v163">
+<meta name="portal-build" content="2026-07-19-collapsible-map-layers-v168">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -70,8 +70,15 @@
   .map-placeholder code { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5DCAA5; }
   
   /* -- LAYER CONTROLS -- */
-  .layer-ctrl { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; min-width: 180px; }
+  .layer-ctrl { background: #fff; border-radius: 8px; box-shadow: var(--shadow-md); padding: 10px 12px; position: absolute; top: 12px; right: 12px; z-index: 10; width: min(330px, calc(100vw - 28px)); max-height: calc(100vh - 150px); overflow-y: auto; }
+  .layer-ctrl.layer-collapsed { width: auto; min-width: 132px; max-height: none; overflow: visible; }
+  .layer-ctrl-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .layer-ctrl-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); margin-bottom: 8px; }
+  .layer-ctrl-head .layer-ctrl-title { margin-bottom: 0; }
+  .layer-collapse-btn { width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 8px; background: var(--gray-50); color: var(--navy); font-size: 16px; font-weight: 800; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .layer-collapse-btn:hover { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .layer-ctrl-body { display: block; margin-top: 9px; }
+  .layer-ctrl.layer-collapsed .layer-ctrl-body { display: none; }
   .layer-toggle { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; }
   .layer-toggle input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--navy); cursor: pointer; }
   .layer-toggle-label { font-size: 12px; font-weight: 500; }
@@ -1657,8 +1664,12 @@
       </div>
 
       <!-- LAYER CONTROLS -->
-      <div class="layer-ctrl">
-        <div class="layer-ctrl-title">Map layers</div>
+      <div class="layer-ctrl layer-collapsed" id="map-layer-panel">
+        <div class="layer-ctrl-head">
+          <div class="layer-ctrl-title">Map layers</div>
+          <button type="button" class="layer-collapse-btn" id="map-layer-toggle" onclick="toggleLayerPanel()" aria-expanded="false" title="Expand map layers">▸</button>
+        </div>
+        <div class="layer-ctrl-body">
         <label class="layer-toggle">
           <input type="checkbox" id="layer-surveys" checked onchange="refreshMap()">
           <svg width="18" height="22" viewBox="-12 -28 24 30" aria-hidden="true"><path d="M0 0C-2-9-10-13-10-22A10 10 0 1 1 10-22C10-13 2-9 0 0Z" fill="#BA7517" stroke="#fff" stroke-width="1.5"/><text x="0" y="-18" text-anchor="middle" fill="#fff" font-size="9" font-weight="700">S</text></svg>
@@ -1714,6 +1725,7 @@
           Boundaries: POPGIS and SINSO/OCHA ROAP via
           <a href="https://www.geoboundaries.org/" target="_blank" rel="noopener">geoBoundaries</a>.
           Wards 2014; constituencies 2018. These independently sourced boundaries may not align exactly.
+        </div>
         </div>
       </div>
 
@@ -2737,6 +2749,13 @@
         </div>
 
         <div id="tower-fields" style="opacity:1;pointer-events:auto;transition:all 0.3s">
+          <div class="sf-fcell" style="margin:0 0 12px">
+            <label>Field assistant who recorded this tower reading <span style="color:var(--red)">*</span></label>
+            <input type="text" id="fd-s7-recorder" placeholder="Field assistant name" style="width:100%;margin-top:4px">
+            <div style="font-size:10px;color:var(--gray-600);margin-top:4px;line-height:1.35">
+              Auto-filled from login. Change this if someone else collected the tower reading and you are only uploading it.
+            </div>
+          </div>
           <div style="margin:0 0 8px;padding:9px 12px;background:#F8FAFC;border:1px solid var(--border);border-radius:8px">
             <div style="font-size:12px;font-weight:800;color:var(--navy);margin-bottom:3px">1. NCIL RAW tab readings</div>
             <div style="font-size:10px;color:var(--gray-600);line-height:1.45">Open NCIL RAW tab at or near the tower. Record the serving LTE block values exactly as shown, then upload the RAW screenshot for verification.</div>
@@ -3980,6 +3999,19 @@ function closeMobileMapPanels() {
   mapView?.classList.remove('mobile-panel-open');
 }
 
+function toggleLayerPanel(forceOpen) {
+  const panel = document.getElementById('map-layer-panel') || document.querySelector('#view-map .layer-ctrl');
+  if (!panel) return;
+  const open = typeof forceOpen === 'boolean' ? forceOpen : panel.classList.contains('layer-collapsed');
+  panel.classList.toggle('layer-collapsed', !open);
+  const btn = document.getElementById('map-layer-toggle');
+  if (btn) {
+    btn.textContent = open ? '▾' : '▸';
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.title = open ? 'Collapse map layers' : 'Expand map layers';
+  }
+}
+
 function toggleMobileMapPanel(panel) {
   const mapView = document.getElementById('view-map');
   const sidebar = mapView?.querySelector('.sidebar');
@@ -3994,6 +4026,7 @@ function toggleMobileMapPanel(panel) {
     return;
   }
   target.classList.add('mobile-open');
+  if (panel === 'layers') toggleLayerPanel(true);
   mapView.classList.add('mobile-panel-open');
 }
 
@@ -4785,6 +4818,10 @@ function offsetLatLngByPixels(position, dx, dy) {
   return new google.maps.LatLng(shiftedLat, shiftedLng);
 }
 
+function towerRecordDisplayId(point) {
+  return String(point?.sourceRespondentId || point?.respondentId || point?.recordId || point?.id || '').trim();
+}
+
 function markerChooserLabel(item) {
   if (item.type === 'survey') {
     return {
@@ -4794,9 +4831,12 @@ function markerChooserLabel(item) {
       color: '#1C3557',
     };
   }
+  const recordId = towerRecordDisplayId(item.point);
+  const enbText = item.point.enb ? `eNB ${item.point.enb}` : 'eNB not recorded';
+  const photoText = towerPhotoRef(item.point) ? ' - photo available' : '';
   return {
-    title: `Mobile tower ${item.point.enb ? 'eNB ' + item.point.enb : 'point'}`,
-    meta: `${item.point.op || item.point.operator || 'Operator not recorded'} - ${item.point.towerType || 'Tower type not recorded'}`,
+    title: recordId ? `Tower record ${recordId}` : `Mobile tower ${enbText}`,
+    meta: `${enbText} - ${item.point.op || item.point.operator || 'Operator not recorded'} - ${item.point.towerType || 'Tower type not recorded'}${photoText}`,
     badge: 'Tower data point',
     color: '#BA7517',
   };
@@ -5028,7 +5068,7 @@ function refreshMap() {
       });
       const info = new google.maps.InfoWindow({
         content: cellInfoWindowHTML(p),
-        maxWidth: 260,
+        maxWidth: 320,
       });
       info.addListener('closeclick', clearTowerSurveyHighlights);
       info.addListener('domready', () => hydrateTowerPhoto(p));
@@ -5175,18 +5215,25 @@ function infoWindowHTML(p) {
 
 function cellInfoWindowHTML(p) {
   const connected = p.connectedSurveys || [];
+  const recordId = towerRecordDisplayId(p);
+  const recorder = String(p.fd_s7_recorder || p.recordedBy || p.interviewer || p.appRecorder || '').trim();
+  const uploader = String(p.fd_s7_uploaded_by || p.uploadedBy || p.submittedByName || p.submittedBy || '').trim();
   const values = field => connected.map(s => parseFloat(s[field])).filter(Number.isFinite);
   const average = field => {
     const nums = values(field);
     return nums.length ? (nums.reduce((sum, value) => sum + value, 0) / nums.length).toFixed(1) : '-';
   };
-  return `<div style="font-family:'Inter',sans-serif;padding:3px;min-width:230px;max-width:250px">
-    <div style="font-weight:600;font-size:13px;margin-bottom:4px">Mobile tower - eNB ${p.enb || 'unknown'}</div>
-    <div style="font-size:11px;color:#666;margin-bottom:8px">${p.op} - ${p.ward || 'Ward not recorded'}</div>
+  return `<div style="font-family:'Inter',sans-serif;padding:3px;min-width:250px;max-width:280px">
+    <div style="font-weight:700;font-size:13px;margin-bottom:3px">${recordId ? `Tower record ${recordId}` : 'Mobile tower record'}</div>
+    <div style="font-size:11px;color:#344054;margin-bottom:6px"><strong>eNB ${p.enb || 'unknown'}</strong> - ${p.op || p.operator || 'Operator not recorded'} - ${p.ward || 'Ward not recorded'}</div>
     ${towerPhotoPreviewHTML(p)}
     <div style="background:#f8f9fa;border-radius:6px;padding:6px;font-size:10px;line-height:1.35">
+      <div><span style="color:#666">Record ID: </span><strong>${recordId || 'Not recorded'}</strong></div>
       <div><span style="color:#666">GPS: </span><strong>${displayCoordinate(p.lat)}, ${displayCoordinate(p.lng)}</strong></div>
+      <div><span style="color:#666">Recorded by: </span><strong>${recorder || 'Not recorded'}</strong></div>
+      <div><span style="color:#666">Uploaded by: </span><strong>${uploader || 'Not recorded'}</strong></div>
       <div><span style="color:#666">Type: </span><strong>${p.towerType || 'Not recorded'}</strong></div>
+      <div><span style="color:#666">ECI: </span><strong>${p.eci || 'Not recorded'}</strong></div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:6px">
       <div style="background:#eef4ff;border-radius:5px;padding:5px"><div style="font-size:8px;color:#667085">CONNECTED</div><strong>${connected.length}</strong></div>
@@ -9987,10 +10034,11 @@ function towerPhotoBoxId(p) {
 
 function towerPhotoPreviewHTML(p) {
   const hasPhoto = Boolean(towerPhotoRef(p));
+  if (!hasPhoto) return '';
   return `<div style="margin:7px 0;border:1px solid #d0d5dd;border-radius:8px;overflow:hidden;background:#f8fafc">
-    <div style="padding:4px 6px;background:#fff;border-bottom:1px solid #e5e7eb;color:#344054;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Tower photo</div>
-    <div id="${towerPhotoBoxId(p)}" style="height:${hasPhoto ? '118px' : '52px'};display:flex;align-items:center;justify-content:center;color:#667085;font-size:10px;text-align:center;padding:${hasPhoto ? '0' : '8px'};box-sizing:border-box;overflow:hidden">
-      ${hasPhoto ? 'Loading tower photo...' : 'No tower photo uploaded for this tower.'}
+    <div style="padding:4px 6px;background:#fff;border-bottom:1px solid #e5e7eb;color:#344054;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Tower structure photo</div>
+    <div id="${towerPhotoBoxId(p)}" style="height:126px;display:flex;align-items:center;justify-content:center;color:#667085;font-size:10px;text-align:center;box-sizing:border-box;overflow:hidden">
+      Loading tower photo...
     </div>
   </div>`;
 }
@@ -10567,6 +10615,7 @@ function populateTowerFormFromRecord(record) {
     }
     if (typeof s7OpChange === 'function') s7OpChange();
   }
+  setTowerField('fd-s7-recorder', record.fd_s7_recorder || record.recordedBy || record.interviewer || record.appRecorder);
   setTowerField('fd-s7-mcc', record.fd_s7_mcc || record.fd_s2a_mcc || record.mcc);
   setTowerField('fd-s7-mnc', record.fd_s7_mnc || record.fd_s2a_mnc || record.mnc);
   setTowerField('fd-s7-enb', record.fd_s7_enb || record.fd_s2a_enb || record.enb);
@@ -11207,11 +11256,29 @@ function initTowerReadingsView() {
     <div style="display:flex;gap:8px"><button class="btn" type="button" onclick="towerReset()">Clear</button><button class="btn btn-primary" id="tower-submit-btn" type="button" onclick="towerSubmit()">Submit tower reading</button></div>`;
   host.appendChild(bar);
   host.dataset.ready = 'true';
+  syncTowerRecorder();
+}
+
+function currentRecorderName() {
+  return String(currentUser?.fullName || currentUser?.username || '').trim();
+}
+
+function currentUploaderName() {
+  return String(currentUser?.fullName || currentUser?.username || '').trim();
+}
+
+function syncTowerRecorder() {
+  const el = document.getElementById('fd-s7-recorder');
+  if (el && !String(el.value || '').trim()) el.value = currentRecorderName();
 }
 
 function towerGetData() {
   const g = id => document.getElementById(id)?.value || '';
   const today = new Date().toISOString().split('T')[0];
+  const recorder = String(g('fd-s7-recorder') || currentRecorderName()).trim();
+  const uploaderName = currentUploaderName();
+  const submitter = String(currentUser?.username || uploaderName || recorder).trim();
+  const submitterName = String(currentUser?.fullName || uploaderName || recorder).trim();
   const operator = g('fd-s7-top') === 'Other' ? g('fd-s7-top-other') : g('fd-s7-top');
   const mcc = g('fd-s7-mcc');
   const mnc = g('fd-s7-mnc');
@@ -11232,8 +11299,14 @@ function towerGetData() {
     respondentId: `TOWER-${operator || 'OP'}-${enb || towerKey || Date.now()}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
     date: g('sf-date') || today,
     time: new Date().toTimeString().slice(0, 5),
-    interviewer: currentUser?.fullName || currentUser?.username || '',
-    appRecorder: currentUser?.fullName || currentUser?.username || '',
+    interviewer: recorder,
+    appRecorder: recorder,
+    uploadedBy: uploaderName || recorder,
+    recordedBy: recorder,
+    fd_s7_recorder: recorder,
+    fd_s7_uploaded_by: uploaderName || recorder,
+    submittedBy: submitter,
+    submittedByName: submitterName,
     name: 'Tower reading', ward: towerWard, constituency: towerConstituency,
     operator, op: operator, fd_s1_op: operator,
     fd_s2a_mcc: mcc, fd_s2a_mnc: mnc, fd_s2a_eci: eci, fd_s2a_enb: enb,
@@ -11264,6 +11337,7 @@ async function towerSubmit() {
   const lat = document.getElementById('fd-s7-tlat')?.value;
   const lon = document.getElementById('fd-s7-tlon')?.value;
   const selectedWard = document.getElementById('fd-s7-ward')?.value;
+  const recorder = String(document.getElementById('fd-s7-recorder')?.value || '').trim();
   const operator = document.getElementById('fd-s7-top')?.value;
   const mcc = document.getElementById('fd-s7-mcc')?.value;
   const mnc = document.getElementById('fd-s7-mnc')?.value;
@@ -11278,6 +11352,7 @@ async function towerSubmit() {
   await loadWardBoundaryIndex();
   const detectedWard = wardContainingCoordinate(lat, lon);
   const missingRequired = [];
+  if (!recorder) missingRequired.push('tower readings recorded by');
   if (!lat) missingRequired.push('tower latitude');
   if (!lon) missingRequired.push('tower longitude');
   if (lat && lon && !detectedWard && !selectedWard) missingRequired.push('tower ward');
@@ -11378,6 +11453,7 @@ function towerReset(keepEditingId) {
   });
   const other = document.getElementById('fd-s7-top-other');
   if (other) other.style.display = 'none';
+  syncTowerRecorder();
   checkTowerAccess();
 }
 
@@ -12504,6 +12580,8 @@ function normalizeTowerRecordForTable(record) {
   const rsrq = record.fd_s7_rsrq || record.fd_s2a_rsrq || record.rsrq || '';
   const rssnr = record.fd_s7_rssnr || record.fd_s2a_rssnr || record.rssnr || record.sinr || '';
   const ward = record.ward || record.fd_s7_ward || '';
+  const recorder = String(record.fd_s7_recorder || record.recordedBy || record.interviewer || record.appRecorder || '').trim();
+  const uploader = String(record.fd_s7_uploaded_by || record.uploadedBy || record.submittedByName || record.submittedBy || '').trim();
   return {
     ...record,
     _id: record._id != null ? String(record._id) : '',
@@ -12513,6 +12591,12 @@ function normalizeTowerRecordForTable(record) {
     constituency: record.constituency || WARDS[ward]?.constituency || '',
     op: operator,
     operator,
+    interviewer: recorder,
+    appRecorder: recorder,
+    uploadedBy: uploader,
+    recordedBy: recorder,
+    fd_s7_recorder: recorder,
+    fd_s7_uploaded_by: uploader,
     lat,
     lng,
     enb,
