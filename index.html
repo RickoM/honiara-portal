@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-19-step7-evidence-upload-v160">
+<meta name="portal-build" content="2026-07-19-step7-map-table-v161">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1975,7 +1975,7 @@
         <select id="dt-type" onchange="renderDataTable()" style="font-size:11px">
           <option value="">All types</option>
           <option value="survey">Survey points</option>
-          <option value="cell">Cell sites</option>
+          <option value="cell">Tower readings / cell sites</option>
         </select>
         <button class="btn btn-sm" id="admin-export-csv-btn" onclick="exportAdminCSV()" hidden disabled>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -9675,7 +9675,12 @@ function renderDataTable() {
   let fw   = document.getElementById('dt-ward').value;
   let fo   = document.getElementById('dt-op').value;
   let ft   = document.getElementById('dt-type').value;
-  let rows   = points;
+  const tableRecords = ft === 'survey'
+    ? points
+    : ft === 'cell'
+      ? towerPoints
+      : [...points, ...towerPoints];
+  let rows   = tableRecords;
   if (fw) rows = rows.filter(p => p.ward === fw);
   if (fo) rows = rows.filter(p => p.op === fo);
   if (ft) rows = rows.filter(p => p.type === ft);
@@ -9688,7 +9693,12 @@ function renderDataTable() {
     fw = document.getElementById('dt-ward').value;
     fo = document.getElementById('dt-op').value;
     ft = document.getElementById('dt-type').value;
-    rows = points;
+    const resetTableRecords = ft === 'survey'
+      ? points
+      : ft === 'cell'
+        ? towerPoints
+        : [...points, ...towerPoints];
+    rows = resetTableRecords;
     if (fw) rows = rows.filter(p => p.ward === fw);
     if (fo) rows = rows.filter(p => p.op === fo);
     if (ft) rows = rows.filter(p => p.type === ft);
@@ -9700,8 +9710,11 @@ function renderDataTable() {
   const wardMismatchCount = wardBoundaryGeoFeatures.length
     ? points.filter(p => ['mismatch', 'outside-boundary'].includes(wardGpsValidation(p)?.type)).length
     : 0;
+  const towerTableNotice = (!ft && towerPoints.length)
+    ? ` - ${towerPoints.length} tower reading${towerPoints.length === 1 ? '' : 's'} available under Tower readings / cell sites`
+    : '';
   document.getElementById('data-count').textContent =
-    `${rows.length} of ${points.length} records${duplicateCount ? ` - ${duplicateCount} duplicate respondent ID${duplicateCount === 1 ? '' : 's'} flagged` : ''}`;
+    `${rows.length} of ${tableRecords.length} records${towerTableNotice}${duplicateCount ? ` - ${duplicateCount} duplicate respondent ID${duplicateCount === 1 ? '' : 's'} flagged` : ''}`;
   if (sharedGpsCount) {
     document.getElementById('data-count').textContent +=
       ` - ${sharedGpsCount} shared GPS location${sharedGpsCount === 1 ? '' : 's'}`;
@@ -12290,7 +12303,7 @@ function deriveConnectedSurveysForTower(tower, surveys) {
   const towerOp = String(tower.fd_s7_top || tower.fd_s1_op || tower.operator || tower.op || '').trim().toLowerCase();
   if (!towerEnb && !towerEci) return [];
   return surveys.filter(candidate => {
-    if (candidate.record_type === 'tower' || candidate.type === 'tower') return false;
+    if (isTowerRecordRaw(candidate)) return false;
     const candOp = String(candidate.fd_s1_op || candidate.operator || candidate.op || '').trim().toLowerCase();
     if (towerOp && candOp && towerOp !== candOp) return false;
     const candEnb = String(candidate.fd_s2a_enb || String(candidate.enb || '').split('-')[0] || '').trim();
@@ -12301,20 +12314,35 @@ function deriveConnectedSurveysForTower(tower, surveys) {
   }).map(record => ({ ...record, towerLinkStatus: 'confirmed' }));
 }
 
+function isTowerRecordRaw(record) {
+  return !!record && (
+    record.record_type === 'tower' ||
+    record.type === 'tower' ||
+    (record.type === 'cell' && !!(record.fd_s7_tlat || record.fd_s7_tlon || record.fd_s7_enb || record.fd_s7_eci))
+  );
+}
+
 function deriveUniqueTowerPoints(surveys) {
   const unique = new Map();
   const surveyEnb = s => String(s.fd_s2a_enb || String(s.enb || '').split('-')[0] || '').trim();
   const surveyOperator = s => String(s.fd_s1_op || s.operator || s.op || '').trim();
-  const surveyRecords = surveys.filter(s => s.record_type !== 'tower' && s.type !== 'tower');
+  const surveyRecords = surveys.filter(s => !isTowerRecordRaw(s));
   const deriveConnected = tower => deriveConnectedSurveysForTower(tower, surveyRecords);
   surveys.forEach(s => {
-    const isTowerRecord = s.record_type === 'tower' || s.type === 'tower';
+    const isTowerRecord = isTowerRecordRaw(s);
     const lat = parseCoordinate(s.fd_s7_tlat);
     const lng = parseCoordinate(s.fd_s7_tlon);
     if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
         lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
     const enb = String(s.fd_s7_newenb || surveyEnb(s) || '').trim();
     const operator = String(s.fd_s7_top || s.fd_s1_op || s.operator || s.op || '').trim();
+    const eci = String(s.fd_s7_eci || s.fd_s2a_eci || s.eci || '').trim();
+    const tac = String(s.fd_s7_tac || s.fd_s2a_tac || s.tac || '').trim();
+    const pci = String(s.fd_s7_pci || s.fd_s2a_pci || s.pci || '').trim();
+    const band = normaliseRadioBand(s.fd_s7_band || s.fd_s2a_band || s.band || '');
+    const rsrp = s.fd_s7_rsrp || s.fd_s2a_rsrp || s.rsrp || '';
+    const rsrq = s.fd_s7_rsrq || s.fd_s2a_rsrq || s.rsrq || '';
+    const rssnr = s.fd_s7_rssnr || s.fd_s2a_rssnr || s.rssnr || s.sinr || '';
     // Prefer the network identifier; otherwise group observations within roughly 10 metres.
     const key = enb
       ? `${operator.toLowerCase()}|${enb.toLowerCase()}`
@@ -12334,6 +12362,15 @@ function deriveUniqueTowerPoints(surveys) {
         lat,
         lng,
         enb,
+        eci,
+        tac,
+        pci,
+        band,
+        rsrp,
+        r: parseFloat(rsrp),
+        rsrq,
+        rssnr,
+        taceci: tac && eci ? `${tac}-${eci}` : eci,
         towerType: s.fd_s7_ttype || '',
         towerPhoto: s.fd_s7_photo_file || '',
         towerPhotoTaken: s.fd_s7_photo || '',
@@ -12367,7 +12404,7 @@ async function loadSurveysFromAPI({ silent = false } = {}) {
     duplicateRecordGroups = findDuplicateRecordGroups(data.surveys);
     towerPoints = deriveUniqueTowerPoints(data.surveys);
     points = data.surveys
-      .filter(record => record.record_type !== 'tower' && record.type !== 'tower')
+      .filter(record => !isTowerRecordRaw(record))
       .map(normalizeSurveyForPoint);
     refresh();
     if (!silent && activeView === 'map') setTimeout(() => fitSurveyWaypoints(false, false), 100);
