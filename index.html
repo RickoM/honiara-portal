@@ -4135,19 +4135,26 @@ function renderDayStrip() {
 function updateSidebarMetrics() {
   const src   = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
   const towerSrc = selDay === 'all' ? towerPoints : towerPoints.filter(p => p.date <= selDay);
+  const towerRecordSrc = selDay === 'all' ? towerRecords : towerRecords.filter(p => !p.date || p.date <= selDay);
   const surveys = src.filter(p => p.type === 'survey');
   const mapped = surveys.filter(p => gpsStatus(p.lat, p.lng) !== 'Missing');
   const missingGps = surveys.length - mapped.length;
+  const mappedTowerRecords = towerRecordSrc.filter(p => gpsStatus(p.lat, p.lng) !== 'Missing');
+  const missingTowerGps = towerRecordSrc.length - mappedTowerRecords.length;
   const dlVals = surveys.map(p => +p.dl).filter(v => !isNaN(v) && v > 0);
   const avgDl  = dlVals.length ? (dlVals.reduce((a, b) => a + b) / dlVals.length).toFixed(2) : '-';
 
-  document.getElementById('m-today').textContent = mapped.length;
-  document.getElementById('m-total').textContent = surveys.length;
+  document.getElementById('m-today').textContent = mapped.length + mappedTowerRecords.length;
+  document.getElementById('m-total').textContent = surveys.length + towerRecordSrc.length;
+  const mappedLabel = document.getElementById('m-today')?.nextElementSibling;
+  if (mappedLabel) mappedLabel.textContent = 'Mapped records';
+  const totalLabel = document.getElementById('m-total')?.nextElementSibling;
+  if (totalLabel) totalLabel.textContent = 'Survey + tower records';
   document.getElementById('m-avgdl').textContent = avgDl;
   const avgDlLabel = document.getElementById('m-avgdl')?.nextElementSibling;
   if (avgDlLabel) avgDlLabel.textContent = 'Avg Ookla DL (Mbps)';
-  document.getElementById('m-below1').textContent = missingGps;
-  document.getElementById('m-below1').style.color = missingGps > 0 ? 'var(--red)' : 'var(--green)';
+  document.getElementById('m-below1').textContent = missingGps + missingTowerGps;
+  document.getElementById('m-below1').style.color = (missingGps + missingTowerGps) > 0 ? 'var(--red)' : 'var(--green)';
   const quality = document.getElementById('map-quality');
   if (quality) {
     const valid = surveys.filter(p => gpsStatus(p.lat, p.lng) === 'Valid').length;
@@ -4163,7 +4170,8 @@ function updateSidebarMetrics() {
       row('Valid Honiara waypoints', valid, 'var(--green)') +
       row('Outside study area', outside, outside ? 'var(--amber)' : 'var(--green)') +
       row('Overlapping GPS records', mappedLayout.overlapCount, mappedLayout.overlapCount ? 'var(--amber)' : 'var(--green)') +
-      row('Mobile tower points', towers) +
+      row('Step 7 tower records', towerRecordSrc.length) +
+      row('Unique tower points on map', towers) +
       row('Duplicate respondent IDs', duplicateRespondentIds.size, duplicateRespondentIds.size ? 'var(--red)' : 'var(--green)') +
       row('Possible duplicate record groups', duplicateRecordGroups.size, duplicateRecordGroups.size ? 'var(--red)' : 'var(--green)') +
       row('Operators represented', operators.join(', ') || 'None');
@@ -4908,6 +4916,7 @@ function refreshMap() {
 
   const src = selDay === 'all' ? points : points.filter(p => p.date <= selDay);
   const towerSrc = selDay === 'all' ? towerPoints : towerPoints.filter(p => p.date <= selDay);
+  const towerRecordSrc = selDay === 'all' ? towerRecords : towerRecords.filter(p => !p.date || p.date <= selDay);
   const hasMapCoordinates = p =>
     Number.isFinite(parseCoordinate(p.lat)) && Number.isFinite(parseCoordinate(p.lng)) &&
     parseCoordinate(p.lat) >= -90 && parseCoordinate(p.lat) <= 90 &&
@@ -4985,14 +4994,16 @@ function refreshMap() {
     else item.open();
   };
   const plottedSurveys = src.filter(p => p.type === 'survey' && hasMapCoordinates(p));
+  const plottedTowerRecords = towerRecordSrc.filter(hasMapCoordinates);
   const markerLayout = surveyMarkerLayout(plottedSurveys);
   const waypointCount = document.getElementById('ms-waypoints');
   if (waypointCount) {
     const outsideCount = plottedSurveys.filter(p => gpsStatus(p.lat, p.lng) === 'Outside study area').length;
     const outsideNote = outsideCount ? `, ${outsideCount} outside study area` : '';
+    const mappedRecordTotal = plottedSurveys.length + plottedTowerRecords.length;
     waypointCount.textContent = markerLayout.overlapCount
-      ? `${plottedSurveys.length} records at ${markerLayout.locationCount} locations (${markerLayout.overlapCount} overlapping${outsideNote})`
-      : `${plottedSurveys.length} survey location${plottedSurveys.length === 1 ? '' : 's'} plotted${outsideNote}`;
+      ? `${mappedRecordTotal} mapped records (${plottedSurveys.length} surveys + ${plottedTowerRecords.length} tower readings); ${markerLayout.locationCount} survey locations (${markerLayout.overlapCount} overlapping${outsideNote})`
+      : `${mappedRecordTotal} mapped records (${plottedSurveys.length} surveys + ${plottedTowerRecords.length} tower readings)${outsideNote}`;
   }
 
   // Signal heatmap
@@ -5903,8 +5914,8 @@ function dashTopOptions(records, field, limit = 3) {
 
 function dashboardReadingProfile(record) {
   const rsrp = dashMetric(record, ['rsrp', 'fd_s2a_rsrp']);
-  const rsrq = dashMetric(record, ['fd_s2a_rsrq']);
-  const sinr = dashMetric(record, ['fd_s2a_sinr', 'fd_s2a_rssnr']);
+  const rsrq = dashMetric(record, ['fd_s2a_rsrq', 'rsrq']);
+  const sinr = dashMetric(record, ['fd_s2a_sinr', 'fd_s2a_rssnr', 'sinr', 'rssnr']);
   const dl = dashMetric(record, ['dl', 'fd_s1_ookla_dl', 'fd_s1_ncil_dl', 'fd_s1_nperf_dl_avg', 'fd_s1_nperf_dl']);
   const ping = dashMetric(record, ['ping', 'fd_s1_ookla_ping', 'fd_s1_ncil_ping', 'fd_s1_nperf_ping']);
   const jitter = dashMetric(record, ['jitter', 'fd_s1_ookla_jitter', 'fd_s1_ncil_jitter', 'fd_s1_nperf_jitter']);
@@ -8384,12 +8395,12 @@ function buildWardCellGroups(records) {
   const groups = new Map();
   records.forEach(record => {
     const enb = String(record.fd_s2a_enb || String(record.enb || '').split('-')[0] || '').trim();
-    const lcid = String(record.fd_s2a_lcid || '').trim();
-    const eci = String(record.fd_s2a_eci || '').trim();
-    const tac = String(record.fd_s2a_tac || '').trim();
-    const pci = String(record.fd_s2a_pci || '').trim();
-    const mcc = String(record.fd_s2a_mcc || '').trim();
-    const mnc = String(record.fd_s2a_mnc || '').trim();
+    const lcid = String(record.fd_s2a_lcid || record.lcid || '').trim();
+    const eci = String(record.fd_s2a_eci || record.eci || '').trim();
+    const tac = String(record.fd_s2a_tac || record.tac || '').trim();
+    const pci = String(record.fd_s2a_pci || record.pci || '').trim();
+    const mcc = String(record.fd_s2a_mcc || record.mcc || '').trim();
+    const mnc = String(record.fd_s2a_mnc || record.mnc || '').trim();
     if (!enb && !lcid && !eci && !pci) return;
     const key = eci ? `eci:${mcc}-${mnc}-${eci}` : `cell:${mcc}-${mnc}-${enb}-${lcid}-${pci}`;
     if (!groups.has(key)) {
@@ -8406,13 +8417,13 @@ function buildWardCellGroups(records) {
 
 function buildCellCard(group) {
   const records = group.records || [];
-  const mcc = cellFirstText(records, ['fd_s2a_mcc']) || group.mcc;
-  const mnc = cellFirstText(records, ['fd_s2a_mnc']) || group.mnc;
+  const mcc = cellFirstText(records, ['fd_s2a_mcc', 'mcc']) || group.mcc;
+  const mnc = cellFirstText(records, ['fd_s2a_mnc', 'mnc']) || group.mnc;
   const enb = cellFirstText(records, ['fd_s2a_enb', 'enb']) || group.enb;
-  const lcid = cellFirstText(records, ['fd_s2a_lcid']) || group.lcid;
-  const tac = cellFirstText(records, ['fd_s2a_tac']) || group.tac;
-  const eci = cellFirstText(records, ['fd_s2a_eci']) || group.eci;
-  const pci = cellFirstText(records, ['fd_s2a_pci']) || group.pci;
+  const lcid = cellFirstText(records, ['fd_s2a_lcid', 'lcid']) || group.lcid;
+  const tac = cellFirstText(records, ['fd_s2a_tac', 'tac']) || group.tac;
+  const eci = cellFirstText(records, ['fd_s2a_eci', 'eci']) || group.eci;
+  const pci = cellFirstText(records, ['fd_s2a_pci', 'pci']) || group.pci;
   const plmn = cellPlmnText(mcc, mnc) || cellFirstText(records, ['fd_s1_op', 'operator', 'op']) || 'Operator not recorded';
   const rsrp = cellRecordsAverage(records, ['fd_s2a_rsrp', 'rsrp']);
   const rsrq = cellRecordsAverage(records, ['fd_s2a_rsrq', 'rsrq']);
@@ -8474,12 +8485,12 @@ function dataReadingReviewSummary(records) {
     const band = bandOf(record);
     return band && !knownBands.has(band);
   });
-  const missingPlmn = countIf(record => !hasText(record.fd_s2a_mcc) || !hasText(record.fd_s2a_mnc));
+  const missingPlmn = countIf(record => !hasText(record.fd_s2a_mcc || record.mcc) || !hasText(record.fd_s2a_mnc || record.mnc));
   const missingEnb = countIf(record => !hasText(record.fd_s2a_enb) && !hasText(record.enb));
-  const missingLcid = countIf(record => !hasText(record.fd_s2a_lcid));
-  const missingEci = countIf(record => !hasText(record.fd_s2a_eci));
-  const missingTac = countIf(record => !hasText(record.fd_s2a_tac));
-  const missingPci = countIf(record => !hasText(record.fd_s2a_pci));
+  const missingLcid = countIf(record => !hasText(record.fd_s2a_lcid || record.lcid));
+  const missingEci = countIf(record => !hasText(record.fd_s2a_eci || record.eci));
+  const missingTac = countIf(record => !hasText(record.fd_s2a_tac || record.tac));
+  const missingPci = countIf(record => !hasText(record.fd_s2a_pci || record.pci));
   const missingRsrp = countIf(record => !Number.isFinite(dashMetric(record, ['fd_s2a_rsrp', 'rsrp'])));
   const missingRsrq = countIf(record => !Number.isFinite(dashMetric(record, ['fd_s2a_rsrq', 'rsrq'])));
   const missingSinr = countIf(record => !Number.isFinite(dashMetric(record, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'sinr', 'rssnr'])));
@@ -8518,31 +8529,39 @@ function dataReadingReviewIssueLabels(record) {
   const band = normaliseRadioBand(record.fd_s2a_band || record.band || record.fd_s2b_band);
   if (!band) issues.push('No band');
   else if (!knownBands.has(band)) issues.push(`Band not recognised: ${band}`);
-  if (!hasText(record.fd_s2a_mcc) || !hasText(record.fd_s2a_mnc)) issues.push('No MCC/MNC');
+  if (!hasText(record.fd_s2a_mcc || record.mcc) || !hasText(record.fd_s2a_mnc || record.mnc)) issues.push('No MCC/MNC');
   if (!hasText(record.fd_s2a_enb) && !hasText(record.enb)) issues.push('No eNB');
-  if (!hasText(record.fd_s2a_lcid)) issues.push('No LCID');
-  if (!hasText(record.fd_s2a_eci)) issues.push('No ECI');
-  if (!hasText(record.fd_s2a_tac)) issues.push('No TAC');
-  if (!hasText(record.fd_s2a_pci)) issues.push('No PCI');
+  if (!hasText(record.fd_s2a_lcid || record.lcid)) issues.push('No LCID');
+  if (!hasText(record.fd_s2a_eci || record.eci)) issues.push('No ECI');
+  if (!hasText(record.fd_s2a_tac || record.tac)) issues.push('No TAC');
+  if (!hasText(record.fd_s2a_pci || record.pci)) issues.push('No PCI');
   if (!Number.isFinite(dashMetric(record, ['fd_s2a_rsrp', 'rsrp']))) issues.push('No RSRP');
   if (!Number.isFinite(dashMetric(record, ['fd_s2a_rsrq', 'rsrq']))) issues.push('No RSRQ');
   if (!Number.isFinite(dashMetric(record, ['fd_s2a_rssnr', 'fd_s2a_sinr', 'sinr', 'rssnr']))) issues.push('No RSSNR/SINR');
   return issues;
 }
 
-function renderDataReadingResults(allSurveys) {
+function renderDataReadingResults(allSurveys, allTowerRecords = towerRecords) {
   const target = document.getElementById('dash-data-reading-results');
   if (!target) return;
   const sections = ['West Honiara', 'Central Honiara', 'East Honiara'].map(constituency => {
     const wards = Object.keys(WARDS).filter(ward => WARDS[ward].constituency === constituency);
-    const constituencyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
+    const constituencySurveyRecords = allSurveys.filter(record => record.constituency === constituency || wards.includes(record.ward));
+    const constituencyTowerRecords = allTowerRecords.filter(record => record.constituency === constituency || wards.includes(record.ward));
+    const constituencyRecords = [...constituencySurveyRecords, ...constituencyTowerRecords];
     const readingRecords = constituencyRecords.filter(record => dashboardReadingProfile(record).hasReading);
     const constituencyTotal = readingRecords.length;
-    const constituencyCells = wards.flatMap(ward => buildWardCellGroups(allSurveys.filter(record => record.ward === ward)));
+    const constituencyCells = wards.flatMap(ward => buildWardCellGroups([
+      ...allSurveys.filter(record => record.ward === ward),
+      ...allTowerRecords.filter(record => record.ward === ward)
+    ]));
     const constituencyEnbs = new Set(constituencyCells.map(cell => cell.enb).filter(Boolean));
     const constituencyEcis = new Set(constituencyCells.map(cell => cell.eci).filter(Boolean));
     const wardEnbBreakdown = wards.map(ward => {
-      const wardCells = buildWardCellGroups(allSurveys.filter(record => record.ward === ward));
+      const wardCells = buildWardCellGroups([
+        ...allSurveys.filter(record => record.ward === ward),
+        ...allTowerRecords.filter(record => record.ward === ward)
+      ]);
       const wardEnbs = new Set(wardCells.map(cell => cell.enb).filter(Boolean));
       return { ward, count: wardEnbs.size };
     }).filter(item => item.count > 0);
@@ -8550,7 +8569,10 @@ function renderDataReadingResults(allSurveys) {
       ? wardEnbBreakdown.map(item => `${item.ward}: ${item.count}`).join('; ')
       : 'No ward eNB IDs recorded';
     const wardEciBreakdown = wards.map(ward => {
-      const wardCells = buildWardCellGroups(allSurveys.filter(record => record.ward === ward));
+      const wardCells = buildWardCellGroups([
+        ...allSurveys.filter(record => record.ward === ward),
+        ...allTowerRecords.filter(record => record.ward === ward)
+      ]);
       const wardEcis = new Set(wardCells.map(cell => cell.eci).filter(Boolean));
       return { ward, count: wardEcis.size };
     }).filter(item => item.count > 0);
@@ -8559,7 +8581,7 @@ function renderDataReadingResults(allSurveys) {
       : 'No ward Cell IDs recorded';
     const directPlmns = new Map();
     readingRecords.forEach(record => {
-      const plmn = cellPlmnText(record.fd_s2a_mcc, record.fd_s2a_mnc);
+      const plmn = cellPlmnText(record.fd_s2a_mcc || record.mcc, record.fd_s2a_mnc || record.mnc);
       if (plmn) directPlmns.set(plmn, (directPlmns.get(plmn) || 0) + 1);
     });
     const plmnText = Array.from(directPlmns.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([label, count]) => `${label} (${count})`).join('; ') || 'No operator reading';
@@ -8574,7 +8596,10 @@ function renderDataReadingResults(allSurveys) {
       <div class="cell-summary-chip ${reviewSummary.cls}"><span>Data fields needing review</span><strong>${reviewSummary.count}</strong><small>${dashEscape(reviewSummary.text)}</small></div>
     </div>`;
     const wardPanels = wards.map(ward => {
-      const records = allSurveys.filter(record => record.ward === ward);
+      const records = [
+        ...allSurveys.filter(record => record.ward === ward),
+        ...allTowerRecords.filter(record => record.ward === ward)
+      ];
       const wardReadingBase = records.filter(record => dashboardReadingProfile(record).hasReading).length;
       const cellGroups = buildWardCellGroups(records);
       const cellCards = cellGroups.length ? `<div class="cell-card-grid">${cellGroups.map(buildCellCard).join('')}</div>` : '<div class="cell-empty">No serving-cell identity recorded for this ward yet.</div>';
@@ -9239,11 +9264,12 @@ function renderDashboard() {
   const constituencyNames = ['West Honiara', 'Central Honiara', 'East Honiara'];
   if (!constituencyNames.includes(selectedDashboardConstituency)) selectedDashboardConstituency = 'West Honiara';
   const src = day ? points.filter(p => p.date <= day) : points;
+  const towerSrc = day ? towerRecords.filter(p => !p.date || p.date <= day) : towerRecords;
   const allSurveys = src.filter(p => p.type === 'survey');
   renderResearchEvidenceTree();
   renderConstituencyOverview(allSurveys);
   renderParticipantSurveyResults(allSurveys);
-  renderDataReadingResults(allSurveys);
+  renderDataReadingResults(allSurveys, towerSrc);
   ['dash-findings-pack','dash-metrics','dash-zone-bars','dash-flags','dash-experience-correlation','dash-dissertation-insights','dash-questionnaire-results','dash-spectrum-config','dash-ward-detail'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.innerHTML = ''; el.style.display = 'none'; }
