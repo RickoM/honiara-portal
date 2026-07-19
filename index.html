@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-18-screenshot-upload-fix-v159">
+<meta name="portal-build" content="2026-07-19-step7-evidence-upload-v160">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -2767,7 +2767,7 @@
 
           <div class="sf-fcell" style="margin:8px 0 12px">
             <label>Upload NCIL RAW readings screenshot</label>
-            <input type="file" id="fd-s7-ncil-scr" accept="image/*" capture="environment" style="width:100%;margin-top:4px;font-size:11px">
+            <input type="file" id="fd-s7-ncil-scr" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
             <div style="font-size:10px;color:var(--gray-600);margin-top:4px;line-height:1.35">
               Required for cross-checking MCC/MNC, eNB, ECI, PCI, TAC, LTE band, RSRP, RSRQ and RSSNR/SINR entered above.
             </div>
@@ -2857,7 +2857,7 @@
               </div>
               <div class="sf-fcell">
                 <label>Upload tower structure photo</label>
-                <input type="file" id="fd-s7-photo-file" accept="image/*" capture="environment" style="width:100%;margin-top:4px;font-size:11px">
+                <input type="file" id="fd-s7-photo-file" accept="image/*" style="width:100%;margin-top:4px;font-size:11px">
               </div>
             </div>
           </div>
@@ -10331,7 +10331,13 @@ async function prepareScreenshotUploadFile(file) {
     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.84));
     if (!blob) return file;
     const baseName = file.name.replace(/\.[^.]+$/, '') || 'tower-evidence';
-    return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg', lastModified: Date.now() });
+    const compressedName = `${baseName}.jpg`;
+    try {
+      return new File([blob], compressedName, { type: 'image/jpeg', lastModified: Date.now() });
+    } catch (fileErr) {
+      blob.name = compressedName;
+      return blob;
+    }
   } catch (err) {
     console.warn('Image compression skipped:', err);
     return file;
@@ -10410,10 +10416,23 @@ function initScreenshotInputs() {
     const input = document.getElementById(id);
     if (!input || input.dataset.previewReady) return;
     input.dataset.previewReady = 'true';
-    input.addEventListener('change', () => {
+    input.addEventListener('change', async () => {
       if (!input.files?.[0]) return;
       delete input.dataset.uploadId;
       showScreenshotPreview(input, URL.createObjectURL(input.files[0]), 'Selected screenshot');
+      if (!TOWER_SCREENSHOT_FIELDS.includes(id) || DEMO_MODE) return;
+      try {
+        await uploadSurveyScreenshots([id]);
+      } catch (err) {
+        const box = screenshotPreviewBox(input);
+        box.querySelectorAll('.upload-status').forEach(el => el.remove());
+        const status = document.createElement('div');
+        status.className = 'upload-status';
+        status.style.cssText = 'font-size:11px;color:var(--red);margin-top:4px;font-weight:700';
+        status.textContent = 'Upload failed: ' + (err?.message || 'Please choose the file again.');
+        box.appendChild(status);
+        alert('Step 7 evidence upload failed:\n\n' + (err?.message || 'Please choose the file again or try a smaller image.'));
+      }
     });
   });
 }
@@ -10426,7 +10445,12 @@ async function uploadSurveyScreenshots(fieldIds = SCREENSHOT_FIELDS) {
     if (!file) continue;
     const uploadFile = await prepareScreenshotUploadFile(file);
     const box = screenshotPreviewBox(input);
-    box.insertAdjacentHTML('beforeend', '<div class="upload-status" style="font-size:11px;color:var(--gray-600);margin-top:4px">Uploading evidence...</div>');
+    box.querySelectorAll('.upload-status').forEach(el => el.remove());
+    const status = document.createElement('div');
+    status.className = 'upload-status';
+    status.style.cssText = 'font-size:11px;color:var(--gray-600);margin-top:4px';
+    status.textContent = 'Uploading evidence...';
+    box.appendChild(status);
     const form = new FormData();
     form.append('image', uploadFile, uploadFile.name || file.name);
     form.append('field', id);
@@ -10446,8 +10470,8 @@ async function uploadSurveyScreenshots(fieldIds = SCREENSHOT_FIELDS) {
     input.dataset.uploadId = uploadId;
     input.dataset.uploadName = file.name;
     input.value = '';
-    const status = box.querySelector('.upload-status');
-    if (status) status.innerHTML = `<span style="color:var(--green);font-weight:700">Uploaded and linked:</span> ${file.name}`;
+    status.innerHTML = '<span style="color:var(--green);font-weight:700">Uploaded and linked:</span> ';
+    status.appendChild(document.createTextNode(file.name));
   }
 }
 
@@ -12453,4 +12477,5 @@ checkAuth();
 </script>
 </body>
 </html>
+
 
