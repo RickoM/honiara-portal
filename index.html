@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-19-step7-map-table-v161">
+<meta name="portal-build" content="2026-07-19-step7-tower-records-v162">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -3170,6 +3170,7 @@ function surveyMarkerLayout(surveys) {
 
 let points   = [];   // all survey & cell site data points
 let towerPoints = []; // unique tower waypoints derived from Step 7 survey fields
+let towerRecords = []; // individual Step 7 tower submissions for Data Table verification
 let duplicateRespondentIds = new Set();
 let duplicateGpsGroups = new Map();
 let duplicateRecordGroups = new Map();
@@ -9678,8 +9679,8 @@ function renderDataTable() {
   const tableRecords = ft === 'survey'
     ? points
     : ft === 'cell'
-      ? towerPoints
-      : [...points, ...towerPoints];
+      ? towerRecords
+      : [...points, ...towerRecords];
   let rows   = tableRecords;
   if (fw) rows = rows.filter(p => p.ward === fw);
   if (fo) rows = rows.filter(p => p.op === fo);
@@ -9696,8 +9697,8 @@ function renderDataTable() {
     const resetTableRecords = ft === 'survey'
       ? points
       : ft === 'cell'
-        ? towerPoints
-        : [...points, ...towerPoints];
+        ? towerRecords
+        : [...points, ...towerRecords];
     rows = resetTableRecords;
     if (fw) rows = rows.filter(p => p.ward === fw);
     if (fo) rows = rows.filter(p => p.op === fo);
@@ -9710,8 +9711,8 @@ function renderDataTable() {
   const wardMismatchCount = wardBoundaryGeoFeatures.length
     ? points.filter(p => ['mismatch', 'outside-boundary'].includes(wardGpsValidation(p)?.type)).length
     : 0;
-  const towerTableNotice = (!ft && towerPoints.length)
-    ? ` - ${towerPoints.length} tower reading${towerPoints.length === 1 ? '' : 's'} available under Tower readings / cell sites`
+  const towerTableNotice = (!ft && towerRecords.length)
+    ? ` - ${towerRecords.length} tower reading${towerRecords.length === 1 ? '' : 's'} available under Tower readings / cell sites`
     : '';
   document.getElementById('data-count').textContent =
     `${rows.length} of ${tableRecords.length} records${towerTableNotice}${duplicateCount ? ` - ${duplicateCount} duplicate respondent ID${duplicateCount === 1 ? '' : 's'} flagged` : ''}`;
@@ -11096,7 +11097,7 @@ function towerGetData() {
   const towerWard = detectedWard || g('fd-s7-ward');
   const towerConstituency = WARDS[towerWard]?.constituency || '';
   return {
-    record_type: 'tower', type: 'cell',
+    record_type: 'survey', type: 'cell', tower_record: 'yes',
     respondentId: `TOWER-${operator || 'OP'}-${enb || towerKey || Date.now()}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
     date: g('sf-date') || today,
     time: new Date().toTimeString().slice(0, 5),
@@ -11176,6 +11177,7 @@ async function towerSubmit() {
   const data = towerGetData();
   if (DEMO_MODE) {
     towerPoints.push({ ...data, id: data.respondentId, sourceSurveyId: data.respondentId, connectedSurveys: deriveConnectedSurveysForTower(data, points) });
+    towerRecords.push(normalizeTowerRecordForTable(data));
     document.getElementById('tower-form-host').style.display = 'none';
     document.getElementById('tower-success').classList.add('show');
     document.getElementById('tower-success-txt').textContent = `[DEMO] Tower ${data.enb} saved locally and linked to matching survey readings.`;
@@ -11194,8 +11196,15 @@ async function towerSubmit() {
     }
     document.getElementById('tower-form-host').style.display = 'none';
     document.getElementById('tower-success').classList.add('show');
-    document.getElementById('tower-success-txt').textContent = `Tower ${data.enb} saved. Matching participant readings will now show as linked on the map.`;
+    document.getElementById('tower-success-txt').textContent = `Tower ${data.enb || data.respondentId} submitted. Checking it appears in map/table records...`;
     await syncSurveyViews();
+    const savedTowerVisible = [...towerRecords, ...towerPoints].some(t =>
+      String(t.sourceRespondentId || t.respondentId || t.id || '').trim() === String(data.respondentId || '').trim() ||
+      (data.enb && String(t.enb || '').trim() === String(data.enb).trim() && String(t.op || t.operator || '').trim() === String(data.op || data.operator || '').trim())
+    );
+    document.getElementById('tower-success-txt').textContent = savedTowerVisible
+      ? `Tower ${data.enb || data.respondentId} saved and is visible under Live Map tower points and Data Table > Tower readings / cell sites.`
+      : `Tower ${data.enb || data.respondentId} was accepted by the server, but did not appear after reload. Open Data Table > Tower readings / cell sites; if it is still missing, the API is not returning Step 7 records.`;
   } catch (err) {
     alert('Tower submission failed: ' + err.message);
   } finally {
@@ -12318,8 +12327,45 @@ function isTowerRecordRaw(record) {
   return !!record && (
     record.record_type === 'tower' ||
     record.type === 'tower' ||
+    record.tower_record === 'yes' ||
     (record.type === 'cell' && !!(record.fd_s7_tlat || record.fd_s7_tlon || record.fd_s7_enb || record.fd_s7_eci))
   );
+}
+
+function normalizeTowerRecordForTable(record) {
+  const operator = String(record.fd_s7_top || record.fd_s1_op || record.operator || record.op || '').trim() || 'Unknown';
+  const lat = parseCoordinate(record.fd_s7_tlat ?? record.lat);
+  const lng = parseCoordinate(record.fd_s7_tlon ?? record.lng);
+  const enb = String(record.fd_s7_newenb || record.fd_s7_enb || record.fd_s2a_enb || record.enb || '').trim();
+  const eci = String(record.fd_s7_eci || record.fd_s2a_eci || record.eci || '').trim();
+  const tac = String(record.fd_s7_tac || record.fd_s2a_tac || record.tac || '').trim();
+  const pci = String(record.fd_s7_pci || record.fd_s2a_pci || record.pci || '').trim();
+  const band = normaliseRadioBand(record.fd_s7_band || record.fd_s2a_band || record.band || '');
+  const rsrp = record.fd_s7_rsrp || record.fd_s2a_rsrp || record.rsrp || '';
+  const rsrq = record.fd_s7_rsrq || record.fd_s2a_rsrq || record.rsrq || '';
+  const rssnr = record.fd_s7_rssnr || record.fd_s2a_rssnr || record.rssnr || record.sinr || '';
+  const ward = record.ward || record.fd_s7_ward || '';
+  return {
+    ...record,
+    id: record.respondentId || record.id || (enb ? `TOWER-${enb}` : record._id || 'Tower reading'),
+    type: 'cell',
+    ward,
+    constituency: record.constituency || WARDS[ward]?.constituency || '',
+    op: operator,
+    operator,
+    lat,
+    lng,
+    enb,
+    eci,
+    tac,
+    pci,
+    band,
+    rsrp,
+    r: parseFloat(rsrp),
+    rsrq,
+    rssnr,
+    taceci: tac && eci ? `${tac}-${eci}` : eci
+  };
 }
 
 function deriveUniqueTowerPoints(surveys) {
@@ -12403,6 +12449,9 @@ async function loadSurveysFromAPI({ silent = false } = {}) {
     duplicateGpsGroups = findDuplicateGpsGroups(data.surveys);
     duplicateRecordGroups = findDuplicateRecordGroups(data.surveys);
     towerPoints = deriveUniqueTowerPoints(data.surveys);
+    towerRecords = data.surveys
+      .filter(record => isTowerRecordRaw(record))
+      .map(normalizeTowerRecordForTable);
     points = data.surveys
       .filter(record => !isTowerRecordRaw(record))
       .map(normalizeSurveyForPoint);
