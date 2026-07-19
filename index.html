@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="portal-build" content="2026-07-19-step7-tower-records-v162">
+<meta name="portal-build" content="2026-07-19-tower-table-actions-v163">
 <title>Honiara Mobile Network Survey Portal</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -9686,6 +9686,7 @@ function renderDataTable() {
   if (fo) rows = rows.filter(p => p.op === fo);
   if (ft) rows = rows.filter(p => p.type === ft);
   if (dashboardGpsIssueFilter) rows = rows.filter(p => recordMatchesDashboardGpsIssue(p, dashboardGpsIssueFilter));
+  rows = [...rows].sort(newestRecordSort);
   if (dashboardGpsIssueFilter && !rows.length) {
     const resolvedFilter = dashboardGpsIssueFilter;
     const label = `${dashboardGpsIssueLabel(resolvedFilter.kind)}${resolvedFilter.ward ? ` in ${resolvedFilter.ward}` : ''}`;
@@ -9703,6 +9704,7 @@ function renderDataTable() {
     if (fw) rows = rows.filter(p => p.ward === fw);
     if (fo) rows = rows.filter(p => p.op === fo);
     if (ft) rows = rows.filter(p => p.type === ft);
+    rows = [...rows].sort(newestRecordSort);
   }
 
   const duplicateCount = duplicateRespondentIds.size;
@@ -9816,8 +9818,8 @@ function renderDataTable() {
       <td style="font-size:11px">${p.appRecorder || '\u2014'}</td>
       <td style="font-size:11px">${p.uploadedBy || p.submittedBy || '\u2014'}</td>
       <td style="white-space:nowrap">
-        <button onclick='dtView(this)' data-mid='${p._id}' style="border:none;background:var(--green);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">View</button>
-        ${canEdit ? `<button onclick='dtEdit(this)' data-mid='${p._id}' style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>` : ''}
+        <button onclick='dtView(this)' data-mid='${p._id}' data-rtype='${p.type}' style="border:none;background:var(--green);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">View</button>
+        ${canEdit ? `<button onclick='dtEdit(this)' data-mid='${p._id}' data-rtype='${p.type}' style="border:none;background:var(--navy);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:4px">Edit</button>` : ''}
         ${currentUser && currentUser.role === 'admin' ? `<button onclick='dtDelete(this)' data-mid='${p._id}' data-did='${p.id}' style='border:none;background:var(--red);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer'>Delete</button>` : ''}
       </td>
     </tr>`;
@@ -9926,6 +9928,9 @@ let editingOriginalWard = '';
 let editingOriginalRespondentId = '';
 let openRecordReadOnly = false;
 let surveyReadOnlyMode = false;
+let towerEditingId = null;
+let towerEditingOriginalRecord = null;
+let towerReadOnlyMode = false;
 
 const SCREENSHOT_FIELDS = [
   'fd-s2a-scr', 'fd-s2b-scr',
@@ -10322,6 +10327,30 @@ function screenshotValue(id) {
   return document.getElementById(id)?.dataset.uploadId || '';
 }
 
+function recordSortTime(record) {
+  const candidates = [
+    record?.updatedAt,
+    record?.createdAt,
+    record?.submittedAt,
+    record?.savedAt,
+    record?.date
+  ];
+  for (const value of candidates) {
+    if (!value) continue;
+    const time = Date.parse(value);
+    if (Number.isFinite(time)) return time;
+  }
+  return 0;
+}
+
+function newestRecordSort(a, b) {
+  const timeDiff = recordSortTime(b) - recordSortTime(a);
+  if (timeDiff) return timeDiff;
+  const towerDiff = (b.type === 'cell' ? 1 : 0) - (a.type === 'cell' ? 1 : 0);
+  if (towerDiff) return towerDiff;
+  return String(b._id || b.id || '').localeCompare(String(a._id || a.id || ''));
+}
+
 async function prepareScreenshotUploadFile(file) {
   if (!file || !file.type?.startsWith('image/')) return file;
   const maxBytes = 1800 * 1024;
@@ -10504,6 +10533,103 @@ function dtView(btn) {
   dtEdit(btn);
 }
 
+function setTowerReadOnly(readOnly) {
+  towerReadOnlyMode = readOnly;
+  document.querySelectorAll('#view-tower input, #view-tower select, #view-tower textarea, #view-tower button').forEach(el => {
+    if (el.id === 'tower-back-data-btn') return;
+    el.disabled = readOnly;
+  });
+}
+
+function setTowerField(id, value) {
+  const el = document.getElementById(id);
+  if (!el || value == null || value === '') return;
+  if (el.tagName === 'SELECT') {
+    if ([...el.options].some(option => option.value === String(value))) {
+      el.value = String(value);
+      el.dispatchEvent(new Event('change'));
+    }
+  } else {
+    el.value = value;
+  }
+}
+
+function populateTowerFormFromRecord(record) {
+  towerReset(true);
+  const operator = record.fd_s7_top || record.operator || record.op || '';
+  const top = document.getElementById('fd-s7-top');
+  const topOther = document.getElementById('fd-s7-top-other');
+  if (top) {
+    if ([...top.options].some(option => option.value === operator)) top.value = operator;
+    else if (operator) {
+      top.value = 'Other';
+      if (topOther) topOther.value = operator;
+    }
+    if (typeof s7OpChange === 'function') s7OpChange();
+  }
+  setTowerField('fd-s7-mcc', record.fd_s7_mcc || record.fd_s2a_mcc || record.mcc);
+  setTowerField('fd-s7-mnc', record.fd_s7_mnc || record.fd_s2a_mnc || record.mnc);
+  setTowerField('fd-s7-enb', record.fd_s7_enb || record.fd_s2a_enb || record.enb);
+  setTowerField('fd-s7-eci', record.fd_s7_eci || record.fd_s2a_eci || record.eci);
+  setTowerField('fd-s7-pci', record.fd_s7_pci || record.fd_s2a_pci || record.pci);
+  setTowerField('fd-s7-tac', record.fd_s7_tac || record.fd_s2a_tac || record.tac);
+  setTowerField('fd-s7-band', record.fd_s7_band || record.fd_s2a_band || record.band);
+  setTowerField('fd-s7-rsrp', record.fd_s7_rsrp || record.fd_s2a_rsrp || record.rsrp);
+  setTowerField('fd-s7-rsrq', record.fd_s7_rsrq || record.fd_s2a_rsrq || record.rsrq);
+  setTowerField('fd-s7-rssnr', record.fd_s7_rssnr || record.fd_s2a_rssnr || record.rssnr || record.sinr);
+  setTowerField('fd-s7-tlat', record.fd_s7_tlat || record.lat);
+  setTowerField('fd-s7-tlon', record.fd_s7_tlon || record.lng);
+  setTowerField('fd-s7-ward', record.fd_s7_ward || record.ward);
+  setTowerField('fd-s7-gps-method', record.fd_s7_gps_method);
+  setTowerField('fd-s7-ttype', record.fd_s7_ttype);
+  setTowerField('fd-s7-access', record.fd_s7_access);
+  setTowerField('fd-s7-noaccess-reason', record.fd_s7_noaccess_reason);
+  setTowerField('fd-s7-photo', record.fd_s7_photo);
+  restoreSurveyScreenshots(record);
+  if (typeof checkTowerAccess === 'function') checkTowerAccess();
+}
+
+async function dtEditTower(btn, readOnly) {
+  const mongoId = btn.getAttribute('data-mid');
+  if (!mongoId || mongoId === 'undefined') { alert('Cannot open tower reading - record has no database ID.'); return; }
+  let tower = null;
+  try {
+    const res = await fetch(API_URL + '/api/surveys/' + mongoId, {
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    const data = await res.json();
+    if (res.ok) tower = data.survey;
+  } catch (err) {
+    console.warn('Tower fetch failed; using table cache.', err);
+  }
+  if (!tower) tower = towerRecords.find(record => String(record._id) === String(mongoId));
+  if (!tower) { alert('Could not load tower reading.'); return; }
+  towerEditingId = readOnly ? null : mongoId;
+  towerEditingOriginalRecord = tower;
+  populateTowerFormFromRecord(tower);
+  switchView('tower', document.getElementById('tnav-tower'));
+  setTowerReadOnly(readOnly);
+  const host = document.getElementById('tower-form-host');
+  if (host) host.style.display = '';
+  document.getElementById('tower-success')?.classList.remove('show');
+  const submitBtn = document.getElementById('tower-submit-btn');
+  if (submitBtn) {
+    submitBtn.textContent = readOnly ? 'Read-only' : 'Save tower changes';
+    submitBtn.style.display = readOnly ? 'none' : '';
+    submitBtn.disabled = readOnly;
+  }
+  let banner = document.getElementById('tower-edit-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'tower-edit-banner';
+    banner.style.cssText = 'background:#E8F5EE;border:1px solid #2E7D5B;border-radius:6px;padding:10px 14px;margin:10px 0;font-size:12px;color:#205C43;display:flex;align-items:center;justify-content:space-between';
+    host?.insertBefore(banner, host.firstChild);
+  }
+  banner.innerHTML = '<span><strong>' + (readOnly ? 'Viewing' : 'Editing') + ' tower reading:</strong> ' + (tower.respondentId || tower.id || mongoId) + '</span>' +
+    '<button id="tower-back-data-btn" onclick="towerCancelEdit()" style="border:none;background:transparent;color:#205C43;cursor:pointer;font-weight:600;font-size:12px">Back to Data Table</button>';
+  banner.style.display = 'flex';
+}
+
 function normalizeSurveyForPoint(s) {
   return {
     ...s,
@@ -10536,6 +10662,11 @@ async function dtEdit(btn) {
   const readOnly = openRecordReadOnly;
   openRecordReadOnly = false;
   const mongoId = btn.getAttribute('data-mid');
+  const rowType = btn.getAttribute('data-rtype');
+  if (rowType === 'cell') {
+    await dtEditTower(btn, readOnly);
+    return;
+  }
   console.log('dtEdit called with:', mongoId);
   if (!mongoId || mongoId === 'undefined') { alert('Cannot edit - record has no database ID.'); return; }
   const cachedSurvey = points.find(p => p._id === mongoId);
@@ -11129,6 +11260,7 @@ async function towerSubmit() {
     const input = document.getElementById(id);
     return !!(input?.dataset?.uploadId || input?.files?.[0]);
   };
+  const hasExistingEvidence = key => !!(towerEditingOriginalRecord && towerEditingOriginalRecord[key]);
   const lat = document.getElementById('fd-s7-tlat')?.value;
   const lon = document.getElementById('fd-s7-tlon')?.value;
   const selectedWard = document.getElementById('fd-s7-ward')?.value;
@@ -11160,9 +11292,9 @@ async function towerSubmit() {
   if (!rsrp) missingRequired.push('RSRP from NCIL');
   if (!rsrq) missingRequired.push('RSRQ from NCIL');
   if (!rssnr) missingRequired.push('RSSNR / SINR from NCIL');
-  if (!hasEvidence('fd-s7-ncil-scr')) missingRequired.push('NCIL RAW readings screenshot');
-  if (!hasEvidence('fd-s7-scr')) missingRequired.push('tower GPS / NCIL MAP screenshot');
-  if (!hasEvidence('fd-s7-photo-file')) missingRequired.push('tower structure photo');
+  if (!hasEvidence('fd-s7-ncil-scr') && !hasExistingEvidence('fd_s7_ncil_scr')) missingRequired.push('NCIL RAW readings screenshot');
+  if (!hasEvidence('fd-s7-scr') && !hasExistingEvidence('fd_s7_scr')) missingRequired.push('tower GPS / NCIL MAP screenshot');
+  if (!hasEvidence('fd-s7-photo-file') && !hasExistingEvidence('fd_s7_photo_file')) missingRequired.push('tower structure photo');
   if (missingRequired.length) {
     alert('Please complete these Step 7 tower fields before submitting:\n\n- ' + missingRequired.join('\n- '));
     return;
@@ -11175,6 +11307,12 @@ async function towerSubmit() {
     return;
   }
   const data = towerGetData();
+  if (towerEditingOriginalRecord) {
+    ['fd_s7_ncil_scr', 'fd_s7_scr', 'fd_s7_photo_file'].forEach(key => {
+      if (!data[key] && towerEditingOriginalRecord[key]) data[key] = towerEditingOriginalRecord[key];
+    });
+    data.respondentId = towerEditingOriginalRecord.respondentId || data.respondentId;
+  }
   if (DEMO_MODE) {
     towerPoints.push({ ...data, id: data.respondentId, sourceSurveyId: data.respondentId, connectedSurveys: deriveConnectedSurveysForTower(data, points) });
     towerRecords.push(normalizeTowerRecordForTable(data));
@@ -11186,7 +11324,7 @@ async function towerSubmit() {
     return;
   }
   try {
-    const res = await apiCall('POST', '/api/surveys', data);
+    const res = await apiCall(towerEditingId ? 'PUT' : 'POST', towerEditingId ? '/api/surveys/' + towerEditingId : '/api/surveys', data);
     if (!res) return;
     const result = await res.json();
     if (!res.ok) {
@@ -11196,7 +11334,7 @@ async function towerSubmit() {
     }
     document.getElementById('tower-form-host').style.display = 'none';
     document.getElementById('tower-success').classList.add('show');
-    document.getElementById('tower-success-txt').textContent = `Tower ${data.enb || data.respondentId} submitted. Checking it appears in map/table records...`;
+    document.getElementById('tower-success-txt').textContent = `Tower ${data.enb || data.respondentId} ${towerEditingId ? 'updated' : 'submitted'}. Checking it appears in map/table records...`;
     await syncSurveyViews();
     const savedTowerVisible = [...towerRecords, ...towerPoints].some(t =>
       String(t.sourceRespondentId || t.respondentId || t.id || '').trim() === String(data.respondentId || '').trim() ||
@@ -11205,6 +11343,8 @@ async function towerSubmit() {
     document.getElementById('tower-success-txt').textContent = savedTowerVisible
       ? `Tower ${data.enb || data.respondentId} saved and is visible under Live Map tower points and Data Table > Tower readings / cell sites.`
       : `Tower ${data.enb || data.respondentId} was accepted by the server, but did not appear after reload. Open Data Table > Tower readings / cell sites; if it is still missing, the API is not returning Step 7 records.`;
+    towerEditingId = null;
+    towerEditingOriginalRecord = null;
   } catch (err) {
     alert('Tower submission failed: ' + err.message);
   } finally {
@@ -11212,10 +11352,23 @@ async function towerSubmit() {
   }
 }
 
-function towerReset() {
+function towerReset(keepEditingId) {
+  if (!keepEditingId) {
+    towerEditingId = null;
+    towerEditingOriginalRecord = null;
+    setTowerReadOnly(false);
+    const submitBtn = document.getElementById('tower-submit-btn');
+    if (submitBtn) {
+      submitBtn.textContent = 'Submit tower reading';
+      submitBtn.style.display = '';
+      submitBtn.disabled = false;
+    }
+  }
   const host = document.getElementById('tower-form-host');
   if (host) host.style.display = '';
   document.getElementById('tower-success')?.classList.remove('show');
+  const banner = document.getElementById('tower-edit-banner');
+  if (banner && !keepEditingId) banner.style.display = 'none';
   document.querySelectorAll('#view-tower input[type=text], #view-tower input[type=number], #view-tower select').forEach(el => { el.value = ''; });
   document.querySelectorAll('#view-tower input[type=file]').forEach(el => {
     el.value = '';
@@ -11226,6 +11379,12 @@ function towerReset() {
   const other = document.getElementById('fd-s7-top-other');
   if (other) other.style.display = 'none';
   checkTowerAccess();
+}
+
+function towerCancelEdit() {
+  towerReset();
+  const dataTnav = document.getElementById('tnav-data');
+  if (dataTnav) switchView('data', dataTnav);
 }
 
 function showAddUserForm() {
@@ -12347,6 +12506,7 @@ function normalizeTowerRecordForTable(record) {
   const ward = record.ward || record.fd_s7_ward || '';
   return {
     ...record,
+    _id: record._id != null ? String(record._id) : '',
     id: record.respondentId || record.id || (enb ? `TOWER-${enb}` : record._id || 'Tower reading'),
     type: 'cell',
     ward,
@@ -12563,5 +12723,6 @@ checkAuth();
 </script>
 </body>
 </html>
+
 
 
