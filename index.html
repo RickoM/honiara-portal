@@ -933,6 +933,228 @@
   .dash-finding-title { font-size:11px;font-weight:800;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px; }
   .dash-finding-text { font-size:12px;line-height:1.45;color:var(--text); }
   .dash-export-note { font-size:11px;color:var(--gray-600);line-height:1.45;margin-left:auto; }
+  .dashboard-workspace { width:100%;max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:14px; }
+  .dashboard-command-head { display:flex;justify-content:space-between;align-items:flex-start;gap:16px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:16px 18px; }
+  .dashboard-tabs { display:flex;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:8px;position:sticky;top:0;z-index:20; }
+  .dashboard-tab-btn { border:1px solid transparent;background:transparent;color:var(--gray-600);border-radius:8px;padding:9px 12px;font-size:12px;font-weight:800;cursor:pointer; }
+  .dashboard-tab-btn:hover { background:var(--gray-50);color:var(--navy);border-color:var(--border); }
+  .dashboard-tab-btn.on { background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 2px 5px rgba(28,53,87,.18); }
+  .dashboard-tab-panel { display:none; }
+  .dashboard-tab-panel.on { display:block; }
+  .command-overview-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:12px; }
+  .command-summary-card { background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);min-height:126px;display:flex;flex-direction:column;justify-content:space-between;gap:10px; }
+  .command-card-top { display:flex;align-items:flex-start;justify-content:space-between;gap:10px; }
+  .command-card-title { color:var(--gray-600);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;line-height:1.25; }
+  .command-card-value { color:var(--navy);font-size:26px;font-weight:900;line-height:1.05; }
+  .command-card-note { color:var(--gray-600);font-size:11px;line-height:1.4; }
+  .command-progress-track { height:8px;background:var(--gray-200);border-radius:999px;overflow:hidden; }
+  .command-progress-fill { height:100%;border-radius:999px;background:var(--navy); }
+  .evidence-explorer { background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden; }
+  .evidence-head { display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);background:#f8fafc; }
+  .evidence-controls { display:grid;grid-template-columns:1fr 1.3fr auto;gap:8px;padding:12px;border-bottom:1px solid var(--border); }
+  .evidence-body { display:grid;grid-template-columns:300px 1fr;gap:0;min-height:340px; }
+  .evidence-list { border-right:1px solid var(--border);padding:10px;display:grid;gap:7px;align-content:start;max-height:560px;overflow:auto; }
+  .evidence-item { border:1px solid var(--border);border-radius:9px;background:#fff;padding:9px;text-align:left;cursor:pointer; }
+  .evidence-item:hover, .evidence-item.on { border-color:#b8c9dd;background:#f8fbff; }
+  .evidence-item strong { display:block;color:var(--navy);font-size:12px;line-height:1.25; }
+  .evidence-item span { display:block;color:var(--gray-600);font-size:10px;line-height:1.35;margin-top:4px; }
+  .evidence-detail { padding:14px;display:grid;gap:12px;align-content:start; }
+  .evidence-linked-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:10px; }
+  .evidence-linked-card { border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px;min-height:110px; }
+  .evidence-linked-card h4 { margin:0 0 8px;color:var(--navy);font-size:12px;font-weight:900; }
+  .evidence-linked-card ul { margin:0;padding-left:16px;color:var(--gray-800);font-size:11px;line-height:1.45; }
+  .evidence-link-panel { border:1px solid #c8d6e6;border-radius:10px;background:#f8fbff;padding:10px;display:grid;gap:8px; }
+  .evidence-link-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px; }
+  .evidence-link-list { display:flex;gap:6px;flex-wrap:wrap; }
+  .evidence-chip { border:1px solid #c8d6e6;border-radius:999px;background:#fff;color:var(--navy);padding:4px 8px;font-size:10px;font-weight:800;display:inline-flex;gap:6px;align-items:center; }
+  .evidence-chip button { border:0;background:transparent;color:var(--red);font-weight:900;cursor:pointer;padding:0; }
+  .dw-workspace { display:grid;gap:14px; }
+  .dw-toolbar { display:flex;justify-content:space-between;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px; }
+  .dw-stat-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-width:680px; }
+  .dw-stat { border:1px solid var(--border);border-radius:9px;background:var(--gray-50);padding:8px 9px; }
+  .dw-stat strong { display:block;color:var(--navy);font-size:18px;font-weight:900;line-height:1; }
+  .dw-stat span { display:block;color:var(--gray-600);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin-top:5px;line-height:1.15; }
+  .dw-layout { display:grid;grid-template-columns:300px 1fr;gap:14px;align-items:start; }
+  .dw-list-card, .dw-editor-card, .dw-evidence-card { background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden; }
+  .dw-card-head { display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:#f8fafc; }
+  .dw-card-title { color:var(--navy);font-size:14px;font-weight:900; }
+  .dw-list { display:grid;gap:8px;padding:10px;max-height:760px;overflow:auto; }
+  .dw-list-item { text-align:left;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px;cursor:pointer; }
+  .dw-list-item:hover, .dw-list-item.on { border-color:#b8c9dd;background:#f8fbff; }
+  .dw-list-title { color:var(--navy);font-size:12px;font-weight:900;line-height:1.25; }
+  .dw-list-meta { color:var(--gray-600);font-size:10px;line-height:1.35;margin-top:5px; }
+  .dw-form { padding:14px;display:grid;gap:14px; }
+  .dw-form-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+  .dw-field { display:flex;flex-direction:column;gap:5px;min-width:0; }
+  .dw-field.wide { grid-column:1 / -1; }
+  .dw-field label { color:var(--gray-600);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em; }
+  .dw-input, .dw-select, .dw-textarea { width:100%;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);font-family:inherit;font-size:12px;padding:9px 10px; }
+  .dw-textarea { min-height:96px;resize:vertical;line-height:1.45; }
+  .dw-actions { display:flex;gap:8px;flex-wrap:wrap;align-items:center; }
+  .dw-dashboard-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:8px; }
+  .dw-mini-stat { border:1px solid var(--border);border-radius:9px;background:var(--gray-50);padding:8px; }
+  .dw-mini-stat strong { color:var(--navy);font-size:16px;font-weight:900;display:block; }
+  .dw-mini-stat span { color:var(--gray-600);font-size:9px;font-weight:900;text-transform:uppercase;line-height:1.15; }
+  .dw-validation-list { display:grid;gap:6px; }
+  .dw-validation-item { border:1px solid var(--border);border-radius:8px;padding:7px 8px;font-size:11px;line-height:1.35;background:var(--gray-50); }
+  .dw-validation-item.good { background:var(--green-light);border-color:#b7d8a4;color:var(--green); }
+  .dw-validation-item.warn { background:var(--amber-light);border-color:#efc77b;color:var(--amber); }
+  .dw-evidence-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:10px; }
+  .dw-evidence-card { padding:10px;min-height:110px; }
+  .dw-evidence-card h4 { margin:0 0 8px;color:var(--navy);font-size:12px;font-weight:900; }
+  .dw-evidence-card ul { margin:0;padding-left:16px;color:var(--gray-800);font-size:11px;line-height:1.45; }
+  .eq-workspace { display:grid;gap:14px; }
+  .eq-toolbar { display:flex;justify-content:space-between;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px; }
+  .eq-stat-grid { display:grid;grid-template-columns:repeat(6,1fr);gap:8px;min-width:620px; }
+  .eq-stat { border:1px solid var(--border);border-radius:9px;background:var(--gray-50);padding:8px 9px; }
+  .eq-stat strong { display:block;color:var(--navy);font-size:18px;font-weight:900;line-height:1; }
+  .eq-stat span { display:block;color:var(--gray-600);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin-top:5px;line-height:1.15; }
+  .eq-filter-card, .eq-results-card, .eq-detail-card { background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden; }
+  .eq-filter-grid { display:grid;grid-template-columns:1.3fr repeat(4,1fr);gap:8px;padding:12px;border-bottom:1px solid var(--border); }
+  .eq-filter-grid.secondary { grid-template-columns:repeat(5,1fr);border-bottom:0;padding-top:0; }
+  .eq-layout { display:grid;grid-template-columns:1.05fr .95fr;gap:14px;align-items:start; }
+  .eq-card-head { display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:#f8fafc; }
+  .eq-card-title { color:var(--navy);font-size:14px;font-weight:900; }
+  .eq-results { padding:12px;display:grid;gap:12px;max-height:760px;overflow:auto; }
+  .eq-group { border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff; }
+  .eq-group h3 { margin:0;padding:9px 10px;background:#f8fafc;border-bottom:1px solid var(--border);color:var(--navy);font-size:12px;font-weight:900; }
+  .eq-item { border:0;border-bottom:1px solid var(--border);background:#fff;text-align:left;padding:10px;width:100%;cursor:pointer; }
+  .eq-item:last-child { border-bottom:0; }
+  .eq-item:hover, .eq-item.on { background:#f8fbff; }
+  .eq-item strong { display:block;color:var(--navy);font-size:12px;line-height:1.25; }
+  .eq-item span { display:block;color:var(--gray-600);font-size:10px;line-height:1.35;margin-top:4px; }
+  .eq-detail { padding:14px;display:grid;gap:12px; }
+  .eq-detail-section { border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px; }
+  .eq-detail-section h4 { margin:0 0 8px;color:var(--navy);font-size:12px;font-weight:900; }
+  .eq-detail-section pre { white-space:pre-wrap;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gray-800);margin:0; }
+  .eq-breakdown-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+  .dashboard-placeholder { background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:22px; }
+  .dashboard-placeholder h3 { color:var(--navy);font-size:18px;font-weight:900;margin-bottom:7px; }
+  .dashboard-placeholder p { color:var(--gray-600);font-size:12px;line-height:1.55;max-width:760px; }
+  .lit-workspace { display:grid;gap:14px; }
+  .lit-toolbar { display:flex;justify-content:space-between;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px; }
+  .lit-stat-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:8px;min-width:420px; }
+  .lit-stat { border:1px solid var(--border);border-radius:9px;background:var(--gray-50);padding:8px 9px; }
+  .lit-stat strong { display:block;color:var(--navy);font-size:18px;font-weight:900;line-height:1; }
+  .lit-stat span { display:block;color:var(--gray-600);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin-top:5px; }
+  .lit-filter-grid { display:grid;grid-template-columns:1.4fr repeat(5,1fr);gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:12px; }
+  .lit-layout { display:grid;grid-template-columns:330px 1fr;gap:14px;align-items:start; }
+  .lit-list-card, .lit-editor-card, .lit-export-card { background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden; }
+  .lit-card-head { display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:#f8fafc; }
+  .lit-card-title { color:var(--navy);font-size:14px;font-weight:900; }
+  .lit-list { display:grid;gap:8px;padding:10px;max-height:720px;overflow:auto; }
+  .lit-list-item { text-align:left;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px;cursor:pointer; }
+  .lit-list-item:hover, .lit-list-item.on { border-color:#b8c9dd;background:#f8fbff; }
+  .lit-list-title { color:var(--navy);font-size:12px;font-weight:900;line-height:1.25; }
+  .lit-list-meta { color:var(--gray-600);font-size:10px;line-height:1.35;margin-top:5px; }
+  .lit-form { padding:14px;display:grid;gap:14px; }
+  .lit-form-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+  .lit-field { display:flex;flex-direction:column;gap:5px;min-width:0; }
+  .lit-field.wide { grid-column:1 / -1; }
+  .lit-field label { color:var(--gray-600);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em; }
+  .lit-input, .lit-select, .lit-textarea { width:100%;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);font-family:inherit;font-size:12px;padding:9px 10px; }
+  .lit-textarea { min-height:82px;resize:vertical;line-height:1.45; }
+  .lit-bibtex { font-family:'JetBrains Mono',monospace;font-size:11px;min-height:170px; }
+  .lit-actions { display:flex;gap:8px;flex-wrap:wrap;align-items:center; }
+  .lit-citation-box { border:1px solid #c8d6e6;border-radius:10px;background:#f8fbff;padding:10px;display:grid;gap:7px; }
+  .lit-citation-key { color:var(--navy);font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:900;overflow-wrap:anywhere; }
+  .lit-copy-command { font-family:'JetBrains Mono',monospace;border:1px dashed #b8c9dd;border-radius:8px;background:#fff;padding:8px;color:var(--navy);font-size:12px;overflow-wrap:anywhere; }
+  .lit-validation-list { display:grid;gap:6px; }
+  .lit-validation-item { border:1px solid var(--border);border-radius:8px;padding:7px 8px;font-size:11px;line-height:1.35;background:var(--gray-50); }
+  .lit-validation-item.good { background:var(--green-light);border-color:#b7d8a4;color:var(--green); }
+  .lit-validation-item.warn { background:var(--amber-light);border-color:#efc77b;color:var(--amber); }
+  .lit-validation-item.bad { background:var(--red-light);border-color:#e7a5a5;color:var(--red); }
+  .lit-export-card { padding:14px;display:grid;gap:10px; }
+  .lit-export-output { font-family:'JetBrains Mono',monospace;font-size:11px;min-height:150px; }
+  .im-workspace { display:grid;gap:14px; }
+  .im-toolbar { display:flex;justify-content:space-between;align-items:flex-start;gap:12px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px; }
+  .im-stat-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-width:680px; }
+  .im-stat { border:1px solid var(--border);border-radius:9px;background:var(--gray-50);padding:8px 9px; }
+  .im-stat strong { display:block;color:var(--navy);font-size:18px;font-weight:900;line-height:1; }
+  .im-stat span { display:block;color:var(--gray-600);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;margin-top:5px;line-height:1.15; }
+  .im-filter-grid { display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:8px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:12px; }
+  .im-layout { display:grid;grid-template-columns:330px 1fr;gap:14px;align-items:start; }
+  .im-list-card, .im-editor-card, .im-output-card { background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);overflow:hidden; }
+  .im-card-head { display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:#f8fafc; }
+  .im-card-title { color:var(--navy);font-size:14px;font-weight:900; }
+  .im-list { display:grid;gap:8px;padding:10px;max-height:760px;overflow:auto; }
+  .im-list-item { text-align:left;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px;cursor:pointer; }
+  .im-list-item:hover, .im-list-item.on { border-color:#b8c9dd;background:#f8fbff; }
+  .im-list-title { color:var(--navy);font-size:12px;font-weight:900;line-height:1.25; }
+  .im-list-meta { color:var(--gray-600);font-size:10px;line-height:1.35;margin-top:5px; }
+  .im-form { padding:14px;display:grid;gap:14px; }
+  .im-form-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+  .im-field { display:flex;flex-direction:column;gap:5px;min-width:0; }
+  .im-field.wide { grid-column:1 / -1; }
+  .im-field label { color:var(--gray-600);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.04em; }
+  .im-input, .im-select, .im-textarea { width:100%;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);font-family:inherit;font-size:12px;padding:9px 10px; }
+  .im-textarea { min-height:84px;resize:vertical;line-height:1.45; }
+  .im-actions { display:flex;gap:8px;flex-wrap:wrap;align-items:center; }
+  .im-document-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+  .im-doc-slot { border:1px dashed #c8d6e6;border-radius:10px;background:#f8fbff;padding:10px;display:grid;gap:7px; }
+  .im-doc-slot strong { color:var(--navy);font-size:12px; }
+  .im-doc-slot span { color:var(--gray-600);font-size:10px;line-height:1.35; }
+  .im-workflow { display:flex;gap:7px;flex-wrap:wrap; }
+  .im-workflow button { border:1px solid var(--border);background:#fff;color:var(--navy);border-radius:999px;padding:7px 10px;font-size:10px;font-weight:900;cursor:pointer; }
+  .im-workflow button.on { background:var(--navy);border-color:var(--navy);color:#fff; }
+  .im-progress-card { border:1px solid var(--border);border-radius:12px;background:#fff;box-shadow:var(--shadow);padding:12px;display:grid;gap:10px; }
+  .im-progress-track { height:9px;background:var(--gray-200);border-radius:999px;overflow:hidden; }
+  .im-progress-fill { height:100%;background:var(--navy);border-radius:999px;transition:width .2s; }
+  .im-stage-grid { display:grid;grid-template-columns:repeat(5,1fr);gap:7px; }
+  .im-stage { border:1px solid var(--border);border-radius:9px;background:#fff;padding:7px 8px;font-size:9px;font-weight:900;color:var(--gray-600);line-height:1.2; }
+  .im-stage.done { background:var(--green-light);border-color:#b7d8a4;color:var(--green); }
+  .im-stage.current { background:var(--navy);border-color:var(--navy);color:#fff; }
+  .im-transcript-version-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+  .im-version-pane { border:1px solid var(--border);border-radius:10px;background:#fff;overflow:hidden; }
+  .im-version-pane-body { min-height:120px;max-height:230px;overflow:auto;padding:10px;font-size:12px;line-height:1.45;background:#fbfcfd;white-space:pre-wrap; }
+  .im-transcript-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+  .im-transcript-box { border:1px solid var(--border);border-radius:10px;background:#fff;overflow:hidden; }
+  .im-transcript-head { display:flex;justify-content:space-between;align-items:center;gap:8px;background:#f8fafc;border-bottom:1px solid var(--border);padding:9px 10px;color:var(--navy);font-size:12px;font-weight:900; }
+  .im-transcript-original { min-height:260px;max-height:520px;overflow:auto;padding:10px;font-family:'JetBrains Mono',monospace;font-size:11px;white-space:pre-wrap;line-height:1.45;background:#fbfcfd;color:var(--gray-800); }
+  .im-editor-toolbar { display:flex;gap:6px;flex-wrap:wrap;padding:8px;border-bottom:1px solid var(--border);background:#fff; }
+  .im-rich-editor { min-height:260px;max-height:520px;overflow:auto;padding:12px;font-size:13px;line-height:1.55;outline:none; }
+  .im-rich-editor mark { background:#fff2b8;border-radius:3px;padding:0 2px; }
+  .im-version-list { display:grid;gap:6px;max-height:170px;overflow:auto; }
+  .im-version-item { border:1px solid var(--border);border-radius:8px;background:var(--gray-50);padding:7px 8px;font-size:11px;line-height:1.35; }
+  .im-output-card { padding:14px;display:grid;gap:10px; }
+  .im-output { min-height:150px;font-family:'JetBrains Mono',monospace;font-size:11px; }
+  @media (max-width: 900px) {
+    .command-overview-grid { grid-template-columns:repeat(2,1fr); }
+    .dashboard-command-head { flex-direction:column; }
+    .evidence-controls { grid-template-columns:1fr; }
+    .evidence-body { grid-template-columns:1fr; }
+    .evidence-list { border-right:0;border-bottom:1px solid var(--border);max-height:260px; }
+    .evidence-linked-grid, .evidence-link-grid { grid-template-columns:1fr; }
+    .dw-toolbar { flex-direction:column; }
+    .dw-stat-grid { width:100%;min-width:0;grid-template-columns:repeat(2,1fr); }
+    .dw-layout { grid-template-columns:1fr; }
+    .dw-form-grid, .dw-dashboard-grid, .dw-evidence-grid { grid-template-columns:1fr 1fr; }
+    .eq-toolbar { flex-direction:column; }
+    .eq-stat-grid { width:100%;min-width:0;grid-template-columns:repeat(2,1fr); }
+    .eq-filter-grid, .eq-filter-grid.secondary { grid-template-columns:1fr 1fr; }
+    .eq-layout { grid-template-columns:1fr; }
+    .eq-breakdown-grid { grid-template-columns:1fr; }
+    .lit-toolbar { flex-direction:column; }
+    .lit-stat-grid { width:100%;min-width:0; }
+    .lit-filter-grid { grid-template-columns:1fr 1fr; }
+    .lit-layout { grid-template-columns:1fr; }
+    .lit-form-grid { grid-template-columns:1fr 1fr; }
+    .im-toolbar { flex-direction:column; }
+    .im-stat-grid { width:100%;min-width:0;grid-template-columns:repeat(2,1fr); }
+    .im-filter-grid { grid-template-columns:1fr 1fr; }
+    .im-layout, .im-transcript-grid, .im-transcript-version-grid { grid-template-columns:1fr; }
+    .im-form-grid, .im-document-grid { grid-template-columns:1fr 1fr; }
+    .im-stage-grid { grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width: 560px) {
+    .dashboard-tabs { position:static;overflow-x:auto;flex-wrap:nowrap; }
+    .dashboard-tab-btn { white-space:nowrap;flex:0 0 auto; }
+    .command-overview-grid { grid-template-columns:1fr; }
+    .lit-stat-grid, .lit-filter-grid, .lit-form-grid { grid-template-columns:1fr; }
+    .im-stat-grid, .im-filter-grid, .im-form-grid, .im-document-grid { grid-template-columns:1fr; }
+    .dw-stat-grid, .dw-form-grid, .dw-dashboard-grid, .dw-evidence-grid { grid-template-columns:1fr; }
+    .eq-stat-grid, .eq-filter-grid, .eq-filter-grid.secondary { grid-template-columns:1fr; }
+  }
   .analytics-nav { display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px; }
   .analytics-nav button { border:1px solid var(--border);background:#fff;color:var(--navy);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 1px 3px rgba(16,24,40,.08); }
   .analytics-nav button:hover { background:#edf3fb;border-color:#c9d8ea; }
@@ -1762,31 +1984,493 @@
 
   <!-- DASHBOARD VIEW -->
   <div class="view-panel" id="view-dashboard">
-    <div style="max-width:1180px;margin:0 auto">
-      <div id="dash-research-tree"></div>
-      <div id="dash-constituency-overview"></div>
-      <div id="dash-participant-results"></div>
-      <div id="dash-data-reading-results"></div>
-      <div class="dash-export-bar">
-        <button class="btn primary" type="button" onclick="exportDashboardFindingsMarkdown()">Export findings notes</button>
-        <button class="btn" type="button" onclick="exportDashboardFindingsImage()">Export image table</button>
-        <button class="btn" type="button" onclick="exportDashboardFindingsLatex()">Export LaTeX table</button>
-        <button class="btn" type="button" onclick="exportDashboardFindingsCSV()">Export ward metrics CSV</button>
-        <button class="btn" type="button" onclick="copyDashboardFindings()">Copy findings text</button>
-        <button class="btn" type="button" onclick="window.print()">Print / save PDF</button>
-        <div class="dash-export-note">Use image for slides, LaTeX for dissertation tables, notes for write-up wording, and CSV for further analysis.</div>
+    <div class="dashboard-workspace">
+      <div class="dashboard-command-head">
+        <div>
+          <div class="dash-title">Dissertation Command Centre</div>
+          <div class="dash-subtitle">A tabbed workspace for dissertation progress, research analytics, interviews, literature review, journal notes and portal settings.</div>
+        </div>
+        <div class="dash-subtitle" id="dashboard-command-status">Overview</div>
       </div>
-      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-findings-pack"></div>
-      <div class="dash-grid" id="dash-metrics"></div>
-      <div class="dash-story">
-        <div class="data-card" style="padding:16px" id="dash-zone-bars"></div>
-        <div class="data-card" style="padding:16px" id="dash-flags"></div>
+
+      <div class="dashboard-tabs" role="tablist" aria-label="Dashboard workspace tabs">
+        <button class="dashboard-tab-btn on" type="button" role="tab" aria-selected="true" data-dashboard-tab="overview" onclick="setDashboardTab('overview', this)">Overview</button>
+        <button class="dashboard-tab-btn" type="button" role="tab" aria-selected="false" data-dashboard-tab="query" onclick="setDashboardTab('query', this)">Evidence Query &amp; Filter</button>
+        <button class="dashboard-tab-btn" type="button" role="tab" aria-selected="false" data-dashboard-tab="project" onclick="setDashboardTab('project', this)">Project Management</button>
+        <button class="dashboard-tab-btn" type="button" role="tab" aria-selected="false" data-dashboard-tab="analytics" onclick="setDashboardTab('analytics', this)">Analytics</button>
+        <button class="dashboard-tab-btn" type="button" role="tab" aria-selected="false" data-dashboard-tab="interviews" onclick="setDashboardTab('interviews', this)">Interviews</button>
+        <button class="dashboard-tab-btn" type="button" role="tab" aria-selected="false" data-dashboard-tab="literature" onclick="setDashboardTab('literature', this)">Literature Review</button>
+        <button class="dashboard-tab-btn" type="button" role="tab" aria-selected="false" data-dashboard-tab="journal" onclick="setDashboardTab('journal', this)">Research Journal</button>
+        <button class="dashboard-tab-btn" type="button" role="tab" aria-selected="false" data-dashboard-tab="settings" onclick="setDashboardTab('settings', this)">Settings</button>
       </div>
-      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-experience-correlation"></div>
-      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-dissertation-insights"></div>
-      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-questionnaire-results"></div>
-      <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-spectrum-config"></div>
-      <div class="data-card" style="padding:16px" id="dash-ward-detail"></div>
+
+      <section class="dashboard-tab-panel on" id="dashboard-tab-overview" role="tabpanel">
+        <div class="command-overview-grid" id="dashboard-overview-grid"></div>
+        <div class="evidence-explorer" id="evidence-explorer">
+          <div class="evidence-head">
+            <div>
+              <div class="dash-title">Evidence Explorer</div>
+              <div class="dash-subtitle">Browse shared research questions, themes, findings and recommendations, then inspect linked literature, interviews, analytics and dissertation chapters.</div>
+            </div>
+            <button class="btn btn-primary btn-sm" type="button" onclick="evCreateEntity()">Add entity</button>
+          </div>
+          <div class="evidence-controls">
+            <select class="lit-select" id="ev-browse-type" onchange="evRenderExplorer()"></select>
+            <input class="lit-input" id="ev-search" placeholder="Search evidence entities..." oninput="evRenderExplorer()">
+            <button class="btn" type="button" onclick="evShowAnalyticsLinkPanel()">Prepare analytics link</button>
+          </div>
+          <div class="evidence-body">
+            <div class="evidence-list" id="ev-entity-list"></div>
+            <div class="evidence-detail" id="ev-detail"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-tab-panel" id="dashboard-tab-query" role="tabpanel">
+        <div class="eq-workspace">
+          <div class="eq-toolbar">
+            <div>
+              <div class="dash-title">Evidence Query &amp; Filter</div>
+              <div class="dash-subtitle">Search, filter and navigate existing literature, interviews, analytics placeholders, dissertation chapters, findings, recommendations and notes without generating new interpretations.</div>
+            </div>
+            <div class="eq-stat-grid" id="eq-stat-grid"></div>
+          </div>
+
+          <div class="eq-filter-card">
+            <div class="eq-card-head">
+              <div class="eq-card-title">Global Search &amp; Filters</div>
+              <div class="dw-actions">
+                <button class="btn" type="button" onclick="eqResetFilters()">Reset</button>
+                <button class="btn" type="button" onclick="eqExportFilteredMetadata()">Export metadata</button>
+              </div>
+            </div>
+            <div class="eq-filter-grid">
+              <input class="lit-input" id="eq-search" placeholder="Keyword, interviewee, organisation, citation key, tag..." oninput="eqRender()">
+              <select class="lit-select" id="eq-filter-rq" onchange="eqRender()"></select>
+              <select class="lit-select" id="eq-filter-chapter" onchange="eqRender()"></select>
+              <select class="lit-select" id="eq-filter-theme" onchange="eqRender()"></select>
+              <select class="lit-select" id="eq-filter-type" onchange="eqRender()"></select>
+            </div>
+            <div class="eq-filter-grid secondary">
+              <select class="lit-select" id="eq-filter-literature" onchange="eqRender()"></select>
+              <select class="lit-select" id="eq-filter-interview" onchange="eqRender()"></select>
+              <input class="lit-input" id="eq-filter-organisation" placeholder="Organisation" oninput="eqRender()">
+              <input class="lit-input" id="eq-filter-tags" placeholder="Tags / keywords" oninput="eqRender()">
+              <input class="lit-input" id="eq-filter-date" type="date" onchange="eqRender()">
+            </div>
+          </div>
+
+          <div class="eq-layout">
+            <div class="eq-results-card">
+              <div class="eq-card-head">
+                <div class="eq-card-title">Grouped Results</div>
+                <div class="dash-subtitle" id="eq-result-count">0 results</div>
+              </div>
+              <div class="eq-results" id="eq-results"></div>
+            </div>
+            <div class="eq-detail-card">
+              <div class="eq-card-head">
+                <div class="eq-card-title">Selected Evidence</div>
+              </div>
+              <div class="eq-detail" id="eq-detail"></div>
+            </div>
+          </div>
+
+          <div class="eq-results-card">
+            <div class="eq-card-head">
+              <div class="eq-card-title">Evidence Statistics</div>
+            </div>
+            <div class="eq-detail">
+              <div class="eq-breakdown-grid" id="eq-breakdowns"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-tab-panel" id="dashboard-tab-project" role="tabpanel">
+        <div class="dw-workspace">
+          <div class="dw-toolbar">
+            <div>
+              <div class="dash-title">Dissertation Workspace</div>
+              <div class="dash-subtitle">Write, organise and validate chapters while pulling supporting evidence from the Research Evidence Linking Engine.</div>
+            </div>
+            <div class="dw-stat-grid" id="dw-overview-stats"></div>
+          </div>
+
+          <div class="dw-layout">
+            <div class="dw-list-card">
+              <div class="dw-card-head">
+                <div class="dw-card-title">Chapters</div>
+                <button class="btn btn-primary btn-sm" type="button" onclick="dwNewChapter()">New</button>
+              </div>
+              <div class="dw-list" id="dw-chapter-list"></div>
+            </div>
+
+            <div class="dw-editor-card">
+              <div class="dw-card-head">
+                <div>
+                  <div class="dw-card-title">Chapter Workspace</div>
+                  <div class="dash-subtitle" id="dw-editor-subtitle">Select or create a chapter.</div>
+                </div>
+                <div class="dw-actions">
+                  <button class="btn btn-primary" type="button" onclick="dwSaveChapter()">Save chapter</button>
+                  <button class="btn" type="button" onclick="dwDeleteChapter()">Delete</button>
+                </div>
+              </div>
+              <div class="dw-form">
+                <div class="dw-dashboard-grid" id="dw-chapter-dashboard"></div>
+                <div class="dw-form-grid">
+                  <div class="dw-field"><label>Chapter Title</label><input class="dw-input" id="dw-title"></div>
+                  <div class="dw-field"><label>Completion Status</label><select class="dw-select" id="dw-status"><option>Not Started</option><option>Drafting</option><option>Reviewing</option><option>Complete</option></select></div>
+                  <div class="dw-field"><label>Target Word Count</label><input class="dw-input" id="dw-target-words" type="number" min="0" oninput="dwUpdateChapterMetrics()"></div>
+                  <div class="dw-field wide"><label>Objectives</label><textarea class="dw-textarea" id="dw-objectives"></textarea></div>
+                  <div class="dw-field wide"><label>Draft Notes</label><textarea class="dw-textarea" id="dw-draft-notes" oninput="dwUpdateChapterMetrics()"></textarea></div>
+                  <div class="dw-field wide"><label>Draft Paragraphs</label><textarea class="dw-textarea" id="dw-draft-paragraphs" oninput="dwUpdateChapterMetrics()"></textarea></div>
+                  <div class="dw-field"><label>Key Arguments</label><textarea class="dw-textarea" id="dw-key-arguments"></textarea></div>
+                  <div class="dw-field"><label>Outstanding Tasks</label><textarea class="dw-textarea" id="dw-outstanding-tasks"></textarea></div>
+                  <div class="dw-field"><label>Writing Checklist</label><textarea class="dw-textarea" id="dw-writing-checklist"></textarea></div>
+                  <div class="dw-field"><label>LaTeX Notes</label><textarea class="dw-textarea" id="dw-latex-notes"></textarea></div>
+                  <div class="dw-field"><label>Figure References</label><textarea class="dw-textarea" id="dw-figure-refs" placeholder="fig:coverage-map"></textarea></div>
+                  <div class="dw-field"><label>Table References</label><textarea class="dw-textarea" id="dw-table-refs" placeholder="tab:qos-summary"></textarea></div>
+                </div>
+
+                <div class="evidence-link-panel">
+                  <div class="dw-card-title">Chapter Evidence Links</div>
+                  <div class="dash-subtitle">Link this chapter to shared research questions, themes, findings and recommendations. Evidence records remain in their original modules.</div>
+                  <div class="evidence-link-grid">
+                    <select class="dw-select" id="dw-ev-type" onchange="evPopulateTargetSelect('dw')"></select>
+                    <select class="dw-select" id="dw-ev-target"></select>
+                    <button class="btn" type="button" onclick="dwAddChapterEvidenceLink()">Link chapter</button>
+                  </div>
+                  <div class="evidence-link-list" id="dw-evidence-links"></div>
+                </div>
+
+                <div>
+                  <div class="dw-card-title" style="margin-bottom:8px">Evidence Panel</div>
+                  <div class="dw-evidence-grid" id="dw-evidence-panel"></div>
+                </div>
+
+                <div>
+                  <div class="dw-card-title" style="margin-bottom:8px">Validation</div>
+                  <div class="dw-validation-list" id="dw-validation-list"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-tab-panel" id="dashboard-tab-analytics" role="tabpanel">
+        <div id="dash-research-tree"></div>
+        <div id="dash-constituency-overview"></div>
+        <div id="dash-participant-results"></div>
+        <div id="dash-data-reading-results"></div>
+        <div class="dash-export-bar">
+          <button class="btn primary" type="button" onclick="exportDashboardFindingsMarkdown()">Export findings notes</button>
+          <button class="btn" type="button" onclick="exportDashboardFindingsImage()">Export image table</button>
+          <button class="btn" type="button" onclick="exportDashboardFindingsLatex()">Export LaTeX table</button>
+          <button class="btn" type="button" onclick="exportDashboardFindingsCSV()">Export ward metrics CSV</button>
+          <button class="btn" type="button" onclick="copyDashboardFindings()">Copy findings text</button>
+          <button class="btn" type="button" onclick="window.print()">Print / save PDF</button>
+          <div class="dash-export-note">Use image for slides, LaTeX for dissertation tables, notes for write-up wording, and CSV for further analysis.</div>
+        </div>
+        <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-findings-pack"></div>
+        <div class="dash-grid" id="dash-metrics"></div>
+        <div class="dash-story">
+          <div class="data-card" style="padding:16px" id="dash-zone-bars"></div>
+          <div class="data-card" style="padding:16px" id="dash-flags"></div>
+        </div>
+        <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-experience-correlation"></div>
+        <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-dissertation-insights"></div>
+        <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-questionnaire-results"></div>
+        <div class="data-card" style="padding:16px;margin-bottom:20px" id="dash-spectrum-config"></div>
+        <div class="data-card" style="padding:16px" id="dash-ward-detail"></div>
+      </section>
+
+      <section class="dashboard-tab-panel" id="dashboard-tab-interviews" role="tabpanel">
+        <div class="im-workspace">
+          <div class="im-toolbar">
+            <div>
+              <div class="dash-title">Interview Management System</div>
+              <div class="dash-subtitle">Plan interviews, preserve transcript originals, manage approvals, prepare coding links and generate dissertation-ready transcript copies.</div>
+            </div>
+            <div class="im-stat-grid" id="im-stat-grid"></div>
+          </div>
+
+          <div class="im-filter-grid">
+            <input class="im-input" id="im-search" placeholder="Search interviewee, organisation, notes..." oninput="imRenderList()">
+            <select class="im-select" id="im-filter-status" onchange="imRenderList()"></select>
+            <input class="im-input" id="im-filter-rq" placeholder="Research question" oninput="imRenderList()">
+            <input class="im-input" id="im-filter-org" placeholder="Organisation" oninput="imRenderList()">
+            <input class="im-input" id="im-filter-date" type="date" onchange="imRenderList()">
+          </div>
+
+          <div class="im-layout">
+            <div class="im-list-card">
+              <div class="im-card-head">
+                <div class="im-card-title">Interview Records</div>
+                <button class="btn btn-primary btn-sm" type="button" onclick="imNewRecord()">New</button>
+              </div>
+              <div class="im-list" id="im-list"></div>
+            </div>
+
+            <div class="im-editor-card">
+              <div class="im-card-head">
+                <div>
+                  <div class="im-card-title">Interview Record</div>
+                  <div class="dash-subtitle" id="im-editor-subtitle">Create or select an interview.</div>
+                </div>
+                <div class="im-actions">
+                  <button class="btn btn-primary" type="button" onclick="imSaveRecord()">Save</button>
+                  <button class="btn" type="button" onclick="imDeleteRecord()">Delete</button>
+                  <button class="btn" type="button" onclick="imGenerateApprovalCopy()">Approval copy</button>
+                </div>
+              </div>
+
+              <div class="im-form">
+                <div class="im-progress-card">
+                  <div class="im-transcript-head"><span>Interview Workflow Progress</span><span id="im-progress-label">0%</span></div>
+                  <div class="im-progress-track"><div class="im-progress-fill" id="im-progress-fill" style="width:0%"></div></div>
+                  <div class="im-stage-grid" id="im-stage-grid"></div>
+                </div>
+
+                <div class="im-workflow" id="im-workflow"></div>
+
+                <div class="im-form-grid">
+                  <div class="im-field"><label>Interviewee Name</label><input class="im-input" id="im-name"></div>
+                  <div class="im-field"><label>Organisation</label><input class="im-input" id="im-organisation"></div>
+                  <div class="im-field"><label>Position</label><input class="im-input" id="im-position"></div>
+                  <div class="im-field"><label>Email</label><input class="im-input" id="im-email" type="email"></div>
+                  <div class="im-field"><label>Telephone</label><input class="im-input" id="im-telephone"></div>
+                  <div class="im-field"><label>Interview Date</label><input class="im-input" id="im-date" type="date"></div>
+                  <div class="im-field"><label>Duration</label><input class="im-input" id="im-duration" placeholder="e.g. 45 min"></div>
+                  <div class="im-field"><label>Interview Type</label><select class="im-select" id="im-type"><option>Teams</option><option>Face-to-Face</option><option>Telephone</option></select></div>
+                  <div class="im-field"><label>Consent Status</label><select class="im-select" id="im-consent"><option>Not requested</option><option>Requested</option><option>Received</option><option>Withdrawn</option></select></div>
+                  <div class="im-field"><label>Status</label><select class="im-select" id="im-status" onchange="imSyncWorkflowFromStatus()"></select></div>
+                  <div class="im-field"><label>Research Questions Covered</label><input class="im-input" id="im-rqs" placeholder="RQ1; RQ3; RQ5"></div>
+                  <div class="im-field"><label>Dissertation Chapter(s)</label><input class="im-input" id="im-chapters" placeholder="Methodology; Analysis"></div>
+                  <div class="im-field"><label>Literature Record(s)</label><input class="im-input" id="im-literature" placeholder="Citation keys or titles"></div>
+                  <div class="im-field"><label>Survey Finding(s)</label><input class="im-input" id="im-survey-findings"></div>
+                  <div class="im-field wide"><label>Notes</label><textarea class="im-textarea" id="im-notes"></textarea></div>
+                </div>
+
+                <div class="evidence-link-panel">
+                  <div class="im-card-title">Evidence Links</div>
+                  <div class="dash-subtitle">Link this interview to shared research questions, chapters, themes, findings and recommendations. Links use IDs and do not duplicate the interview record.</div>
+                  <div class="evidence-link-grid">
+                    <select class="im-select" id="im-ev-type" onchange="evPopulateTargetSelect('im')"></select>
+                    <select class="im-select" id="im-ev-target"></select>
+                    <button class="btn" type="button" onclick="evAddCurrentInterviewLink()">Link interview</button>
+                  </div>
+                  <div class="evidence-link-list" id="im-evidence-links"></div>
+                </div>
+
+                <div class="im-document-grid">
+                  <div class="im-doc-slot"><strong>Audio Recording</strong><input class="im-input" type="file" accept="audio/*" onchange="imAttachDocument(this,'audio')"><span id="im-doc-audio">No file attached.</span></div>
+                  <div class="im-doc-slot"><strong>Video Recording</strong><input class="im-input" type="file" accept="video/*" onchange="imAttachDocument(this,'video')"><span id="im-doc-video">No file attached.</span></div>
+                  <div class="im-doc-slot"><strong>Teams VTT Transcript</strong><input class="im-input" type="file" accept=".vtt,text/vtt,text/plain" onchange="imImportVtt(this)"><span id="im-doc-vtt">No VTT imported.</span></div>
+                  <div class="im-doc-slot"><strong>DOCX Transcript</strong><input class="im-input" type="file" accept=".docx" onchange="imAttachDocument(this,'docx')"><span id="im-doc-docx">No file attached.</span></div>
+                  <div class="im-doc-slot"><strong>Consent Form</strong><input class="im-input" type="file" accept=".pdf,.doc,.docx,image/*" onchange="imAttachDocument(this,'consent')"><span id="im-doc-consent">No file attached.</span></div>
+                  <div class="im-doc-slot"><strong>Additional Documents</strong><input class="im-input" type="file" multiple onchange="imAttachDocument(this,'additional')"><span id="im-doc-additional">No files attached.</span></div>
+                </div>
+
+                <div class="im-transcript-grid">
+                  <div class="im-transcript-box">
+                    <div class="im-transcript-head"><span>Original Transcript</span><span id="im-original-word-count">0 words</span></div>
+                    <div class="im-transcript-original" id="im-original-transcript">Import a Teams VTT transcript to preserve the original here.</div>
+                  </div>
+                  <div class="im-transcript-box">
+                    <div class="im-transcript-head"><span>Cleaned Transcript Editor</span><span id="im-clean-word-count">0 words</span></div>
+                    <div class="im-editor-toolbar">
+                      <button class="btn btn-sm" type="button" onclick="imEditorCommand('bold')">B</button>
+                      <button class="btn btn-sm" type="button" onclick="imEditorCommand('italic')">I</button>
+                      <button class="btn btn-sm" type="button" onclick="imEditorCommand('insertUnorderedList')">List</button>
+                      <button class="btn btn-sm" type="button" onclick="imEditorCommand('undo')">Undo</button>
+                      <button class="btn btn-sm" type="button" onclick="imToggleTimestamps()">Timestamps</button>
+                      <button class="btn btn-sm" type="button" onclick="imHighlightUncertain()">Highlight uncertain</button>
+                      <input class="im-input" id="im-transcript-search" placeholder="Find" style="max-width:120px">
+                      <input class="im-input" id="im-transcript-replace" placeholder="Replace" style="max-width:120px">
+                      <button class="btn btn-sm" type="button" onclick="imFindInTranscript()">Find</button>
+                      <button class="btn btn-sm" type="button" onclick="imReplaceInTranscript()">Replace</button>
+                    </div>
+                    <div class="im-rich-editor" id="im-clean-transcript" contenteditable="true" oninput="imUpdateWordCounts()">Cleaned transcript will appear here after VTT import.</div>
+                  </div>
+                </div>
+
+                <div class="im-actions">
+                  <button class="btn" type="button" onclick="imGenerateCleanTranscript()">Generate cleaned transcript</button>
+                  <button class="btn" type="button" onclick="imSaveCleanedTranscript()">Save cleaned transcript</button>
+                  <button class="btn" type="button" onclick="imSaveReviewedTranscript()">Save reviewed transcript</button>
+                  <button class="btn" type="button" onclick="imSaveApprovedTranscript()">Save approved transcript</button>
+                  <button class="btn" type="button" onclick="imMarkResearcherApproved()">Mark researcher approved</button>
+                  <button class="btn" type="button" onclick="imMarkIntervieweeApproved()">Mark interviewee approved</button>
+                </div>
+
+                <div class="im-transcript-version-grid">
+                  <div class="im-version-pane">
+                    <div class="im-transcript-head"><span>Cleaned Version</span><span id="im-cleaned-version-count">0 words</span></div>
+                    <div class="im-version-pane-body" id="im-cleaned-version">No cleaned transcript saved.</div>
+                  </div>
+                  <div class="im-version-pane">
+                    <div class="im-transcript-head"><span>Reviewed Version</span><span id="im-reviewed-version-count">0 words</span></div>
+                    <div class="im-version-pane-body" id="im-reviewed-version">No reviewed transcript saved.</div>
+                  </div>
+                  <div class="im-version-pane">
+                    <div class="im-transcript-head"><span>Approved Version for Coding</span><span id="im-approved-version-count">0 words</span></div>
+                    <div class="im-version-pane-body" id="im-approved-version">No approved transcript saved.</div>
+                  </div>
+                </div>
+
+                <div class="im-form-grid">
+                  <div class="im-field wide"><label>Version History</label><div class="im-version-list" id="im-version-list"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="im-output-card">
+            <div class="im-card-title">Interviewee Approval Copy</div>
+            <div class="dash-subtitle">Generated from the cleaned transcript without changing the preserved original transcript.</div>
+            <textarea class="im-textarea im-output" id="im-approval-output" readonly></textarea>
+            <div class="im-actions">
+              <button class="btn" type="button" onclick="imCopyApprovalOutput()">Copy approval copy</button>
+              <button class="btn" type="button" onclick="imShowCodingLinks()">Show coding links</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-tab-panel" id="dashboard-tab-literature" role="tabpanel">
+        <div class="lit-workspace">
+          <div class="lit-toolbar">
+            <div>
+              <div class="dash-title">Literature Management System</div>
+              <div class="dash-subtitle">Single source of truth for dissertation literature, BibTeX entries, citation keys, structured notes and LaTeX writing support.</div>
+            </div>
+            <div class="lit-stat-grid" id="lit-stat-grid"></div>
+          </div>
+
+          <div class="lit-filter-grid">
+            <input class="lit-input" id="lit-search" placeholder="Search title, author, keyword, citation key..." oninput="litRenderList()">
+            <select class="lit-select" id="lit-filter-status" onchange="litRenderList()"></select>
+            <input class="lit-input" id="lit-filter-year" placeholder="Year" oninput="litRenderList()">
+            <input class="lit-input" id="lit-filter-theme" placeholder="Theme" oninput="litRenderList()">
+            <input class="lit-input" id="lit-filter-chapter" placeholder="Chapter" oninput="litRenderList()">
+            <input class="lit-input" id="lit-filter-rq" placeholder="Research question" oninput="litRenderList()">
+          </div>
+
+          <div class="lit-layout">
+            <div class="lit-list-card">
+              <div class="lit-card-head">
+                <div class="lit-card-title">References</div>
+                <button class="btn btn-primary btn-sm" type="button" onclick="litNewRecord()">New</button>
+              </div>
+              <div class="lit-list" id="lit-list"></div>
+            </div>
+
+            <div class="lit-editor-card">
+              <div class="lit-card-head">
+                <div>
+                  <div class="lit-card-title">Reference Editor</div>
+                  <div class="dash-subtitle" id="lit-editor-subtitle">Create or select a literature record.</div>
+                </div>
+                <div class="lit-actions">
+                  <button class="btn btn-primary" type="button" onclick="litSaveRecord()">Save</button>
+                  <button class="btn" type="button" onclick="litGenerateBibtexForForm()">Generate BibTeX</button>
+                  <button class="btn" type="button" onclick="litDeleteRecord()">Delete</button>
+                </div>
+              </div>
+
+              <div class="lit-form">
+                <div class="lit-citation-box">
+                  <div class="command-card-title">Citation Key</div>
+                  <div class="lit-citation-key" id="lit-citation-key-display">new-reference</div>
+                  <div class="lit-copy-command" id="lit-cite-command">\cite{new-reference}</div>
+                  <div class="lit-actions">
+                    <button class="btn btn-sm" type="button" onclick="litCopyCitation()">Copy citation</button>
+                    <button class="btn btn-sm" type="button" onclick="litGenerateCitationKeyForForm()">Generate unique key</button>
+                  </div>
+                </div>
+
+                <div class="lit-form-grid">
+                  <div class="lit-field wide"><label>Title</label><input class="lit-input" id="lit-title" oninput="litSyncCitationPreview()"></div>
+                  <div class="lit-field"><label>Authors</label><input class="lit-input" id="lit-authors" placeholder="Surname, Initials and Surname, Initials" oninput="litSyncCitationPreview()"></div>
+                  <div class="lit-field"><label>Publication Year</label><input class="lit-input" id="lit-year" inputmode="numeric" oninput="litSyncCitationPreview()"></div>
+                  <div class="lit-field"><label>Reading Status</label><select class="lit-select" id="lit-status" onchange="litSyncCitationPreview()"></select></div>
+                  <div class="lit-field"><label>Journal / Conference</label><input class="lit-input" id="lit-journal"></div>
+                  <div class="lit-field"><label>Publisher</label><input class="lit-input" id="lit-publisher"></div>
+                  <div class="lit-field"><label>DOI</label><input class="lit-input" id="lit-doi"></div>
+                  <div class="lit-field"><label>URL</label><input class="lit-input" id="lit-url"></div>
+                  <div class="lit-field"><label>Citation Key</label><input class="lit-input" id="lit-citation-key" oninput="litSyncCitationPreview()"></div>
+                  <div class="lit-field wide"><label>PDF Attachment</label><input class="lit-input" id="lit-pdf" type="file" accept="application/pdf,.pdf" onchange="litAttachPdf(this)"><div class="dash-subtitle" id="lit-pdf-note">No PDF selected. Attachment metadata is stored locally.</div></div>
+                  <div class="lit-field wide"><label>Abstract</label><textarea class="lit-textarea" id="lit-abstract"></textarea></div>
+                  <div class="lit-field"><label>Keywords</label><input class="lit-input" id="lit-keywords" placeholder="QoS; LTE; capacity planning"></div>
+                  <div class="lit-field"><label>Research Theme(s)</label><input class="lit-input" id="lit-themes" placeholder="QoS; network KPIs"></div>
+                  <div class="lit-field"><label>Dissertation Chapter(s)</label><input class="lit-input" id="lit-chapters" placeholder="Literature Review; Analysis"></div>
+                  <div class="lit-field"><label>Research Question(s)</label><input class="lit-input" id="lit-rqs" placeholder="RQ1; RQ2"></div>
+                  <div class="lit-field"><label>Interview Theme(s)</label><input class="lit-input" id="lit-interview-themes"></div>
+                  <div class="lit-field"><label>Survey Finding(s)</label><input class="lit-input" id="lit-survey-findings"></div>
+                </div>
+
+                <div class="evidence-link-panel">
+                  <div class="lit-card-title">Evidence Links</div>
+                  <div class="dash-subtitle">Link this literature record to shared research questions, chapters, themes, findings and recommendations. Links use IDs and do not duplicate the literature record.</div>
+                  <div class="evidence-link-grid">
+                    <select class="lit-select" id="lit-ev-type" onchange="evPopulateTargetSelect('lit')"></select>
+                    <select class="lit-select" id="lit-ev-target"></select>
+                    <button class="btn" type="button" onclick="evAddCurrentLiteratureLink()">Link literature</button>
+                  </div>
+                  <div class="evidence-link-list" id="lit-evidence-links"></div>
+                </div>
+
+                <div class="lit-form-grid">
+                  <div class="lit-field wide"><label>BibTeX Entry</label><textarea class="lit-textarea lit-bibtex" id="lit-bibtex" oninput="litSyncCitationPreview()"></textarea></div>
+                  <div class="lit-field wide"><label>Reference Validation</label><div class="lit-validation-list" id="lit-validation-list"></div></div>
+                </div>
+
+                <div class="lit-form-grid">
+                  <div class="lit-field"><label>Summary</label><textarea class="lit-textarea" id="lit-note-summary"></textarea></div>
+                  <div class="lit-field"><label>Key Findings</label><textarea class="lit-textarea" id="lit-note-findings"></textarea></div>
+                  <div class="lit-field"><label>Methodology</label><textarea class="lit-textarea" id="lit-note-methodology"></textarea></div>
+                  <div class="lit-field"><label>Limitations</label><textarea class="lit-textarea" id="lit-note-limitations"></textarea></div>
+                  <div class="lit-field"><label>Contribution</label><textarea class="lit-textarea" id="lit-note-contribution"></textarea></div>
+                  <div class="lit-field"><label>Relevance to Dissertation</label><textarea class="lit-textarea" id="lit-note-relevance"></textarea></div>
+                  <div class="lit-field"><label>Important Quotations</label><textarea class="lit-textarea" id="lit-note-quotes"></textarea></div>
+                  <div class="lit-field"><label>Page Numbers</label><textarea class="lit-textarea" id="lit-note-pages"></textarea></div>
+                  <div class="lit-field"><label>Personal Notes</label><textarea class="lit-textarea" id="lit-note-personal"></textarea></div>
+                  <div class="lit-field"><label>Future Research Ideas</label><textarea class="lit-textarea" id="lit-note-future"></textarea></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lit-export-card">
+            <div class="lit-card-title">Export Preparation</div>
+            <div class="dash-subtitle">Prepared outputs for future download as references.bib, literature summary, citation list and reference statistics.</div>
+            <div class="lit-actions">
+              <button class="btn" type="button" onclick="litShowMasterBibtex()">Preview references.bib</button>
+              <button class="btn" type="button" onclick="litShowCitationList()">Preview citation list</button>
+              <button class="btn" type="button" onclick="litShowReferenceStats()">Preview statistics</button>
+              <button class="btn" type="button" onclick="litCopyExportOutput()">Copy preview</button>
+            </div>
+            <textarea class="lit-textarea lit-export-output" id="lit-export-output" readonly></textarea>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-tab-panel" id="dashboard-tab-journal" role="tabpanel">
+        <div class="dashboard-placeholder">
+          <h3>Research Journal</h3>
+          <p>This tab will become the daily research diary for ideas, problems, solutions and field observations in a later phase.</p>
+        </div>
+      </section>
+
+      <section class="dashboard-tab-panel" id="dashboard-tab-settings" role="tabpanel">
+        <div class="dashboard-placeholder">
+          <h3>Settings</h3>
+          <p>This tab will hold configurable dissertation dates, targets and command centre preferences in a later phase.</p>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -3223,6 +3907,7 @@ let lastSurveyFingerprint = '';
 let inactivityTimer = null;
 const INACTIVITY_LOGOUT_MS = 15 * 60 * 1000;
 let activeView = 'survey';
+let activeDashboardTab = 'overview';
 
 // ======================================================
 //  HELPERS
@@ -3972,7 +4657,11 @@ function switchView(id, btn) {
       setTimeout(() => fitSurveyWaypoints(false, false), 100);
     }
   }
-  if (id === 'dashboard') { document.getElementById('view-dashboard').classList.add('on'); renderDashboard(); }
+  if (id === 'dashboard') {
+    document.getElementById('view-dashboard').classList.add('on');
+    renderDashboard();
+    setDashboardTab(activeDashboardTab, document.querySelector(`#view-dashboard .dashboard-tab-btn[data-dashboard-tab="${activeDashboardTab}"]`));
+  }
   if (id === 'data')      { document.getElementById('view-data').classList.add('on'); renderDataTable(); }
   if (id === 'interviews') { document.getElementById('view-interviews')?.classList.add('on'); iaInit(); }
   if (id === 'survey')    { document.getElementById('view-survey').classList.add('on'); }
@@ -3988,6 +4677,1901 @@ function switchView(id, btn) {
     const ap = document.getElementById('view-admin');
     ap.style.cssText = 'display:none';
   }
+}
+
+// Dashboard command centre tabs and phase-two overview cards.
+function setDashboardTab(tab, btn) {
+  activeDashboardTab = tab || 'overview';
+  document.querySelectorAll('#view-dashboard .dashboard-tab-btn').forEach(button => {
+    const selected = button.dataset.dashboardTab === activeDashboardTab;
+    button.classList.toggle('on', selected);
+    button.setAttribute('aria-selected', selected ? 'true' : 'false');
+  });
+  document.querySelectorAll('#view-dashboard .dashboard-tab-panel').forEach(panel => {
+    panel.classList.toggle('on', panel.id === `dashboard-tab-${activeDashboardTab}`);
+  });
+  const status = document.getElementById('dashboard-command-status');
+  const label = btn?.textContent || document.querySelector(`#view-dashboard .dashboard-tab-btn[data-dashboard-tab="${activeDashboardTab}"]`)?.textContent || 'Overview';
+  if (status) status.textContent = label;
+  if (activeDashboardTab === 'overview') { renderDashboardOverview(); evInitExplorer(); }
+  if (activeDashboardTab === 'query') eqInit();
+  if (activeDashboardTab === 'project') { dwInit(); evInitLinkControls('dw'); }
+  if (activeDashboardTab === 'interviews') { imInit(); evInitLinkControls('im'); }
+  if (activeDashboardTab === 'literature') { litInit(); evInitLinkControls('lit'); }
+}
+
+function dashboardCommandState() {
+  const fallback = {
+    dates: { presentation: '', viva: '', submission: '' },
+    dissertationProgress: 0,
+    literatureProgress: 0,
+    writingGoal: { target: 0, written: 0 },
+    tasks: [],
+    activity: []
+  };
+  try {
+    return { ...fallback, ...JSON.parse(localStorage.getItem('dissertation_command_centre_v1') || '{}') };
+  } catch (err) {
+    console.warn('Dashboard command state could not be read.', err);
+    return fallback;
+  }
+}
+
+function dashboardDaysUntil(dateValue) {
+  if (!dateValue) return null;
+  const target = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(target.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((target - today) / 86400000);
+}
+
+function dashboardPctValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.max(0, Math.min(100, Math.round(number)));
+}
+
+function dashboardOverviewCard(title, value, note, pct, badgeClass) {
+  const bar = Number.isFinite(pct) ? `<div class="command-progress-track"><div class="command-progress-fill" style="width:${dashboardPctValue(pct)}%"></div></div>` : '';
+  const badge = badgeClass ? `<span class="badge ${badgeClass}">${dashboardPctValue(pct)}%</span>` : '';
+  return `<div class="command-summary-card">
+    <div class="command-card-top">
+      <div class="command-card-title">${dashEscape(title)}</div>
+      ${badge}
+    </div>
+    <div class="command-card-value">${dashEscape(value)}</div>
+    ${bar}
+    <div class="command-card-note">${dashEscape(note)}</div>
+  </div>`;
+}
+
+function renderDashboardOverview() {
+  const target = document.getElementById('dashboard-overview-grid');
+  if (!target) return;
+  const state = dashboardCommandState();
+  const surveys = points.filter(p => p.type === 'survey');
+  const interviews = imGetRecords();
+  const literature = litGetRecords();
+  const dissertation = dwGetChapters();
+  const completedTasks = state.tasks.filter(task => task.completed).length;
+  const remainingTasks = Math.max(0, state.tasks.length - completedTasks);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todaysTasks = state.tasks.filter(task => !task.date || task.date === todayKey);
+  const writingTarget = Number(state.writingGoal?.target || 0);
+  const writingWritten = Number(state.writingGoal?.written || 0);
+  const writingPct = writingTarget ? Math.round((writingWritten / writingTarget) * 100) : 0;
+  const interviewPct = interviews.length ? 100 : 0;
+  const countdownItems = [
+    ['Submission', dashboardDaysUntil(state.dates?.submission)],
+    ['Presentation', dashboardDaysUntil(state.dates?.presentation)],
+    ['Viva', dashboardDaysUntil(state.dates?.viva)]
+  ].filter(([, days]) => days !== null).sort((a, b) => a[1] - b[1]);
+  const countdownText = countdownItems.length ? `${countdownItems[0][1]} days` : 'Set dates';
+  const countdownNote = countdownItems.length ? `${countdownItems[0][0]} is the next dissertation milestone.` : 'Configure presentation, viva and submission dates in Settings during the next phase.';
+
+  target.innerHTML = [
+    dashboardOverviewCard('Dissertation countdown', countdownText, countdownNote, NaN, ''),
+    dashboardOverviewCard('Dissertation progress', `${dwOverallProgress(dissertation)}%`, 'Average chapter progress from the Dissertation Workspace.', dwOverallProgress(dissertation), 'badge-blue'),
+    dashboardOverviewCard('Interview progress', `${interviews.length} saved`, 'Uses the existing locally saved interview analysis records.', interviewPct, 'badge-ok'),
+    dashboardOverviewCard('Literature progress', `${literature.filter(item => ['Reviewed','Cited'].includes(item.status)).length}/${literature.length || 0}`, 'Reviewed or cited references from the Literature Management System.', literature.length ? Math.round((literature.filter(item => ['Reviewed','Cited'].includes(item.status)).length / literature.length) * 100) : 0, 'badge-blue'),
+    dashboardOverviewCard("Today's tasks", `${todaysTasks.length} today`, `${completedTasks} completed and ${remainingTasks} remaining in the current project state.`, NaN, ''),
+    dashboardOverviewCard('Writing goal', writingTarget ? `${Math.max(0, writingTarget - writingWritten)} left` : 'Set target', writingTarget ? `${writingWritten}/${writingTarget} words written today.` : 'Daily writing targets will be configured in Project Management.', writingPct, 'badge-warn'),
+    dashboardOverviewCard('Recent activity', `${surveys.length} surveys`, 'Latest analytics data remains available in the Analytics tab.', NaN, '')
+  ].join('');
+}
+
+const DW_STORAGE_KEY = 'dissertation_workspace_chapters_v1';
+let dwSelectedId = 'chapter-abstract';
+
+// Returns default dissertation chapters for the workspace.
+function dwDefaultChapters() {
+  return [
+    ['chapter-abstract', 'Abstract', 300],
+    ['chapter-introduction', 'Introduction', 1200],
+    ['chapter-literature-review', 'Literature Review', 2500],
+    ['chapter-methodology', 'Methodology', 1800],
+    ['chapter-results', 'Results', 2000],
+    ['chapter-discussion', 'Discussion', 2200],
+    ['chapter-recommendations', 'Recommendations', 900],
+    ['chapter-conclusion', 'Conclusion', 900],
+    ['chapter-references', 'References', 0],
+    ['chapter-appendices', 'Appendices', 0]
+  ].map(([id, title, targetWords], order) => ({
+    id, title, order, targetWords, status:'Not Started', objectives:'', draftNotes:'', draftParagraphs:'',
+    keyArguments:'', outstandingTasks:'', writingChecklist:'', latexNotes:'', figureRefs:'', tableRefs:'',
+    lastModified:''
+  }));
+}
+
+// Reads chapters from localStorage and merges any missing defaults.
+function dwGetChapters() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(DW_STORAGE_KEY) || '[]');
+    const chapters = Array.isArray(stored) && stored.length ? stored : dwDefaultChapters();
+    return dwMergeDefaultChapters(chapters);
+  } catch (err) {
+    console.warn('Dissertation chapters could not be read.', err);
+    return dwDefaultChapters();
+  }
+}
+
+// Persists dissertation chapters.
+function dwSetChapters(chapters) {
+  localStorage.setItem(DW_STORAGE_KEY, JSON.stringify(chapters || []));
+}
+
+// Ensures all standard chapters remain available.
+function dwMergeDefaultChapters(chapters) {
+  const map = new Map((chapters || []).map(chapter => [chapter.id, chapter]));
+  dwDefaultChapters().forEach(chapter => { if (!map.has(chapter.id)) map.set(chapter.id, chapter); });
+  return Array.from(map.values()).sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+}
+
+// Initialises the Dissertation Workspace.
+function dwInit() {
+  const chapters = dwGetChapters();
+  if (!chapters.some(chapter => chapter.id === dwSelectedId)) dwSelectedId = chapters[0]?.id || '';
+  dwRenderOverview();
+  dwRenderList();
+  dwLoadChapter(dwSelectedId, false);
+}
+
+// Creates a new custom chapter.
+function dwNewChapter() {
+  const chapters = dwGetChapters();
+  const id = `chapter-custom-${Date.now()}`;
+  const chapter = { ...dwDefaultChapters()[1], id, title:'New Chapter', order:chapters.length, targetWords:1000, status:'Not Started', lastModified:new Date().toISOString() };
+  chapters.push(chapter);
+  dwSetChapters(chapters);
+  dwSelectedId = id;
+  dwRenderOverview();
+  dwRenderList();
+  dwLoadChapter(id);
+}
+
+// Loads a chapter into the editor.
+function dwLoadChapter(id, rerenderList = true) {
+  const chapter = dwGetChapters().find(item => item.id === id);
+  if (!chapter) return;
+  dwSelectedId = id;
+  const set = (field, value) => { const el = document.getElementById(field); if (el) el.value = value || ''; };
+  set('dw-title', chapter.title);
+  set('dw-status', chapter.status);
+  set('dw-target-words', chapter.targetWords);
+  set('dw-objectives', chapter.objectives);
+  set('dw-draft-notes', chapter.draftNotes);
+  set('dw-draft-paragraphs', chapter.draftParagraphs);
+  set('dw-key-arguments', chapter.keyArguments);
+  set('dw-outstanding-tasks', chapter.outstandingTasks);
+  set('dw-writing-checklist', chapter.writingChecklist);
+  set('dw-latex-notes', chapter.latexNotes);
+  set('dw-figure-refs', chapter.figureRefs);
+  set('dw-table-refs', chapter.tableRefs);
+  const subtitle = document.getElementById('dw-editor-subtitle');
+  if (subtitle) subtitle.textContent = `${chapter.title} · last modified ${chapter.lastModified ? new Date(chapter.lastModified).toLocaleString() : 'not saved yet'}`;
+  evRenderSourceLinks('chapter', chapter.id, 'dw-evidence-links');
+  dwRenderChapterDashboard(chapter);
+  dwRenderEvidencePanel(chapter.id);
+  dwRenderValidation(chapter.id);
+  if (rerenderList) dwRenderList();
+}
+
+// Collects the current chapter editor values.
+function dwGetFormChapter() {
+  const val = id => document.getElementById(id)?.value.trim() || '';
+  const existing = dwGetChapters().find(chapter => chapter.id === dwSelectedId) || {};
+  return {
+    ...existing,
+    id: dwSelectedId || `chapter-custom-${Date.now()}`,
+    title: val('dw-title') || 'Untitled Chapter',
+    status: val('dw-status') || 'Not Started',
+    targetWords: Number(val('dw-target-words') || 0),
+    objectives: val('dw-objectives'),
+    draftNotes: val('dw-draft-notes'),
+    draftParagraphs: val('dw-draft-paragraphs'),
+    keyArguments: val('dw-key-arguments'),
+    outstandingTasks: val('dw-outstanding-tasks'),
+    writingChecklist: val('dw-writing-checklist'),
+    latexNotes: val('dw-latex-notes'),
+    figureRefs: val('dw-figure-refs'),
+    tableRefs: val('dw-table-refs'),
+    lastModified: new Date().toISOString()
+  };
+}
+
+// Saves the selected chapter.
+function dwSaveChapter() {
+  const chapter = dwGetFormChapter();
+  const chapters = dwGetChapters();
+  const index = chapters.findIndex(item => item.id === chapter.id);
+  if (index >= 0) chapters[index] = chapter;
+  else chapters.push(chapter);
+  dwSetChapters(chapters);
+  dwSelectedId = chapter.id;
+  dwRenderOverview();
+  dwRenderList();
+  dwLoadChapter(chapter.id);
+  renderDashboardOverview();
+}
+
+// Deletes a custom chapter or clears a default chapter.
+function dwDeleteChapter() {
+  if (!dwSelectedId) return;
+  const defaults = new Set(dwDefaultChapters().map(chapter => chapter.id));
+  let chapters = dwGetChapters();
+  if (defaults.has(dwSelectedId)) {
+    if (!confirm('Default chapters cannot be removed. Clear this chapter content instead?')) return;
+    chapters = chapters.map(chapter => chapter.id === dwSelectedId ? { ...dwDefaultChapters().find(item => item.id === dwSelectedId), lastModified:new Date().toISOString() } : chapter);
+  } else {
+    if (!confirm('Delete this chapter?')) return;
+    chapters = chapters.filter(chapter => chapter.id !== dwSelectedId);
+    evSetLinks(evGetLinks().filter(link => !(link.sourceType === 'chapter' && link.sourceId === dwSelectedId)));
+  }
+  dwSetChapters(chapters);
+  dwSelectedId = dwGetChapters()[0]?.id || '';
+  dwInit();
+  renderDashboardOverview();
+}
+
+// Renders the chapter list.
+function dwRenderList() {
+  const target = document.getElementById('dw-chapter-list');
+  if (!target) return;
+  target.innerHTML = dwGetChapters().map(chapter => {
+    const progress = dwChapterProgress(chapter);
+    return `<button class="dw-list-item ${chapter.id === dwSelectedId ? 'on' : ''}" type="button" onclick="dwLoadChapter('${dashEscape(chapter.id)}')">
+      <div class="dw-list-title">${dashEscape(chapter.title)}</div>
+      <div class="dw-list-meta">${dashEscape(chapter.status)} · ${progress}% · ${dwWordCount(chapter)} words</div>
+    </button>`;
+  }).join('');
+}
+
+// Renders dissertation-wide overview stats.
+function dwRenderOverview() {
+  const target = document.getElementById('dw-overview-stats');
+  if (!target) return;
+  const chapters = dwGetChapters();
+  const evidence = chapters.flatMap(chapter => dwChapterEvidence(chapter.id).all);
+  const literatureIds = new Set(evidence.filter(link => link.sourceType === 'literature').map(link => link.sourceId));
+  const interviewIds = new Set(evidence.filter(link => link.sourceType === 'interview').map(link => link.sourceId));
+  const figureCount = chapters.reduce((sum, chapter) => sum + dwSplitLines(chapter.figureRefs).length, 0);
+  const tableCount = chapters.reduce((sum, chapter) => sum + dwSplitLines(chapter.tableRefs).length, 0);
+  const stats = [
+    ['Progress', `${dwOverallProgress(chapters)}%`],
+    ['Words', chapters.reduce((sum, chapter) => sum + dwWordCount(chapter), 0)],
+    ['References', litGetRecords().length],
+    ['Interviews Used', interviewIds.size],
+    ['Literature Cited', literatureIds.size],
+    ['Figures', figureCount],
+    ['Tables', tableCount]
+  ];
+  target.innerHTML = stats.map(([label, value]) => `<div class="dw-stat"><strong>${dashEscape(value)}</strong><span>${dashEscape(label)}</span></div>`).join('');
+}
+
+// Renders chapter-specific dashboard stats.
+function dwRenderChapterDashboard(chapter) {
+  const target = document.getElementById('dw-chapter-dashboard');
+  if (!target) return;
+  const evidence = dwChapterEvidence(chapter.id);
+  const citations = dwCitationKeysForChapter(evidence.literature);
+  const stats = [
+    ['Progress', `${dwChapterProgress(chapter)}%`],
+    ['Word Count', dwWordCount(chapter)],
+    ['Evidence', evidence.all.length],
+    ['Literature', evidence.literature.length],
+    ['Interviews', evidence.interviews.length],
+    ['Analytics', evidence.analytics.length],
+    ['Citations', citations.length]
+  ];
+  target.innerHTML = stats.map(([label, value]) => `<div class="dw-mini-stat"><strong>${dashEscape(value)}</strong><span>${dashEscape(label)}</span></div>`).join('');
+}
+
+// Updates live chapter metrics as draft text changes.
+function dwUpdateChapterMetrics() {
+  const chapter = dwGetFormChapter();
+  dwRenderChapterDashboard(chapter);
+}
+
+// Links the current chapter to a shared evidence entity.
+function dwAddChapterEvidenceLink() {
+  if (!dwSelectedId) dwSaveChapter();
+  const type = document.getElementById('dw-ev-type')?.value;
+  const targetId = document.getElementById('dw-ev-target')?.value;
+  evAddLink('chapter', dwSelectedId, type, targetId);
+  evRenderSourceLinks('chapter', dwSelectedId, 'dw-evidence-links');
+  dwRenderEvidencePanel(dwSelectedId);
+  dwRenderValidation(dwSelectedId);
+  evRenderExplorer();
+}
+
+// Returns evidence links connected to a chapter through shared entities.
+function dwChapterEvidence(chapterId) {
+  const links = evGetLinks();
+  const direct = links.filter(link => link.sourceType === 'chapter' && link.sourceId === chapterId);
+  const targetIds = new Set(direct.map(link => link.targetId));
+  const related = links.filter(link => targetIds.has(link.targetId) && !(link.sourceType === 'chapter' && link.sourceId === chapterId));
+  return {
+    direct,
+    all: related,
+    literature: related.filter(link => link.sourceType === 'literature'),
+    interviews: related.filter(link => link.sourceType === 'interview'),
+    analytics: related.filter(link => link.sourceType === 'analytics'),
+    findings: direct.filter(link => link.targetType === 'finding'),
+    recommendations: direct.filter(link => link.targetType === 'recommendation'),
+    rqs: direct.filter(link => link.targetType === 'rq')
+  };
+}
+
+// Renders linked evidence for the selected chapter.
+function dwRenderEvidencePanel(chapterId) {
+  const target = document.getElementById('dw-evidence-panel');
+  if (!target) return;
+  const evidence = dwChapterEvidence(chapterId);
+  const entities = new Map(evGetEntities().map(entity => [entity.id, entity]));
+  target.innerHTML = [
+    dwEvidenceCard('Supporting Literature', evidence.literature.map(link => evDescribeLiterature(link.sourceId))),
+    dwEvidenceCard('Supporting Interviews', evidence.interviews.map(link => evDescribeInterview(link.sourceId))),
+    dwEvidenceCard('Supporting Survey Results', evidence.analytics.map(link => link.meta?.title || link.sourceId)),
+    dwEvidenceCard('Supporting Analytics', evidence.analytics.map(link => link.meta?.title || link.sourceId)),
+    dwEvidenceCard('Supporting Findings', evidence.findings.map(link => entities.get(link.targetId)?.title || link.targetId)),
+    dwEvidenceCard('Supporting Recommendations', evidence.recommendations.map(link => entities.get(link.targetId)?.title || link.targetId)),
+    dwEvidenceCard('Supporting Research Questions', evidence.rqs.map(link => entities.get(link.targetId)?.label || link.targetId)),
+    dwEvidenceCard('Citation Commands', dwCitationKeysForChapter(evidence.literature).map(key => `\\cite{${key}}`))
+  ].join('');
+}
+
+// Renders one chapter evidence card.
+function dwEvidenceCard(title, items) {
+  const unique = [...new Set((items || []).filter(Boolean))];
+  return `<div class="dw-evidence-card"><h4>${dashEscape(title)}</h4>${unique.length ? `<ul>${unique.map(item => `<li>${dashEscape(item)}</li>`).join('')}</ul>` : '<div class="dash-subtitle">No linked evidence yet.</div>'}</div>`;
+}
+
+// Renders validation warnings for missing chapter evidence.
+function dwRenderValidation(chapterId) {
+  const target = document.getElementById('dw-validation-list');
+  if (!target) return;
+  const evidence = dwChapterEvidence(chapterId);
+  const warnings = [];
+  if (!evidence.literature.length) warnings.push('No supporting literature linked.');
+  if (!evidence.interviews.length) warnings.push('No interview evidence linked.');
+  if (!evidence.findings.length) warnings.push('No linked findings.');
+  if (!evidence.recommendations.length) warnings.push('No linked recommendations.');
+  if (!evidence.rqs.length) warnings.push('Missing research question links.');
+  target.innerHTML = warnings.length
+    ? warnings.map(text => `<div class="dw-validation-item warn">${dashEscape(text)}</div>`).join('')
+    : '<div class="dw-validation-item good">Chapter evidence traceability looks complete.</div>';
+}
+
+// Computes chapter writing progress from words and completion status.
+function dwChapterProgress(chapter) {
+  if (chapter.status === 'Complete') return 100;
+  const words = dwWordCount(chapter);
+  const target = Number(chapter.targetWords || 0);
+  const wordPct = target ? Math.min(95, Math.round((words / target) * 100)) : 0;
+  const statusBoost = chapter.status === 'Reviewing' ? 80 : chapter.status === 'Drafting' ? 35 : 0;
+  return Math.max(wordPct, statusBoost);
+}
+
+// Computes overall dissertation progress.
+function dwOverallProgress(chapters = dwGetChapters()) {
+  if (!chapters.length) return 0;
+  return Math.round(chapters.reduce((sum, chapter) => sum + dwChapterProgress(chapter), 0) / chapters.length);
+}
+
+// Counts words across chapter writing fields.
+function dwWordCount(chapter) {
+  return (String([chapter.objectives, chapter.draftNotes, chapter.draftParagraphs, chapter.keyArguments].join(' ')).match(/\b[\w'-]+\b/g) || []).length;
+}
+
+// Returns citation keys for linked literature.
+function dwCitationKeysForChapter(literatureLinks) {
+  const literature = new Map(litGetRecords().map(record => [record.id, record]));
+  return [...new Set((literatureLinks || []).map(link => literature.get(link.sourceId)?.citationKey).filter(Boolean))];
+}
+
+// Splits textarea lines into non-empty values.
+function dwSplitLines(text) {
+  return String(text || '').split(/\r?\n|;/).map(item => item.trim()).filter(Boolean);
+}
+
+let eqSelectedKey = '';
+
+// Initialises the read-only Evidence Query & Filter Centre.
+function eqInit() {
+  eqPopulateFilters();
+  eqRender();
+}
+
+// Builds a fresh query index from existing stores without duplicating data.
+function eqBuildIndex() {
+  const entities = evGetEntities();
+  const links = evGetLinks();
+  const records = [];
+  litGetRecords().forEach(item => records.push(eqRecord('literature', item.id, item.title || 'Untitled literature', item.authors || '', [
+    item.citationKey, item.year, item.journal, item.publisher, item.doi, item.url, item.abstract, item.keywords, item.themes, item.chapters, item.rqs, item.notes?.summary, item.notes?.findings, item.notes?.relevance
+  ].join(' '), item)));
+  imGetRecords().forEach(item => records.push(eqRecord('interview', item.id, item.name || 'Unnamed interviewee', item.organisation || '', [
+    item.position, item.email, item.telephone, item.date, item.type, item.rqs, item.consent, item.notes, item.status, item.literature, item.surveyFindings, item.chapters, item.transcript?.approved?.text, item.transcript?.reviewed?.text
+  ].join(' '), item)));
+  dwGetChapters().forEach(item => records.push(eqRecord('chapter', item.id, item.title || 'Untitled chapter', item.status || '', [
+    item.objectives, item.draftNotes, item.draftParagraphs, item.keyArguments, item.outstandingTasks, item.writingChecklist, item.latexNotes, item.figureRefs, item.tableRefs
+  ].join(' '), item)));
+  entities.filter(item => ['finding','recommendation','theme','rq'].includes(item.type)).forEach(item => records.push(eqRecord(item.type, item.id, item.label, item.title, item.title, item)));
+  links.filter(link => link.sourceType === 'analytics').forEach(link => records.push(eqRecord('analytics', link.sourceId, link.meta?.title || link.sourceId, 'Analytics placeholder', [link.targetId, link.targetType].join(' '), link)));
+  points.filter(p => p.type === 'survey').forEach(p => records.push(eqRecord('survey', p.id || p._id || p.respondentId || `survey-${records.length}`, p.respondentId || p.id || 'Survey result', p.ward || p.constituency || '', Object.values(p).join(' '), p)));
+  return records.map(record => ({ ...record, linkTargets: eqLinkedTargets(record.type, record.id, links), haystack: eqHaystack(record) }));
+}
+
+// Creates one normalized query record.
+function eqRecord(type, id, title, subtitle, text, raw) {
+  return { key:`${type}:${id}`, type, id:String(id || ''), title:String(title || ''), subtitle:String(subtitle || ''), text:String(text || ''), raw };
+}
+
+// Returns target entity IDs linked to a source record.
+function eqLinkedTargets(type, id, links = evGetLinks()) {
+  return links.filter(link => link.sourceType === type && link.sourceId === id).map(link => link.targetId);
+}
+
+// Builds searchable text for one query record.
+function eqHaystack(record) {
+  const linked = (record.linkTargets || []).map(id => {
+    const entity = evGetEntities().find(item => item.id === id);
+    return entity ? `${entity.id} ${entity.label} ${entity.title} ${entity.type}` : id;
+  }).join(' ');
+  return `${record.type} ${record.id} ${record.title} ${record.subtitle} ${record.text} ${linked}`.toLowerCase();
+}
+
+// Populates filter dropdowns from current evidence stores.
+function eqPopulateFilters() {
+  const setOptions = (id, rows, first) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const current = el.value;
+    el.innerHTML = `<option value="">${first}</option>${rows.map(([value, label]) => `<option value="${dashEscape(value)}">${dashEscape(label)}</option>`).join('')}`;
+    if ([...el.options].some(option => option.value === current)) el.value = current;
+  };
+  const entities = evGetEntities();
+  setOptions('eq-filter-rq', entities.filter(e => e.type === 'rq').map(e => [e.id, `${e.label} - ${e.title}`]), 'All research questions');
+  setOptions('eq-filter-chapter', entities.filter(e => e.type === 'chapter').map(e => [e.id, e.label]), 'All chapters');
+  setOptions('eq-filter-theme', entities.filter(e => e.type === 'theme').map(e => [e.id, e.label]), 'All themes');
+  setOptions('eq-filter-type', [['literature','Literature'],['interview','Interview'],['survey','Survey Results'],['analytics','Network Analytics'],['chapter','Dissertation Workspace'],['finding','Research Findings'],['recommendation','Recommendations'],['theme','Themes'],['rq','Research Questions']], 'All evidence types');
+  setOptions('eq-filter-literature', litGetRecords().map(item => [item.id, item.citationKey || item.title || item.id]), 'All literature');
+  setOptions('eq-filter-interview', imGetRecords().map(item => [item.id, item.name || item.id]), 'All interviews');
+}
+
+// Applies all active query filters.
+function eqFilteredRecords() {
+  const val = id => document.getElementById(id)?.value.trim().toLowerCase() || '';
+  const q = val('eq-search');
+  const rq = val('eq-filter-rq');
+  const chapter = val('eq-filter-chapter');
+  const theme = val('eq-filter-theme');
+  const type = val('eq-filter-type');
+  const literature = val('eq-filter-literature');
+  const interview = val('eq-filter-interview');
+  const organisation = val('eq-filter-organisation');
+  const tags = val('eq-filter-tags');
+  const date = val('eq-filter-date');
+  return eqBuildIndex().filter(record => {
+    const linked = record.linkTargets.map(String);
+    return (!q || record.haystack.includes(q)) &&
+      (!rq || linked.includes(rq)) &&
+      (!chapter || linked.includes(chapter) || record.id.toLowerCase() === chapter) &&
+      (!theme || linked.includes(theme)) &&
+      (!type || record.type === type) &&
+      (!literature || (record.type === 'literature' && record.id.toLowerCase() === literature) || linked.includes(literature)) &&
+      (!interview || (record.type === 'interview' && record.id.toLowerCase() === interview) || linked.includes(interview)) &&
+      (!organisation || record.haystack.includes(organisation)) &&
+      (!tags || record.haystack.includes(tags)) &&
+      (!date || record.haystack.includes(date));
+  });
+}
+
+// Renders all query results, grouped by evidence type.
+function eqRender() {
+  eqPopulateFilters();
+  const records = eqFilteredRecords();
+  eqRenderStats();
+  eqRenderBreakdowns(records);
+  const count = document.getElementById('eq-result-count');
+  if (count) count.textContent = `${records.length} result${records.length === 1 ? '' : 's'}`;
+  const target = document.getElementById('eq-results');
+  if (!target) return;
+  const groups = eqGroupBy(records, record => record.type);
+  target.innerHTML = Object.keys(groups).length ? Object.entries(groups).map(([type, items]) => `<div class="eq-group"><h3>${dashEscape(eqTypeLabel(type))} (${items.length})</h3>${items.map(item => `<button type="button" class="eq-item ${item.key === eqSelectedKey ? 'on' : ''}" onclick="eqSelect('${dashEscape(item.key)}')"><strong>${dashEscape(item.title)}</strong><span>${dashEscape(item.subtitle)} - ${dashEscape(item.id)}</span></button>`).join('')}</div>`).join('') : '<div class="dash-subtitle">No existing evidence matches the current filters.</div>';
+  if (!records.some(record => record.key === eqSelectedKey)) eqSelectedKey = records[0]?.key || '';
+  eqRenderDetail(eqSelectedKey);
+}
+
+// Selects a query result and renders its metadata.
+function eqSelect(key) {
+  eqSelectedKey = key;
+  eqRender();
+}
+
+// Renders selected evidence metadata only.
+function eqRenderDetail(key) {
+  const target = document.getElementById('eq-detail');
+  if (!target) return;
+  const record = eqBuildIndex().find(item => item.key === key);
+  if (!record) {
+    target.innerHTML = '<div class="dash-subtitle">Select an evidence item to view metadata and links.</div>';
+    return;
+  }
+  const linkedEntities = record.linkTargets.map(id => evGetEntities().find(entity => entity.id === id)).filter(Boolean);
+  target.innerHTML = `<div><div class="dash-title">${dashEscape(record.title)}</div><div class="dash-subtitle">${dashEscape(eqTypeLabel(record.type))} - ${dashEscape(record.subtitle)}</div></div>
+    <div class="eq-detail-section"><h4>Metadata</h4><pre>${dashEscape(eqMetadata(record))}</pre></div>
+    <div class="eq-detail-section"><h4>Linked Evidence Entities</h4>${linkedEntities.length ? linkedEntities.map(entity => `<span class="evidence-chip">${dashEscape(entity.label)} - ${dashEscape(evEntityTypeLabel(entity.type))}</span>`).join(' ') : '<div class="dash-subtitle">No evidence links for this item.</div>'}</div>`;
+}
+
+// Returns metadata text for one evidence item.
+function eqMetadata(record) {
+  if (record.type === 'literature') return [`Citation Key: ${record.raw.citationKey || '-'}`, `Authors: ${record.raw.authors || '-'}`, `Year: ${record.raw.year || '-'}`, `Journal: ${record.raw.journal || '-'}`, `DOI: ${record.raw.doi || '-'}`, `BibTeX: ${record.raw.bibtex || '-'}`].join('\n');
+  if (record.type === 'interview') return [`Interviewee: ${record.raw.name || '-'}`, `Organisation: ${record.raw.organisation || '-'}`, `Position: ${record.raw.position || '-'}`, `Date: ${record.raw.date || '-'}`, `Status: ${record.raw.status || '-'}`, `Notes: ${record.raw.notes || '-'}`].join('\n');
+  if (record.type === 'chapter') return [`Chapter: ${record.raw.title || '-'}`, `Status: ${record.raw.status || '-'}`, `Words: ${dwWordCount(record.raw)}`, `Figures: ${record.raw.figureRefs || '-'}`, `Tables: ${record.raw.tableRefs || '-'}`].join('\n');
+  if (record.type === 'analytics') return [`Analytics Reference: ${record.raw.meta?.title || record.raw.sourceId}`, `Linked target: ${record.raw.targetId || '-'}`].join('\n');
+  return [`ID: ${record.id}`, `Type: ${eqTypeLabel(record.type)}`, `Title: ${record.title}`, `Details: ${record.subtitle}`].join('\n');
+}
+
+// Renders top-level statistics for the query centre.
+function eqRenderStats() {
+  const target = document.getElementById('eq-stat-grid');
+  if (!target) return;
+  const chapters = dwGetChapters();
+  const figureCount = chapters.reduce((sum, chapter) => sum + dwSplitLines(chapter.figureRefs).length, 0);
+  const tableCount = chapters.reduce((sum, chapter) => sum + dwSplitLines(chapter.tableRefs).length, 0);
+  const stats = [
+    ['Literature', litGetRecords().length],
+    ['Interviews', imGetRecords().length],
+    ['Survey Results', points.filter(p => p.type === 'survey').length],
+    ['Analytics Records', evGetLinks().filter(link => link.sourceType === 'analytics').length],
+    ['Figures', figureCount],
+    ['Tables', tableCount]
+  ];
+  target.innerHTML = stats.map(([label, value]) => `<div class="eq-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
+}
+
+// Renders evidence distribution by RQ, chapter and theme.
+function eqRenderBreakdowns(records = eqFilteredRecords()) {
+  const target = document.getElementById('eq-breakdowns');
+  if (!target) return;
+  const entities = evGetEntities();
+  const card = (title, type) => {
+    const rows = entities.filter(entity => entity.type === type).map(entity => {
+      const count = records.filter(record => record.linkTargets.includes(entity.id) || record.id === entity.id).length;
+      return `${entity.label}: ${count}`;
+    });
+    return `<div class="eq-detail-section"><h4>${dashEscape(title)}</h4><pre>${dashEscape(rows.join('\n') || 'No entities')}</pre></div>`;
+  };
+  target.innerHTML = card('Evidence by Research Question', 'rq') + card('Evidence by Chapter', 'chapter') + card('Evidence by Theme', 'theme');
+}
+
+// Exports filtered metadata as CSV, not a narrative report.
+function eqExportFilteredMetadata() {
+  const rows = [['Type','ID','Title','Subtitle','Linked entity IDs']];
+  eqFilteredRecords().forEach(record => rows.push([eqTypeLabel(record.type), record.id, record.title, record.subtitle, record.linkTargets.join(';')]));
+  iaDownloadText(`evidence-filtered-metadata-${new Date().toISOString().slice(0,10)}.csv`, rows.map(row => row.map(value => `"${String(value || '').replace(/"/g, '""')}"`).join(',')).join('\n'));
+}
+
+// Clears all query filters.
+function eqResetFilters() {
+  ['eq-search','eq-filter-rq','eq-filter-chapter','eq-filter-theme','eq-filter-type','eq-filter-literature','eq-filter-interview','eq-filter-organisation','eq-filter-tags','eq-filter-date'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  eqRender();
+}
+
+// Groups an array by a key function.
+function eqGroupBy(items, fn) {
+  return items.reduce((groups, item) => {
+    const key = fn(item);
+    groups[key] = groups[key] || [];
+    groups[key].push(item);
+    return groups;
+  }, {});
+}
+
+// Returns a display label for evidence result types.
+function eqTypeLabel(type) {
+  return {
+    literature:'Literature',
+    interview:'Interview',
+    survey:'Survey Results',
+    analytics:'Network Analytics',
+    chapter:'Dissertation Workspace',
+    finding:'Research Finding',
+    recommendation:'Recommendation',
+    theme:'Research Theme',
+    rq:'Research Question'
+  }[type] || type;
+}
+
+const EV_ENTITY_STORAGE_KEY = 'dissertation_evidence_entities_v1';
+const EV_LINK_STORAGE_KEY = 'dissertation_evidence_links_v1';
+const EV_ENTITY_TYPES = [
+  ['rq', 'Research Question'],
+  ['chapter', 'Dissertation Chapter'],
+  ['theme', 'Research Theme'],
+  ['finding', 'Finding'],
+  ['recommendation', 'Recommendation']
+];
+let evSelectedEntityId = 'rq1';
+
+// Returns the default shared research entities used across modules.
+function evDefaultEntities() {
+  return [
+    { id:'rq1', type:'rq', label:'RQ1', title:'Coverage, signal strength and network availability' },
+    { id:'rq2', type:'rq', label:'RQ2', title:'Quality of service, reliability, speed and interruptions' },
+    { id:'rq3', type:'rq', label:'RQ3', title:'Affordability, data-plan value and mobile use constraints' },
+    { id:'rq4', type:'rq', label:'RQ4', title:'Operator competition, switching and service choice' },
+    { id:'chapter-introduction', type:'chapter', label:'Introduction', title:'Research context and problem statement' },
+    { id:'chapter-literature-review', type:'chapter', label:'Literature Review', title:'Academic and technical literature' },
+    { id:'chapter-methodology', type:'chapter', label:'Methodology', title:'Survey, interview and network measurement approach' },
+    { id:'chapter-results', type:'chapter', label:'Results', title:'Survey and network results' },
+    { id:'chapter-discussion', type:'chapter', label:'Discussion', title:'Interpretation of findings and integrated discussion' },
+    { id:'chapter-analysis', type:'chapter', label:'Analysis', title:'Integrated interpretation of evidence' },
+    { id:'chapter-conclusions', type:'chapter', label:'Conclusions', title:'Research conclusions' },
+    { id:'chapter-recommendations', type:'chapter', label:'Recommendations', title:'Practical and policy recommendations' },
+    { id:'theme-qos', type:'theme', label:'QoS', title:'Quality of service' },
+    { id:'theme-lte-performance', type:'theme', label:'LTE Performance', title:'LTE signal, speed and serving cell performance' },
+    { id:'theme-network-kpis', type:'theme', label:'Network KPIs', title:'RSRP, RSRQ, SINR, throughput and latency' },
+    { id:'theme-capacity-planning', type:'theme', label:'Capacity Planning', title:'Capacity, congestion and infrastructure planning' },
+    { id:'theme-competition', type:'theme', label:'Competition', title:'Operator competition and market choice' }
+  ];
+}
+
+// Reads shared entities, seeding defaults when none exist.
+function evGetEntities() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(EV_ENTITY_STORAGE_KEY) || '[]');
+    const entities = Array.isArray(stored) && stored.length ? stored : evDefaultEntities();
+    return evMergeDefaultEntities(entities);
+  } catch (err) {
+    console.warn('Evidence entities could not be read.', err);
+    return evDefaultEntities();
+  }
+}
+
+// Persists shared research entities.
+function evSetEntities(entities) {
+  localStorage.setItem(EV_ENTITY_STORAGE_KEY, JSON.stringify(entities || []));
+}
+
+// Ensures newer default entities are available without duplicating user entities.
+function evMergeDefaultEntities(entities) {
+  const map = new Map((entities || []).map(entity => [entity.id, entity]));
+  evDefaultEntities().forEach(entity => { if (!map.has(entity.id)) map.set(entity.id, entity); });
+  return Array.from(map.values());
+}
+
+// Reads evidence relationship rows.
+function evGetLinks() {
+  try {
+    const links = JSON.parse(localStorage.getItem(EV_LINK_STORAGE_KEY) || '[]');
+    return Array.isArray(links) ? links : [];
+  } catch (err) {
+    console.warn('Evidence links could not be read.', err);
+    return [];
+  }
+}
+
+// Persists evidence relationship rows.
+function evSetLinks(links) {
+  localStorage.setItem(EV_LINK_STORAGE_KEY, JSON.stringify(links || []));
+}
+
+// Creates a relationship row without duplicating linked records.
+function evAddLink(sourceType, sourceId, targetType, targetId, meta = {}) {
+  if (!sourceType || !sourceId || !targetType || !targetId) return false;
+  const links = evGetLinks();
+  const exists = links.some(link => link.sourceType === sourceType && link.sourceId === sourceId && link.targetType === targetType && link.targetId === targetId);
+  if (exists) return false;
+  links.push({ id:`evlink-${Date.now()}-${Math.random().toString(16).slice(2)}`, sourceType, sourceId, targetType, targetId, meta, createdAt:new Date().toISOString() });
+  evSetLinks(links);
+  return true;
+}
+
+// Removes one relationship row.
+function evRemoveLink(linkId) {
+  evSetLinks(evGetLinks().filter(link => link.id !== linkId));
+  evRenderExplorer();
+  evRenderSourceLinks('literature', litSelectedId, 'lit-evidence-links');
+  evRenderSourceLinks('interview', imSelectedId, 'im-evidence-links');
+}
+
+// Initialises Evidence Explorer controls.
+function evInitExplorer() {
+  evInitTypeSelect('ev-browse-type', true);
+  evRenderExplorer();
+}
+
+// Initialises Literature/Interview link controls.
+function evInitLinkControls(prefix) {
+  evInitTypeSelect(`${prefix}-ev-type`, false);
+  evPopulateTargetSelect(prefix);
+}
+
+// Populates an evidence type select.
+function evInitTypeSelect(id, includeAll) {
+  const select = document.getElementById(id);
+  if (!select || select.options.length) return;
+  select.innerHTML = `${includeAll ? '<option value="all">All evidence entities</option>' : ''}${EV_ENTITY_TYPES.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}`;
+}
+
+// Populates an evidence target select based on selected type.
+function evPopulateTargetSelect(prefix) {
+  const type = document.getElementById(`${prefix}-ev-type`)?.value || 'rq';
+  const target = document.getElementById(`${prefix}-ev-target`);
+  if (!target) return;
+  const entities = evGetEntities().filter(entity => entity.type === type);
+  target.innerHTML = entities.map(entity => `<option value="${entity.id}">${dashEscape(entity.label)} - ${dashEscape(entity.title)}</option>`).join('');
+}
+
+// Links the selected literature record to a shared evidence entity.
+function evAddCurrentLiteratureLink() {
+  if (!litSelectedId) litSaveRecord();
+  const sourceId = litSelectedId;
+  const type = document.getElementById('lit-ev-type')?.value;
+  const targetId = document.getElementById('lit-ev-target')?.value;
+  evAddLink('literature', sourceId, type, targetId);
+  evRenderSourceLinks('literature', sourceId, 'lit-evidence-links');
+  evRenderExplorer();
+}
+
+// Links the selected interview record to a shared evidence entity.
+function evAddCurrentInterviewLink() {
+  if (!imSelectedId) imSaveRecord();
+  const sourceId = imSelectedId;
+  const type = document.getElementById('im-ev-type')?.value;
+  const targetId = document.getElementById('im-ev-target')?.value;
+  evAddLink('interview', sourceId, type, targetId);
+  evRenderSourceLinks('interview', sourceId, 'im-evidence-links');
+  evRenderExplorer();
+}
+
+// Renders link chips for a literature or interview source.
+function evRenderSourceLinks(sourceType, sourceId, targetElementId) {
+  const target = document.getElementById(targetElementId);
+  if (!target) return;
+  if (!sourceId) {
+    target.innerHTML = '<span class="dash-subtitle">Save the record before adding evidence links.</span>';
+    return;
+  }
+  const entities = new Map(evGetEntities().map(entity => [entity.id, entity]));
+  const links = evGetLinks().filter(link => link.sourceType === sourceType && link.sourceId === sourceId);
+  target.innerHTML = links.length ? links.map(link => {
+    const entity = entities.get(link.targetId);
+    return `<span class="evidence-chip">${dashEscape(entity?.label || link.targetId)} <button type="button" onclick="evRemoveLink('${dashEscape(link.id)}')">x</button></span>`;
+  }).join('') : '<span class="dash-subtitle">No evidence links yet.</span>';
+}
+
+// Creates a new shared evidence entity.
+function evCreateEntity() {
+  const type = document.getElementById('ev-browse-type')?.value;
+  const entityType = type && type !== 'all' ? type : prompt('Entity type: rq, chapter, theme, finding, recommendation', 'finding');
+  if (!EV_ENTITY_TYPES.some(([value]) => value === entityType)) { alert('Unknown evidence entity type.'); return; }
+  const label = prompt('Short label for this evidence entity:', entityType.toUpperCase());
+  if (!label) return;
+  const title = prompt('Description/title:', label) || label;
+  const id = `${entityType}-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || Date.now()}`;
+  const entities = evGetEntities();
+  const uniqueId = entities.some(entity => entity.id === id) ? `${id}-${Date.now()}` : id;
+  entities.push({ id: uniqueId, type: entityType, label, title });
+  evSetEntities(entities);
+  evSelectedEntityId = uniqueId;
+  evRenderExplorer();
+  evInitLinkControls('lit');
+  evInitLinkControls('im');
+}
+
+// Renders the Evidence Explorer list and selected evidence detail.
+function evRenderExplorer() {
+  const list = document.getElementById('ev-entity-list');
+  const detail = document.getElementById('ev-detail');
+  if (!list || !detail) return;
+  const type = document.getElementById('ev-browse-type')?.value || 'all';
+  const query = (document.getElementById('ev-search')?.value || '').toLowerCase();
+  const entities = evGetEntities().filter(entity => (type === 'all' || entity.type === type) && `${entity.label} ${entity.title}`.toLowerCase().includes(query));
+  if (!entities.some(entity => entity.id === evSelectedEntityId)) evSelectedEntityId = entities[0]?.id || '';
+  list.innerHTML = entities.length ? entities.map(entity => `<button class="evidence-item ${entity.id === evSelectedEntityId ? 'on' : ''}" type="button" onclick="evSelectEntity('${dashEscape(entity.id)}')"><strong>${dashEscape(entity.label)}</strong><span>${dashEscape(evEntityTypeLabel(entity.type))}: ${dashEscape(entity.title)}</span></button>`).join('') : '<div class="dash-subtitle">No shared evidence entities match this view.</div>';
+  evRenderEntityDetail(evSelectedEntityId);
+}
+
+// Selects an Evidence Explorer entity.
+function evSelectEntity(entityId) {
+  evSelectedEntityId = entityId;
+  evRenderExplorer();
+}
+
+// Renders all linked evidence for a selected entity.
+function evRenderEntityDetail(entityId) {
+  const detail = document.getElementById('ev-detail');
+  if (!detail) return;
+  const entity = evGetEntities().find(item => item.id === entityId);
+  if (!entity) {
+    detail.innerHTML = '<div class="dash-subtitle">Select a research question, theme, finding or recommendation.</div>';
+    return;
+  }
+  const links = evGetLinks().filter(link => link.targetId === entityId);
+  const groups = {
+    literature: links.filter(link => link.sourceType === 'literature').map(link => evDescribeLiterature(link.sourceId)),
+    interviews: links.filter(link => link.sourceType === 'interview').map(link => evDescribeInterview(link.sourceId)),
+    analytics: links.filter(link => link.sourceType === 'analytics').map(link => link.meta?.title || link.sourceId),
+    chapters: entity.type === 'chapter' ? [entity.title] : links.filter(link => link.sourceType === 'chapter').map(link => dwGetChapters().find(item => item.id === link.sourceId)?.title || link.sourceId),
+    findings: entity.type === 'finding' ? [entity.title] : links.filter(link => link.targetType === 'finding').map(link => evGetEntities().find(item => item.id === link.targetId)?.title).filter(Boolean),
+    recommendations: entity.type === 'recommendation' ? [entity.title] : links.filter(link => link.targetType === 'recommendation').map(link => evGetEntities().find(item => item.id === link.targetId)?.title).filter(Boolean)
+  };
+  detail.innerHTML = `<div><div class="dash-title">${dashEscape(entity.label)}</div><div class="dash-subtitle">${dashEscape(evEntityTypeLabel(entity.type))}: ${dashEscape(entity.title)}</div></div>
+    <div class="evidence-linked-grid">
+      ${evLinkedCard('Supporting Literature', groups.literature)}
+      ${evLinkedCard('Supporting Interviews', groups.interviews)}
+      ${evLinkedCard('Supporting Survey Results / Network Analytics', groups.analytics)}
+      ${evLinkedCard('Supporting Dissertation Chapters', groups.chapters)}
+      ${evLinkedCard('Linked Findings', groups.findings)}
+      ${evLinkedCard('Linked Recommendations', groups.recommendations)}
+    </div>`;
+}
+
+// Renders one linked evidence group.
+function evLinkedCard(title, items) {
+  const unique = [...new Set((items || []).filter(Boolean))];
+  return `<div class="evidence-linked-card"><h4>${dashEscape(title)}</h4>${unique.length ? `<ul>${unique.map(item => `<li>${dashEscape(item)}</li>`).join('')}</ul>` : '<div class="dash-subtitle">No linked evidence yet.</div>'}</div>`;
+}
+
+// Returns a human label for an evidence entity type.
+function evEntityTypeLabel(type) {
+  return EV_ENTITY_TYPES.find(([value]) => value === type)?.[1] || type;
+}
+
+// Describes a linked literature record without duplicating it.
+function evDescribeLiterature(id) {
+  const record = litGetRecords().find(item => item.id === id);
+  return record ? `${record.citationKey || 'no-key'} - ${record.title || 'Untitled literature'}` : `Missing literature record ${id}`;
+}
+
+// Describes a linked interview record without duplicating it.
+function evDescribeInterview(id) {
+  const record = imGetRecords().find(item => item.id === id);
+  return record ? `${record.name || 'Unnamed interviewee'} - ${record.organisation || 'No organisation'} (${record.status || 'No status'})` : `Missing interview record ${id}`;
+}
+
+// Creates a placeholder analytics relationship row for future Analytics integration.
+function evShowAnalyticsLinkPanel() {
+  const entityId = evSelectedEntityId || evGetEntities()[0]?.id;
+  const entity = evGetEntities().find(item => item.id === entityId);
+  const title = prompt(`Analytics output label to link to ${entity?.label || 'selected evidence'}:`, 'Survey / network analytics output');
+  if (!title) return;
+  evAddLink('analytics', `analytics-${Date.now()}`, entity?.type || 'finding', entityId, { title });
+  evRenderExplorer();
+}
+
+const IM_STORAGE_KEY = 'dissertation_interviews_v1';
+const IM_STATUSES = ['Scheduled', 'Completed', 'VTT Imported', 'Transcript Cleaned', 'Researcher Reviewed', 'Sent for Interviewee Approval', 'Interviewee Approved', 'Ready for Coding', 'Coded', 'Linked to Dissertation'];
+let imSelectedId = null;
+let imAttachments = {};
+let imOriginalTranscript = '';
+let imTimestampVisible = true;
+
+// Reads locally stored interview-management records.
+function imGetRecords() {
+  try {
+    const records = JSON.parse(localStorage.getItem(IM_STORAGE_KEY) || '[]');
+    return Array.isArray(records) ? records.map(imNormalizeRecord) : [];
+  } catch (err) {
+    console.warn('Interview records could not be read.', err);
+    return [];
+  }
+}
+
+// Persists interview-management records in localStorage.
+function imSetRecords(records) {
+  localStorage.setItem(IM_STORAGE_KEY, JSON.stringify((records || []).map(imNormalizeRecord)));
+}
+
+// Normalises older interview records to the staged workflow data model.
+function imNormalizeRecord(record) {
+  const statusMap = {
+    'Transcript Imported': 'VTT Imported',
+    'Sent to Interviewee': 'Sent for Interviewee Approval',
+    'Ready for Analysis': 'Ready for Coding',
+    'Locked': 'Interviewee Approved'
+  };
+  const transcript = record?.transcript || {};
+  return {
+    ...record,
+    status: statusMap[record?.status] || record?.status || 'Scheduled',
+    transcript: {
+      original: transcript.original || '',
+      cleanedHtml: transcript.cleanedHtml || '',
+      cleanedText: transcript.cleanedText || '',
+      cleaned: transcript.cleaned || (transcript.cleanedHtml || transcript.cleanedText ? { html: transcript.cleanedHtml || imTranscriptTextToHtml(transcript.cleanedText), text: transcript.cleanedText || '', savedAt: transcript.cleanedAt || '' } : null),
+      reviewed: transcript.reviewed || null,
+      approved: transcript.approved || null,
+      versions: transcript.versions || [],
+      researcherApproved: !!transcript.researcherApproved,
+      intervieweeApproved: !!transcript.intervieweeApproved
+    }
+  };
+}
+
+// Initialises dashboard interview controls and renders saved records.
+function imInit() {
+  imPopulateStatusControls();
+  const records = imGetRecords();
+  if (!imSelectedId && records[0]) imSelectedId = records[0].id;
+  if (!records.length && !document.getElementById('im-name')?.value) imNewRecord(false);
+  imRenderStats();
+  imRenderList();
+  imLoadRecord(imSelectedId, false);
+}
+
+// Populates status selectors and workflow buttons.
+function imPopulateStatusControls() {
+  const status = document.getElementById('im-status');
+  const filter = document.getElementById('im-filter-status');
+  if (status && !status.options.length) status.innerHTML = IM_STATUSES.map(item => `<option>${item}</option>`).join('');
+  if (filter && !filter.options.length) filter.innerHTML = `<option value="">All statuses</option>${IM_STATUSES.map(item => `<option>${item}</option>`).join('')}`;
+  imRenderWorkflow();
+}
+
+// Creates a blank interview record in the editor.
+function imNewRecord(clearSelection = true) {
+  if (clearSelection) imSelectedId = null;
+  imAttachments = {};
+  imOriginalTranscript = '';
+  imTimestampVisible = true;
+  imSetForm({
+    id: '',
+    name: '',
+    organisation: '',
+    position: '',
+    email: '',
+    telephone: '',
+    date: '',
+    duration: '',
+    type: 'Teams',
+    rqs: '',
+    consent: 'Not requested',
+    notes: '',
+    status: 'Scheduled',
+    literature: '',
+    surveyFindings: '',
+    chapters: '',
+    attachments: {},
+    transcript: { original: '', cleanedHtml: '', cleanedText: '', cleaned: null, reviewed: null, approved: null, versions: [], researcherApproved: false, intervieweeApproved: false }
+  });
+  imRenderWorkflow();
+  imUpdateWordCounts();
+}
+
+// Copies an interview record into form controls.
+function imSetForm(record) {
+  const set = (id, value) => { const el = document.getElementById(id); if (el) el.value = value || ''; };
+  set('im-name', record.name);
+  set('im-organisation', record.organisation);
+  set('im-position', record.position);
+  set('im-email', record.email);
+  set('im-telephone', record.telephone);
+  set('im-date', record.date);
+  set('im-duration', record.duration);
+  set('im-type', record.type || 'Teams');
+  set('im-consent', record.consent || 'Not requested');
+  set('im-status', record.status || 'Scheduled');
+  set('im-rqs', record.rqs);
+  set('im-chapters', record.chapters);
+  set('im-literature', record.literature);
+  set('im-survey-findings', record.surveyFindings);
+  set('im-notes', record.notes);
+  imAttachments = record.attachments || {};
+  imOriginalTranscript = record.transcript?.original || '';
+  const original = document.getElementById('im-original-transcript');
+  if (original) original.textContent = imOriginalTranscript || 'Import a Teams VTT transcript to preserve the original here.';
+  const clean = document.getElementById('im-clean-transcript');
+  if (clean) clean.innerHTML = record.transcript?.cleanedHtml || 'Cleaned transcript will appear here after VTT import.';
+  const subtitle = document.getElementById('im-editor-subtitle');
+  if (subtitle) subtitle.textContent = record.id ? `Editing ${record.name || 'interview record'}` : 'Create a new interview record.';
+  imRenderDocumentNotes();
+  imRenderWorkflow();
+  imRenderVersions(record);
+  imRenderTranscriptVersions(record);
+  evRenderSourceLinks('interview', record.id, 'im-evidence-links');
+  imUpdateWordCounts();
+}
+
+// Collects current form values into a normalised interview record.
+function imGetFormRecord() {
+  const val = id => document.getElementById(id)?.value.trim() || '';
+  const clean = document.getElementById('im-clean-transcript');
+  const existing = imGetRecords().find(item => item.id === imSelectedId);
+  return {
+    id: imSelectedId || `im-${Date.now()}`,
+    name: val('im-name'),
+    organisation: val('im-organisation'),
+    position: val('im-position'),
+    email: val('im-email'),
+    telephone: val('im-telephone'),
+    date: val('im-date'),
+    duration: val('im-duration'),
+    type: val('im-type') || 'Teams',
+    rqs: val('im-rqs'),
+    consent: val('im-consent') || 'Not requested',
+    notes: val('im-notes'),
+    status: val('im-status') || 'Scheduled',
+    literature: val('im-literature'),
+    surveyFindings: val('im-survey-findings'),
+    chapters: val('im-chapters'),
+    attachments: imAttachments,
+    transcript: {
+      original: imOriginalTranscript,
+      cleanedHtml: clean?.innerHTML || '',
+      cleanedText: clean?.innerText || '',
+      cleaned: existing?.transcript?.cleaned || null,
+      reviewed: existing?.transcript?.reviewed || null,
+      approved: existing?.transcript?.approved || null,
+      versions: existing?.transcript?.versions || [],
+      researcherApproved: existing?.transcript?.researcherApproved || false,
+      intervieweeApproved: existing?.transcript?.intervieweeApproved || false
+    },
+    updatedAt: new Date().toISOString()
+  };
+}
+
+// Saves the current interview record.
+function imSaveRecord() {
+  const record = imGetFormRecord();
+  const records = imGetRecords();
+  const index = records.findIndex(item => item.id === record.id);
+  if (index >= 0) records[index] = record;
+  else records.unshift(record);
+  imSetRecords(records);
+  imSelectedId = record.id;
+  imRenderStats();
+  imRenderList();
+  imSetForm(record);
+  renderDashboardOverview();
+}
+
+// Deletes the selected interview record.
+function imDeleteRecord() {
+  if (!imSelectedId) { alert('Select an interview record to delete.'); return; }
+  const records = imGetRecords();
+  const record = records.find(item => item.id === imSelectedId);
+  if (!confirm(`Delete interview record "${record?.name || imSelectedId}"?`)) return;
+  const next = records.filter(item => item.id !== imSelectedId);
+  imSetRecords(next);
+  imSelectedId = next[0]?.id || null;
+  imRenderStats();
+  imRenderList();
+  imLoadRecord(imSelectedId);
+  renderDashboardOverview();
+}
+
+// Loads a saved interview record into the editor.
+function imLoadRecord(id, rerenderList = true) {
+  const record = imGetRecords().find(item => item.id === id);
+  if (!record) {
+    imNewRecord(false);
+    return;
+  }
+  imSelectedId = id;
+  imSetForm(record);
+  if (rerenderList) imRenderList();
+}
+
+// Stores attachment metadata without uploading or persisting file contents.
+function imAttachDocument(input, key) {
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+  imAttachments[key] = files.map(file => ({ name: file.name, size: file.size, sizeLabel: `${Math.round(file.size / 1024)} KB`, type: file.type || 'unknown', lastModified: file.lastModified }));
+  imRenderDocumentNotes();
+}
+
+// Imports a Teams VTT transcript while preserving the original text.
+function imImportVtt(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  imAttachDocument(input, 'vtt');
+  const reader = new FileReader();
+  reader.onload = () => {
+    imOriginalTranscript = String(reader.result || '');
+    const original = document.getElementById('im-original-transcript');
+    if (original) original.textContent = imOriginalTranscript;
+    imGenerateCleanTranscript();
+    const status = document.getElementById('im-status');
+    if (status) status.value = 'VTT Imported';
+    imRenderWorkflow();
+    imUpdateWordCounts();
+  };
+  reader.readAsText(file);
+}
+
+// Updates attachment metadata labels.
+function imRenderDocumentNotes() {
+  ['audio','video','vtt','docx','consent','additional'].forEach(key => {
+    const target = document.getElementById(`im-doc-${key}`);
+    const files = imAttachments[key] || [];
+    if (target) target.textContent = files.length ? files.map(file => `${file.name} (${file.sizeLabel})`).join('; ') : (key === 'vtt' ? 'No VTT imported.' : key === 'additional' ? 'No files attached.' : 'No file attached.');
+  });
+}
+
+// Renders interview status workflow buttons.
+function imRenderWorkflow() {
+  const target = document.getElementById('im-workflow');
+  const current = imCurrentStatus();
+  if (!target) return;
+  target.innerHTML = IM_STATUSES.map(status => `<button type="button" class="${status === current ? 'on' : ''}" onclick="imSetWorkflowStatus('${dashEscape(status)}')">${dashEscape(status)}</button>`).join('');
+  imRenderProgress();
+}
+
+// Returns the current workflow status, normalised to the approved stage list.
+function imCurrentStatus() {
+  const value = document.getElementById('im-status')?.value || 'Scheduled';
+  return IM_STATUSES.includes(value) ? value : 'Scheduled';
+}
+
+// Renders the visual stage progress indicator.
+function imRenderProgress() {
+  const current = imCurrentStatus();
+  const currentIndex = Math.max(0, IM_STATUSES.indexOf(current));
+  const pct = Math.round((currentIndex / Math.max(1, IM_STATUSES.length - 1)) * 100);
+  const fill = document.getElementById('im-progress-fill');
+  const label = document.getElementById('im-progress-label');
+  const grid = document.getElementById('im-stage-grid');
+  if (fill) fill.style.width = `${pct}%`;
+  if (label) label.textContent = `${pct}% · ${current}`;
+  if (grid) {
+    grid.innerHTML = IM_STATUSES.map((stage, index) => `<div class="im-stage ${index < currentIndex ? 'done' : index === currentIndex ? 'current' : ''}">${index + 1}. ${dashEscape(stage)}</div>`).join('');
+  }
+}
+
+// Sets the workflow status from a pill button.
+function imSetWorkflowStatus(status) {
+  const select = document.getElementById('im-status');
+  if (select) select.value = status;
+  imRenderWorkflow();
+}
+
+// Keeps workflow buttons in sync with the status dropdown.
+function imSyncWorkflowFromStatus() {
+  imRenderWorkflow();
+}
+
+// Renders summary dashboard cards.
+function imRenderStats() {
+  const target = document.getElementById('im-stat-grid');
+  if (!target) return;
+  const records = imGetRecords();
+  const count = status => records.filter(item => item.status === status).length;
+  const awaitingReview = records.filter(item => item.status === 'VTT Imported' || item.status === 'Transcript Cleaned').length;
+  const awaitingApproval = records.filter(item => item.status === 'Sent for Interviewee Approval').length;
+  const analysed = records.filter(item => ['Ready for Coding','Coded','Linked to Dissertation'].includes(item.status)).length;
+  const stats = [
+    ['Total Interviews', records.length],
+    ['Scheduled', count('Scheduled')],
+    ['Completed', count('Completed')],
+    ['Awaiting Transcript Review', awaitingReview],
+    ['Awaiting Interviewee Approval', awaitingApproval],
+    ['Approved', count('Interviewee Approved') + count('Ready for Coding') + count('Coded') + count('Linked to Dissertation')],
+    ['Analysed', analysed]
+  ];
+  target.innerHTML = stats.map(([label, value]) => `<div class="im-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
+}
+
+// Filters interview records by search controls.
+function imFilteredRecords() {
+  const records = imGetRecords();
+  const val = id => document.getElementById(id)?.value.trim().toLowerCase() || '';
+  const q = val('im-search');
+  const status = val('im-filter-status');
+  const rq = val('im-filter-rq');
+  const org = val('im-filter-org');
+  const date = val('im-filter-date');
+  return records.filter(item => {
+    const haystack = [item.name, item.organisation, item.position, item.email, item.notes].join(' ').toLowerCase();
+    return (!q || haystack.includes(q)) &&
+      (!status || String(item.status || '').toLowerCase() === status) &&
+      (!rq || String(item.rqs || '').toLowerCase().includes(rq)) &&
+      (!org || String(item.organisation || '').toLowerCase().includes(org)) &&
+      (!date || item.date === date);
+  });
+}
+
+// Renders the searchable interview list.
+function imRenderList() {
+  imPopulateStatusControls();
+  imRenderStats();
+  const target = document.getElementById('im-list');
+  if (!target) return;
+  const records = imFilteredRecords();
+  target.innerHTML = records.length ? records.map(item => `<button class="im-list-item ${item.id === imSelectedId ? 'on' : ''}" type="button" onclick="imLoadRecord('${dashEscape(item.id)}')">
+    <div class="im-list-title">${dashEscape(item.name || 'Unnamed interviewee')}</div>
+    <div class="im-list-meta">${dashEscape(item.organisation || 'No organisation')} · ${dashEscape(item.date || 'No date')}</div>
+    <div class="im-list-meta"><span class="badge ${['Ready for Coding','Coded','Linked to Dissertation'].includes(item.status) ? 'badge-ok' : item.status === 'Scheduled' ? 'badge-blue' : 'badge-warn'}">${dashEscape(item.status || 'Scheduled')}</span></div>
+  </button>`).join('') : '<div class="dash-subtitle" style="padding:8px">No interview records match the current filters.</div>';
+}
+
+// Converts VTT transcript text into a clean editable transcript.
+function imGenerateCleanTranscript() {
+  const cleanText = imCleanVttTranscript(imOriginalTranscript);
+  const editor = document.getElementById('im-clean-transcript');
+  if (editor) editor.innerHTML = imTranscriptTextToHtml(cleanText || 'No transcript text available yet.');
+  const status = document.getElementById('im-status');
+  if (status && imOriginalTranscript) status.value = 'Transcript Cleaned';
+  imRenderWorkflow();
+  imUpdateWordCounts();
+}
+
+// Cleans VTT syntax while retaining speaker labels and timestamps.
+function imCleanVttTranscript(text) {
+  return String(text || '')
+    .replace(/^\uFEFF?WEBVTT.*$/gmi, '')
+    .replace(/^\s*(NOTE|STYLE|REGION).*$/gmi, '')
+    .replace(/<[^>]+>/g, '')
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line && !/^\d+$/.test(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// Converts plain transcript text to safe HTML paragraphs.
+function imTranscriptTextToHtml(text) {
+  return String(text || '').split(/\n{2,}|\r?\n/).filter(Boolean).map(line => `<p>${dashEscape(line)}</p>`).join('');
+}
+
+// Executes rich text editor commands.
+function imEditorCommand(command) {
+  document.getElementById('im-clean-transcript')?.focus();
+  document.execCommand(command, false, null);
+  imUpdateWordCounts();
+}
+
+// Toggles timestamp lines in the cleaned transcript editor.
+function imToggleTimestamps() {
+  const editor = document.getElementById('im-clean-transcript');
+  if (!editor) return;
+  imTimestampVisible = !imTimestampVisible;
+  Array.from(editor.querySelectorAll('p')).forEach(p => {
+    if (/^\d{2}:\d{2}:\d{2}/.test(p.innerText.trim())) p.style.display = imTimestampVisible ? '' : 'none';
+  });
+}
+
+// Highlights uncertain words and common transcript uncertainty markers.
+function imHighlightUncertain() {
+  const editor = document.getElementById('im-clean-transcript');
+  if (!editor) return;
+  const text = editor.innerText;
+  const html = imTranscriptTextToHtml(text).replace(/\b(unclear|inaudible|unknown|\[.*?\]|\(.*?\))/gi, '<mark>$1</mark>');
+  editor.innerHTML = html;
+}
+
+// Finds text in the transcript editor using the browser selection engine.
+function imFindInTranscript() {
+  const term = document.getElementById('im-transcript-search')?.value || '';
+  document.getElementById('im-clean-transcript')?.focus();
+  if (term) window.find(term);
+}
+
+// Replaces the next matching transcript term and stores the result in the editor.
+function imReplaceInTranscript() {
+  const find = document.getElementById('im-transcript-search')?.value || '';
+  const replace = document.getElementById('im-transcript-replace')?.value || '';
+  const editor = document.getElementById('im-clean-transcript');
+  if (!find || !editor) return;
+  editor.innerHTML = editor.innerHTML.replace(new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), replace);
+  imUpdateWordCounts();
+}
+
+// Updates transcript word counts.
+function imUpdateWordCounts() {
+  const originalWords = imWordCount(imOriginalTranscript);
+  const cleanWords = imWordCount(document.getElementById('im-clean-transcript')?.innerText || '');
+  const original = document.getElementById('im-original-word-count');
+  const clean = document.getElementById('im-clean-word-count');
+  if (original) original.textContent = `${originalWords} words`;
+  if (clean) clean.textContent = `${cleanWords} words`;
+}
+
+// Counts words in transcript text.
+function imWordCount(text) {
+  return (String(text || '').match(/\b[\w'-]+\b/g) || []).length;
+}
+
+// Saves a timestamped transcript revision without overwriting the original.
+function imSaveTranscriptRevision() {
+  imSaveCleanedTranscript();
+}
+
+// Saves the current editor content as the cleaned transcript version.
+function imSaveCleanedTranscript() {
+  let record = imGetFormRecord();
+  record.status = 'Transcript Cleaned';
+  imSaveTranscriptVersion(record, 'cleaned', 'Cleaned transcript saved');
+}
+
+// Saves the current editor content as the researcher-reviewed transcript version.
+function imSaveReviewedTranscript() {
+  let record = imGetFormRecord();
+  record.transcript.researcherApproved = true;
+  record.status = 'Researcher Reviewed';
+  imSaveTranscriptVersion(record, 'reviewed', 'Reviewed transcript saved');
+}
+
+// Saves the current editor content as the interviewee-approved transcript version for future coding.
+function imSaveApprovedTranscript() {
+  let record = imGetFormRecord();
+  record.transcript.intervieweeApproved = true;
+  record.status = 'Interviewee Approved';
+  imSaveTranscriptVersion(record, 'approved', 'Approved transcript saved for future coding');
+}
+
+// Stores a named transcript version while preserving the original VTT.
+function imSaveTranscriptVersion(record, versionKey, label) {
+  const savedAt = new Date().toISOString();
+  record.transcript[versionKey] = {
+    html: record.transcript.cleanedHtml,
+    text: record.transcript.cleanedText,
+    savedAt,
+    wordCount: imWordCount(record.transcript.cleanedText)
+  };
+  record.transcript.versions = record.transcript.versions || [];
+  record.transcript.versions.unshift({
+    savedAt,
+    label,
+    wordCount: imWordCount(record.transcript.cleanedText),
+    html: record.transcript.cleanedHtml,
+    versionKey
+  });
+  imSaveRecordWithObject(record);
+}
+
+// Saves a supplied record object and refreshes views.
+function imSaveRecordWithObject(record) {
+  const records = imGetRecords();
+  const index = records.findIndex(item => item.id === record.id);
+  if (index >= 0) records[index] = record;
+  else records.unshift(record);
+  imSetRecords(records);
+  imSelectedId = record.id;
+  imRenderStats();
+  imRenderList();
+  imSetForm(record);
+  renderDashboardOverview();
+}
+
+// Renders transcript version history.
+function imRenderVersions(record) {
+  const target = document.getElementById('im-version-list');
+  if (!target) return;
+  const versions = record?.transcript?.versions || [];
+  target.innerHTML = versions.length ? versions.map((version, index) => `<div class="im-version-item"><strong>${dashEscape(version.label || 'Transcript revision')} · Version ${versions.length - index}</strong><br>${dashEscape(new Date(version.savedAt).toLocaleString())} · ${version.wordCount || 0} words</div>`).join('') : '<div class="dash-subtitle">No transcript revisions saved yet.</div>';
+}
+
+// Renders cleaned, reviewed and approved transcript snapshots separately.
+function imRenderTranscriptVersions(record) {
+  const render = (key, emptyText) => {
+    const version = record?.transcript?.[key];
+    const body = document.getElementById(`im-${key}-version`);
+    const count = document.getElementById(`im-${key}-version-count`);
+    const text = version?.text || '';
+    if (body) body.textContent = text || emptyText;
+    if (count) count.textContent = `${imWordCount(text)} words`;
+  };
+  render('cleaned', 'No cleaned transcript saved.');
+  render('reviewed', 'No reviewed transcript saved.');
+  render('approved', 'No approved transcript saved.');
+}
+
+// Marks the cleaned transcript as approved by the researcher.
+function imMarkResearcherApproved() {
+  imSaveReviewedTranscript();
+}
+
+// Marks the transcript as approved by the interviewee.
+function imMarkIntervieweeApproved() {
+  imSaveApprovedTranscript();
+}
+
+// Generates a clean interviewee approval copy.
+function imGenerateApprovalCopy() {
+  const record = imGetFormRecord();
+  const output = document.getElementById('im-approval-output');
+  if (!output) return;
+  const status = document.getElementById('im-status');
+  if (status) {
+    status.value = 'Sent for Interviewee Approval';
+    imRenderWorkflow();
+  }
+  output.value = [
+    `Interview transcript approval copy`,
+    `Interviewee: ${record.name || '-'}`,
+    `Organisation: ${record.organisation || '-'}`,
+    `Date: ${record.date || '-'}`,
+    `Status: ${record.status || '-'}`,
+    '',
+    record.transcript.reviewed?.text || record.transcript.cleaned?.text || record.transcript.cleanedText || 'No cleaned transcript has been prepared yet.',
+    '',
+    'Please review this transcript and confirm whether it is approved for dissertation analysis.'
+  ].join('\n');
+}
+
+// Copies the approval output to the clipboard.
+async function imCopyApprovalOutput() {
+  const text = document.getElementById('im-approval-output')?.value || '';
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+  alert('Interviewee approval copy copied.');
+}
+
+// Shows coding-preparation links for later coding phases.
+function imShowCodingLinks() {
+  const record = imGetFormRecord();
+  const output = document.getElementById('im-approval-output');
+  if (!output) return;
+  const approvedText = record.transcript.approved?.text || '';
+  output.value = [
+    'Coding preparation links',
+    `Research Questions: ${record.rqs || '-'}`,
+    `Literature Records: ${record.literature || '-'}`,
+    `Survey Findings: ${record.surveyFindings || '-'}`,
+    `Dissertation Chapters: ${record.chapters || '-'}`,
+    '',
+    'Transcript selected for future coding and AI analysis:',
+    approvedText || 'No approved transcript is available yet. Approve the transcript before coding.'
+  ].join('\n');
+}
+
+const LIT_STORAGE_KEY = 'dissertation_literature_v1';
+const LIT_STATUSES = ['To Read', 'Reading', 'Reviewed', 'Cited'];
+let litSelectedId = null;
+let litPdfAttachment = null;
+
+// Reads the locally stored literature records.
+function litGetRecords() {
+  try {
+    const records = JSON.parse(localStorage.getItem(LIT_STORAGE_KEY) || '[]');
+    return Array.isArray(records) ? records : [];
+  } catch (err) {
+    console.warn('Literature records could not be read.', err);
+    return [];
+  }
+}
+
+// Persists the full literature collection in localStorage.
+function litSetRecords(records) {
+  localStorage.setItem(LIT_STORAGE_KEY, JSON.stringify(records || []));
+}
+
+// Initialises the literature workspace controls and renders saved data.
+function litInit() {
+  litPopulateStatusControls();
+  const records = litGetRecords();
+  if (!litSelectedId && records[0]) litSelectedId = records[0].id;
+  if (!records.length && !document.getElementById('lit-title')?.value) litNewRecord(false);
+  litRenderStats();
+  litRenderList();
+  litLoadRecord(litSelectedId, false);
+}
+
+// Populates status dropdowns once without disturbing selected values.
+function litPopulateStatusControls() {
+  const formStatus = document.getElementById('lit-status');
+  const filterStatus = document.getElementById('lit-filter-status');
+  if (formStatus && !formStatus.options.length) formStatus.innerHTML = LIT_STATUSES.map(status => `<option>${status}</option>`).join('');
+  if (filterStatus && !filterStatus.options.length) filterStatus.innerHTML = `<option value="">All statuses</option>${LIT_STATUSES.map(status => `<option>${status}</option>`).join('')}`;
+}
+
+// Creates a blank literature record in the editor.
+function litNewRecord(clearSelection = true) {
+  if (clearSelection) litSelectedId = null;
+  litPdfAttachment = null;
+  const blank = {
+    id: '',
+    title: '',
+    authors: '',
+    year: '',
+    journal: '',
+    publisher: '',
+    doi: '',
+    url: '',
+    abstract: '',
+    keywords: '',
+    themes: '',
+    chapters: '',
+    rqs: '',
+    interviewThemes: '',
+    surveyFindings: '',
+    pdf: null,
+    status: 'To Read',
+    citationKey: 'new-reference',
+    bibtex: '',
+    notes: {}
+  };
+  litSetForm(blank);
+  litSyncCitationPreview();
+  litRenderValidation();
+}
+
+// Copies a record object into the form controls.
+function litSetForm(record) {
+  const set = (id, value) => { const el = document.getElementById(id); if (el) el.value = value || ''; };
+  set('lit-title', record.title);
+  set('lit-authors', record.authors);
+  set('lit-year', record.year);
+  set('lit-status', record.status || 'To Read');
+  set('lit-journal', record.journal);
+  set('lit-publisher', record.publisher);
+  set('lit-doi', record.doi);
+  set('lit-url', record.url);
+  set('lit-citation-key', record.citationKey);
+  set('lit-abstract', record.abstract);
+  set('lit-keywords', record.keywords);
+  set('lit-themes', record.themes);
+  set('lit-chapters', record.chapters);
+  set('lit-rqs', record.rqs);
+  set('lit-interview-themes', record.interviewThemes);
+  set('lit-survey-findings', record.surveyFindings);
+  set('lit-bibtex', record.bibtex);
+  set('lit-note-summary', record.notes?.summary);
+  set('lit-note-findings', record.notes?.findings);
+  set('lit-note-methodology', record.notes?.methodology);
+  set('lit-note-limitations', record.notes?.limitations);
+  set('lit-note-contribution', record.notes?.contribution);
+  set('lit-note-relevance', record.notes?.relevance);
+  set('lit-note-quotes', record.notes?.quotes);
+  set('lit-note-pages', record.notes?.pages);
+  set('lit-note-personal', record.notes?.personal);
+  set('lit-note-future', record.notes?.future);
+  litPdfAttachment = record.pdf || null;
+  const pdfNote = document.getElementById('lit-pdf-note');
+  if (pdfNote) pdfNote.textContent = litPdfAttachment ? `${litPdfAttachment.name} (${litPdfAttachment.sizeLabel || 'PDF metadata stored'})` : 'No PDF selected. Attachment metadata is stored locally.';
+  const subtitle = document.getElementById('lit-editor-subtitle');
+  if (subtitle) subtitle.textContent = record.id ? `Editing ${record.citationKey || 'reference'}` : 'Create a new literature record.';
+  evRenderSourceLinks('literature', record.id, 'lit-evidence-links');
+}
+
+// Collects the current editor values into a normalised record object.
+function litGetFormRecord() {
+  const val = id => document.getElementById(id)?.value.trim() || '';
+  return {
+    id: litSelectedId || `lit-${Date.now()}`,
+    title: val('lit-title'),
+    authors: val('lit-authors'),
+    year: val('lit-year'),
+    journal: val('lit-journal'),
+    publisher: val('lit-publisher'),
+    doi: val('lit-doi'),
+    url: val('lit-url'),
+    abstract: val('lit-abstract'),
+    keywords: val('lit-keywords'),
+    themes: val('lit-themes'),
+    chapters: val('lit-chapters'),
+    rqs: val('lit-rqs'),
+    interviewThemes: val('lit-interview-themes'),
+    surveyFindings: val('lit-survey-findings'),
+    pdf: litPdfAttachment,
+    status: val('lit-status') || 'To Read',
+    citationKey: litCleanCitationKey(val('lit-citation-key') || 'new-reference'),
+    bibtex: val('lit-bibtex'),
+    notes: {
+      summary: val('lit-note-summary'),
+      findings: val('lit-note-findings'),
+      methodology: val('lit-note-methodology'),
+      limitations: val('lit-note-limitations'),
+      contribution: val('lit-note-contribution'),
+      relevance: val('lit-note-relevance'),
+      quotes: val('lit-note-quotes'),
+      pages: val('lit-note-pages'),
+      personal: val('lit-note-personal'),
+      future: val('lit-note-future')
+    },
+    updatedAt: new Date().toISOString()
+  };
+}
+
+// Saves the current literature record and refreshes dependent views.
+function litSaveRecord() {
+  let record = litGetFormRecord();
+  const records = litGetRecords();
+  const existingIndex = records.findIndex(item => item.id === record.id);
+  record.citationKey = litUniqueCitationKey(record.citationKey || litGenerateCitationKey(record), record.id);
+  if (!record.bibtex) record.bibtex = litBuildBibtex(record);
+  else record.bibtex = litEnsureBibtexKey(record.bibtex, record.citationKey);
+  if (existingIndex >= 0) records[existingIndex] = record;
+  else records.unshift(record);
+  litSetRecords(records);
+  litSelectedId = record.id;
+  litSetForm(record);
+  litRenderStats();
+  litRenderList();
+  litRenderValidation();
+  renderDashboardOverview();
+}
+
+// Deletes the selected literature record after confirmation.
+function litDeleteRecord() {
+  if (!litSelectedId) { alert('Select a literature record to delete.'); return; }
+  const records = litGetRecords();
+  const record = records.find(item => item.id === litSelectedId);
+  if (!confirm(`Delete literature record "${record?.title || record?.citationKey || litSelectedId}"?`)) return;
+  const nextRecords = records.filter(item => item.id !== litSelectedId);
+  litSetRecords(nextRecords);
+  litSelectedId = nextRecords[0]?.id || null;
+  litRenderStats();
+  litRenderList();
+  litLoadRecord(litSelectedId);
+  renderDashboardOverview();
+}
+
+// Loads a saved record into the editor.
+function litLoadRecord(id, rerenderList = true) {
+  const record = litGetRecords().find(item => item.id === id);
+  if (!record) {
+    litNewRecord(false);
+    return;
+  }
+  litSelectedId = id;
+  litSetForm(record);
+  litSyncCitationPreview();
+  litRenderValidation();
+  if (rerenderList) litRenderList();
+}
+
+// Captures PDF attachment metadata for local reference.
+function litAttachPdf(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  litPdfAttachment = {
+    name: file.name,
+    size: file.size,
+    sizeLabel: `${Math.round(file.size / 1024)} KB`,
+    type: file.type || 'application/pdf',
+    lastModified: file.lastModified
+  };
+  const pdfNote = document.getElementById('lit-pdf-note');
+  if (pdfNote) pdfNote.textContent = `${litPdfAttachment.name} (${litPdfAttachment.sizeLabel}) selected. Metadata will be saved with the record.`;
+}
+
+// Updates the citation key and LaTeX command preview.
+function litSyncCitationPreview() {
+  const keyInput = document.getElementById('lit-citation-key');
+  const key = litCleanCitationKey(keyInput?.value || litGenerateCitationKey(litGetFormRecord()) || 'new-reference');
+  const display = document.getElementById('lit-citation-key-display');
+  const command = document.getElementById('lit-cite-command');
+  if (display) display.textContent = key;
+  if (command) command.textContent = `\\cite{${key}}`;
+  litRenderValidation();
+}
+
+// Generates and writes a unique citation key from author, year and title.
+function litGenerateCitationKeyForForm() {
+  const record = litGetFormRecord();
+  const key = litUniqueCitationKey(litGenerateCitationKey(record), record.id);
+  const input = document.getElementById('lit-citation-key');
+  if (input) input.value = key;
+  litSyncCitationPreview();
+}
+
+// Generates BibTeX from the metadata currently in the form.
+function litGenerateBibtexForForm() {
+  let record = litGetFormRecord();
+  record.citationKey = litUniqueCitationKey(record.citationKey || litGenerateCitationKey(record), record.id);
+  const keyInput = document.getElementById('lit-citation-key');
+  const bibtex = document.getElementById('lit-bibtex');
+  if (keyInput) keyInput.value = record.citationKey;
+  if (bibtex) bibtex.value = litBuildBibtex(record);
+  litSyncCitationPreview();
+}
+
+// Produces a deterministic citation key from record metadata.
+function litGenerateCitationKey(record) {
+  const author = (record.authors || 'ref').split(/\band\b|,|;/i).map(part => part.trim()).filter(Boolean)[0] || 'ref';
+  const surname = author.split(/\s+/).filter(Boolean).slice(-1)[0] || author;
+  const titleWord = (record.title || 'study').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).find(word => word.length > 3 && !['with','from','this','that','into','using','based'].includes(word)) || 'study';
+  return litCleanCitationKey(`${surname}${record.year || 'nd'}${titleWord}`);
+}
+
+// Sanitises citation keys for BibTeX and LaTeX use.
+function litCleanCitationKey(key) {
+  return String(key || '').replace(/[^A-Za-z0-9:_-]/g, '').replace(/^[-_:]+/, '') || 'new-reference';
+}
+
+// Ensures a citation key is unique among saved records.
+function litUniqueCitationKey(baseKey, currentId) {
+  const records = litGetRecords();
+  const base = litCleanCitationKey(baseKey || 'reference');
+  let key = base;
+  let index = 2;
+  while (records.some(item => item.id !== currentId && item.citationKey === key)) {
+    key = `${base}${index}`;
+    index += 1;
+  }
+  return key;
+}
+
+// Builds an article-style BibTeX entry from record metadata.
+function litBuildBibtex(record) {
+  const fields = [
+    ['author', record.authors],
+    ['title', record.title],
+    ['journal', record.journal],
+    ['year', record.year],
+    ['publisher', record.publisher],
+    ['doi', record.doi],
+    ['url', record.url],
+    ['keywords', record.keywords]
+  ].filter(([, value]) => value);
+  return `@article{${record.citationKey || litGenerateCitationKey(record)},\n${fields.map(([field, value]) => `  ${field} = {${value}}`).join(',\n')}\n}`;
+}
+
+// Rewrites the BibTeX key while preserving the rest of the entry.
+function litEnsureBibtexKey(bibtex, key) {
+  return bibtex.replace(/^(@\w+\s*\{\s*)[^,\s]+/i, `$1${key}`);
+}
+
+// Extracts the citation key from a BibTeX entry when available.
+function litBibtexKey(bibtex) {
+  return String(bibtex || '').match(/^@\w+\s*\{\s*([^,\s]+)/i)?.[1] || '';
+}
+
+// Checks whether a BibTeX field is present.
+function litBibtexHasField(bibtex, field) {
+  return new RegExp(`\\b${field}\\s*=`, 'i').test(String(bibtex || ''));
+}
+
+// Validates the current record and all saved references for warnings.
+function litValidateRecord(record) {
+  const records = litGetRecords();
+  const messages = [];
+  const bibKey = litBibtexKey(record.bibtex);
+  if (!record.title) messages.push(['bad', 'Missing title.']);
+  if (!record.authors) messages.push(['bad', 'Missing authors.']);
+  if (!record.year) messages.push(['bad', 'Missing publication year.']);
+  if (!record.doi) messages.push(['warn', 'Missing DOI.']);
+  if (!record.citationKey) messages.push(['bad', 'Missing citation key.']);
+  if (bibKey && bibKey !== record.citationKey) messages.push(['warn', `BibTeX key "${bibKey}" does not match citation key "${record.citationKey}".`]);
+  ['author', 'title', 'year'].forEach(field => {
+    if (record.bibtex && !litBibtexHasField(record.bibtex, field)) messages.push(['bad', `BibTeX missing required field: ${field}.`]);
+  });
+  if (record.bibtex && /^@article/i.test(record.bibtex) && !litBibtexHasField(record.bibtex, 'journal')) messages.push(['warn', 'Article BibTeX entry is missing journal.']);
+  if (records.some(item => item.id !== record.id && item.citationKey === record.citationKey)) messages.push(['bad', 'Duplicate citation key detected.']);
+  const fingerprint = litReferenceFingerprint(record);
+  if (fingerprint && records.some(item => item.id !== record.id && litReferenceFingerprint(item) === fingerprint)) messages.push(['warn', 'Possible duplicate reference detected by title, author and year.']);
+  if (!messages.length) messages.push(['good', 'Reference validation passed.']);
+  return messages;
+}
+
+// Creates a simple duplicate-detection fingerprint.
+function litReferenceFingerprint(record) {
+  const clean = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const title = clean(record.title);
+  const author = clean(record.authors).slice(0, 24);
+  const year = clean(record.year);
+  return title && author && year ? `${title}|${author}|${year}` : '';
+}
+
+// Renders validation messages for the editor record.
+function litRenderValidation() {
+  const target = document.getElementById('lit-validation-list');
+  if (!target) return;
+  const record = litGetFormRecord();
+  target.innerHTML = litValidateRecord(record).map(([kind, text]) => `<div class="lit-validation-item ${kind}">${dashEscape(text)}</div>`).join('');
+}
+
+// Renders compact collection statistics.
+function litRenderStats() {
+  const target = document.getElementById('lit-stat-grid');
+  if (!target) return;
+  const records = litGetRecords();
+  const cited = records.filter(item => item.status === 'Cited').length;
+  const reviewed = records.filter(item => ['Reviewed', 'Cited'].includes(item.status)).length;
+  const missingDoi = records.filter(item => !item.doi).length;
+  const invalid = records.filter(item => litValidateRecord(item).some(([kind]) => kind === 'bad')).length;
+  target.innerHTML = [
+    ['Total', records.length],
+    ['Reviewed/Cited', reviewed],
+    ['Cited', cited],
+    ['Needs Fix', invalid + missingDoi]
+  ].map(([label, value]) => `<div class="lit-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
+}
+
+// Applies the current search and filter controls.
+function litFilteredRecords() {
+  const records = litGetRecords();
+  const val = id => document.getElementById(id)?.value.trim().toLowerCase() || '';
+  const q = val('lit-search');
+  const status = val('lit-filter-status');
+  const year = val('lit-filter-year');
+  const theme = val('lit-filter-theme');
+  const chapter = val('lit-filter-chapter');
+  const rq = val('lit-filter-rq');
+  return records.filter(item => {
+    const haystack = [item.title, item.authors, item.keywords, item.citationKey, item.abstract].join(' ').toLowerCase();
+    return (!q || haystack.includes(q)) &&
+      (!status || String(item.status || '').toLowerCase() === status) &&
+      (!year || String(item.year || '').toLowerCase().includes(year)) &&
+      (!theme || String(item.themes || '').toLowerCase().includes(theme)) &&
+      (!chapter || String(item.chapters || '').toLowerCase().includes(chapter)) &&
+      (!rq || String(item.rqs || '').toLowerCase().includes(rq));
+  });
+}
+
+// Renders the searchable literature list.
+function litRenderList() {
+  litPopulateStatusControls();
+  litRenderStats();
+  const target = document.getElementById('lit-list');
+  if (!target) return;
+  const records = litFilteredRecords();
+  target.innerHTML = records.length ? records.map(item => `<button class="lit-list-item ${item.id === litSelectedId ? 'on' : ''}" type="button" onclick="litLoadRecord('${dashEscape(item.id)}')">
+    <div class="lit-list-title">${dashEscape(item.title || 'Untitled reference')}</div>
+    <div class="lit-list-meta">${dashEscape(item.authors || 'No authors')} · ${dashEscape(item.year || 'No year')}</div>
+    <div class="lit-list-meta"><span class="badge badge-blue">${dashEscape(item.citationKey || 'no-key')}</span> <span class="badge ${item.status === 'Cited' ? 'badge-ok' : item.status === 'Reading' ? 'badge-warn' : 'badge-blue'}">${dashEscape(item.status || 'To Read')}</span></div>
+  </button>`).join('') : '<div class="dash-subtitle" style="padding:8px">No literature records match the current filters.</div>';
+}
+
+// Copies the current LaTeX citation command.
+async function litCopyCitation() {
+  const text = document.getElementById('lit-cite-command')?.textContent || '';
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+  alert('Citation command copied.');
+}
+
+// Shows the master BibTeX output for future references.bib export.
+function litShowMasterBibtex() {
+  const output = document.getElementById('lit-export-output');
+  if (!output) return;
+  output.value = litGetRecords().map(item => item.bibtex || litBuildBibtex(item)).join('\n\n');
+}
+
+// Shows a ready-to-copy citation command list.
+function litShowCitationList() {
+  const output = document.getElementById('lit-export-output');
+  if (!output) return;
+  output.value = litGetRecords().map(item => `${item.citationKey}: \\cite{${item.citationKey}} - ${item.title || 'Untitled reference'}`).join('\n');
+}
+
+// Shows reference statistics for future reporting.
+function litShowReferenceStats() {
+  const records = litGetRecords();
+  const byStatus = LIT_STATUSES.map(status => `${status}: ${records.filter(item => item.status === status).length}`).join('\n');
+  const missingYear = records.filter(item => !item.year).length;
+  const missingDoi = records.filter(item => !item.doi).length;
+  const duplicateKeys = records.map(item => item.citationKey).filter((key, index, keys) => key && keys.indexOf(key) !== index);
+  const output = document.getElementById('lit-export-output');
+  if (output) output.value = `Reference statistics\nTotal: ${records.length}\n${byStatus}\nMissing DOI: ${missingDoi}\nMissing publication year: ${missingYear}\nDuplicate citation keys: ${[...new Set(duplicateKeys)].join(', ') || 'None'}`;
+}
+
+// Copies the current export preview text.
+async function litCopyExportOutput() {
+  const text = document.getElementById('lit-export-output')?.value || '';
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+  alert('Export preview copied.');
 }
 
 function closeMobileMapPanels() {
@@ -9270,6 +11854,7 @@ function renderDashboard() {
   renderConstituencyOverview(allSurveys);
   renderParticipantSurveyResults(allSurveys);
   renderDataReadingResults(allSurveys, towerSrc);
+  renderDashboardOverview();
   ['dash-findings-pack','dash-metrics','dash-zone-bars','dash-flags','dash-experience-correlation','dash-dissertation-insights','dash-questionnaire-results','dash-spectrum-config','dash-ward-detail'].forEach(id => {
     const el = document.getElementById(id);
     if (el) { el.innerHTML = ''; el.style.display = 'none'; }
