@@ -251,7 +251,7 @@
   .ia-segment-item.active { border-color: #2563EB; background: #EFF6FF; box-shadow: inset 3px 0 0 #2563EB; }
   .ia-segment-time { display: block; color: var(--navy); font-family: 'JetBrains Mono', monospace; font-weight: 900; font-size: 10px; margin-bottom: 3px; }
   .ia-reviewed-editor { border: 1px solid var(--border); border-radius: 12px; background: #fff; min-height: 420px; max-height: 560px; overflow: auto; padding: 10px; line-height: 1.52; overscroll-behavior: contain; }
-  .ia-reviewed-block-shell { display: block; border: 1px solid #E5E7EB; border-radius: 10px; background: #fff; margin-bottom: 9px; overflow: hidden; }
+  .ia-reviewed-block-shell { display: grid; grid-template-rows: auto auto; border: 1px solid #E5E7EB; border-radius: 10px; background: #fff; margin-bottom: 10px; overflow: hidden; }
   .ia-reviewed-block-shell[draggable="true"] { cursor: grab; }
   .ia-reviewed-block-shell[draggable="true"]:active { cursor: grabbing; }
   .ia-reviewed-block-shell.editing { cursor: text; border-color: #2563EB; box-shadow: inset 4px 0 0 #2563EB; }
@@ -275,13 +275,13 @@
   .ia-reviewed-block-shell.speaker-participant.approved .ia-reviewed-block, .ia-reviewed-block-shell.speaker-participant[data-approved="true"] .ia-reviewed-block { background: #F0FDF4; }
   .ia-reviewed-block-shell.guide-question { border-color: #1D4ED8; background: #DBEAFE; box-shadow: inset 4px 0 0 #1D4ED8; }
   .ia-reviewed-block-shell.guide-question:hover { border-color: #1D4ED8; background: #DBEAFE; }
-  .ia-reviewed-block { display: block; border: 0; background: transparent; padding: 10px 12px 6px; min-height: 42px; height: auto; outline: none; cursor: text; white-space: pre-wrap; overflow: visible; line-height: 1.52; }
+  .ia-reviewed-block { display: block; border: 0; background: transparent; padding: 12px 14px; min-height: 42px; height: auto; outline: none; cursor: text; white-space: pre-wrap; overflow: visible; line-height: 1.52; }
   .ia-reviewed-block:focus { background: #F8FBFF; box-shadow: inset 0 0 0 2px rgba(37,99,235,0.12); }
-  .ia-reviewed-block.guide-question { color: #0F172A; font-weight: 900; cursor: text; padding: 11px 12px; }
+  .ia-reviewed-block.guide-question { color: #0F172A; font-weight: 900; cursor: text; padding: 12px 14px; }
   .ia-reviewed-block.guide-question:focus { background: #EFF6FF; box-shadow: inset 0 0 0 2px rgba(29,78,216,0.16); }
-  .ia-reviewed-guide-footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; padding: 0 10px 10px; }
+  .ia-reviewed-guide-footer { display: flex; justify-content: flex-end; align-items: center; flex-wrap: nowrap; gap: 4px; border-top: 1px solid rgba(15,23,42,0.08); background: rgba(248,250,252,0.78); padding: 8px 10px; overflow-x: auto; scrollbar-width: thin; }
   .ia-reviewed-readonly-chip { display: inline-flex; align-items: center; width: max-content; border: 1px solid #1D4ED8; border-radius: 999px; background: #EFF6FF; color: #1E3A8A; font-size: 10px; font-weight: 900; padding: 2px 7px; text-transform: uppercase; }
-  .ia-reviewed-block-actions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: nowrap; gap: 4px; padding: 0 8px 8px; overflow-x: auto; scrollbar-width: thin; }
+  .ia-reviewed-block-actions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: nowrap; gap: 4px; border-top: 1px solid rgba(15,23,42,0.08); background: rgba(248,250,252,0.78); padding: 8px 10px; overflow-x: auto; scrollbar-width: thin; }
   .ia-reviewed-approve-btn, .ia-reviewed-undo-btn { flex: 0 0 auto; min-width: 56px; min-height: 24px; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 800; line-height: 1; cursor: pointer; white-space: nowrap; }
   .ia-reviewed-edit-btn { flex: 0 0 auto; min-height: 24px; border-radius: 999px; padding: 0 8px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #1E3A8A; font-size: 10.5px; font-weight: 900; cursor: pointer; white-space: nowrap; }
   .ia-reviewed-delete-btn { flex: 0 0 auto; min-height: 24px; border-radius: 999px; padding: 0 8px; border: 1px solid #FECACA; background: #FEF2F2; color: #991B1B; font-size: 10.5px; font-weight: 900; cursor: pointer; white-space: nowrap; }
@@ -9347,7 +9347,7 @@ function iaParticipantApprovalDraftDocumentHTML() {
   .ia-participant-meta-value { color: #0F233C; font-weight: 850; overflow-wrap: anywhere; }
   .ia-participant-meta-section.evidence .ia-participant-meta-row { grid-template-columns: 68px minmax(0, 1fr); }
   .ia-participant-meta-section.review .ia-participant-meta-row { grid-template-columns: 64px minmax(0, 1fr); }
-  .ia-reviewed-block-shell { display: block; border: 1px solid #E5E7EB; border-radius: 10px; background: #fff; margin-bottom: 9px; overflow: hidden; }
+  .ia-reviewed-block-shell { display: grid; grid-template-rows: auto auto; border: 1px solid #E5E7EB; border-radius: 10px; background: #fff; margin-bottom: 10px; overflow: hidden; }
   .ia-reviewed-block { display: block; border: 0; background: transparent; padding: 10px 12px; min-height: 42px; white-space: pre-wrap; line-height: 1.52; outline: none; cursor: default; }
   .ia-reviewed-block-shell.guide-question { border-color: #1D4ED8; background: #DBEAFE; box-shadow: inset 4px 0 0 #1D4ED8; }
   .ia-reviewed-block.guide-question { font-weight: 800; }
