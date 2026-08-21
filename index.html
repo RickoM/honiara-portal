@@ -227,6 +227,7 @@
   .ia-audio-title, .ia-panel-title { color: var(--navy); font-size: 14px; font-weight: 900; text-align: center; }
   .ia-raw-card, .ia-reviewed-card { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; }
   .ia-review-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+  .ia-guide-question-preview ol { max-height: 360px; overflow-y: auto; padding-right: 6px; overscroll-behavior: contain; }
   .ia-review-action { border: 1px solid #DBEAFE; border-radius: 12px; background: #F8FBFF; padding: 12px; display: grid; gap: 7px; align-content: start; }
   .ia-review-action.ia-review-action-full { grid-column: 1 / -1; }
   .ia-review-action strong { color: var(--navy); font-size: 14px; }
@@ -8227,7 +8228,7 @@ function iaRenderInterviewGuideSummary() {
   const guide = iaCurrentInterview?.guide || null;
   const metadata = guide?.metadata || {};
   const questions = Array.isArray(guide?.questions) ? guide.questions : [];
-  const guideQuestionRows = questions.slice(0, 12).map((question, index) => {
+  const guideQuestionRows = questions.map((question, index) => {
     if (question && typeof question === 'object') {
       return `<li><strong>${iaEsc(question.label || `Q${index + 1}`)}:</strong> ${iaEsc(question.text || '')}</li>`;
     }
@@ -8252,7 +8253,7 @@ function iaRenderInterviewGuideSummary() {
         <ol aria-label="Read only interview guide questions">
           ${guideQuestionRows}
         </ol>
-        ${questions.length > 12 ? `<div style="margin-top:5px">Showing first 12 of ${questions.length} questions.</div>` : ''}
+        <div style="margin-top:5px">Showing all ${questions.length} questions.</div>
       </details>
     ` : ''}
   `;
