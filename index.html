@@ -279,19 +279,19 @@
   .ia-reviewed-block:focus { background: #F8FBFF; box-shadow: inset 0 0 0 2px rgba(37,99,235,0.12); }
   .ia-reviewed-block.guide-question { color: #0F172A; font-weight: 900; cursor: text; padding: 11px 12px; }
   .ia-reviewed-block.guide-question:focus { background: #EFF6FF; box-shadow: inset 0 0 0 2px rgba(29,78,216,0.16); }
-  .ia-reviewed-guide-footer { display: flex; justify-content: flex-end; padding: 0 10px 10px; }
+  .ia-reviewed-guide-footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; padding: 0 10px 10px; }
   .ia-reviewed-readonly-chip { display: inline-flex; align-items: center; width: max-content; border: 1px solid #1D4ED8; border-radius: 999px; background: #EFF6FF; color: #1E3A8A; font-size: 10px; font-weight: 900; padding: 2px 7px; text-transform: uppercase; }
-  .ia-reviewed-block-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding: 0 8px 8px; }
-  .ia-reviewed-approve-btn, .ia-reviewed-undo-btn { min-width: 62px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; line-height: 1; cursor: pointer; }
-  .ia-reviewed-edit-btn { height: 24px; border-radius: 999px; padding: 0 9px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #1E3A8A; font-size: 11px; font-weight: 900; cursor: pointer; }
-  .ia-reviewed-delete-btn { height: 24px; border-radius: 999px; padding: 0 9px; border: 1px solid #FECACA; background: #FEF2F2; color: #991B1B; font-size: 11px; font-weight: 900; cursor: pointer; }
+  .ia-reviewed-block-actions { display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 8px 8px; }
+  .ia-reviewed-approve-btn, .ia-reviewed-undo-btn { min-width: 70px; min-height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; line-height: 1.1; cursor: pointer; white-space: nowrap; }
+  .ia-reviewed-edit-btn { min-height: 26px; border-radius: 999px; padding: 0 10px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #1E3A8A; font-size: 11px; font-weight: 900; cursor: pointer; white-space: nowrap; }
+  .ia-reviewed-delete-btn { min-height: 26px; border-radius: 999px; padding: 0 10px; border: 1px solid #FECACA; background: #FEF2F2; color: #991B1B; font-size: 11px; font-weight: 900; cursor: pointer; white-space: nowrap; }
   .ia-reviewed-approve-btn { border: 1px solid #BBF7D0; background: #ECFDF5; color: #15803D; }
   .ia-reviewed-undo-btn { border: 1px solid #CBD5E1; background: #F8FAFC; color: #334155; }
   .ia-reviewed-edit-btn:hover { background: #EFF6FF; border-color: #93C5FD; }
   .ia-reviewed-delete-btn:hover { background: #FEE2E2; border-color: #FCA5A5; }
   .ia-reviewed-approve-btn:hover { background: #DCFCE7; border-color: #16A34A; }
   .ia-reviewed-undo-btn:hover { background: #E2E8F0; border-color: #94A3B8; }
-  .ia-reviewed-block-shell.approved .ia-reviewed-approve-btn, .ia-reviewed-block-shell[data-approved="true"] .ia-reviewed-approve-btn { min-width: 76px; background: #16A34A; border-color: #15803D; color: #fff; font-weight: 1000; }
+  .ia-reviewed-block-shell.approved .ia-reviewed-approve-btn, .ia-reviewed-block-shell[data-approved="true"] .ia-reviewed-approve-btn { min-width: 48px; background: #16A34A; border-color: #15803D; color: #fff; font-weight: 1000; }
   /* Evidence Analysis only (#ieaf-analysis-root) - a block excluded from the Evidence Analysis tree,
      greyed out in place until re-included or its Guide Block section is approved. Scoped so this
      never touches Transcript Processing's own editable reviewed-transcript view. */
