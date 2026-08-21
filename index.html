@@ -282,7 +282,7 @@
   .ia-reviewed-guide-footer { display: flex; justify-content: flex-end; padding: 0 10px 10px; }
   .ia-reviewed-readonly-chip { display: inline-flex; align-items: center; width: max-content; border: 1px solid #1D4ED8; border-radius: 999px; background: #EFF6FF; color: #1E3A8A; font-size: 10px; font-weight: 900; padding: 2px 7px; text-transform: uppercase; }
   .ia-reviewed-block-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding: 0 8px 8px; }
-  .ia-reviewed-approve-btn, .ia-reviewed-undo-btn { width: 26px; height: 24px; border-radius: 999px; font-size: 13px; font-weight: 900; line-height: 1; cursor: pointer; }
+  .ia-reviewed-approve-btn, .ia-reviewed-undo-btn { min-width: 62px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; line-height: 1; cursor: pointer; }
   .ia-reviewed-edit-btn { height: 24px; border-radius: 999px; padding: 0 9px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #1E3A8A; font-size: 11px; font-weight: 900; cursor: pointer; }
   .ia-reviewed-delete-btn { height: 24px; border-radius: 999px; padding: 0 9px; border: 1px solid #FECACA; background: #FEF2F2; color: #991B1B; font-size: 11px; font-weight: 900; cursor: pointer; }
   .ia-reviewed-approve-btn { border: 1px solid #BBF7D0; background: #ECFDF5; color: #15803D; }
@@ -291,7 +291,7 @@
   .ia-reviewed-delete-btn:hover { background: #FEE2E2; border-color: #FCA5A5; }
   .ia-reviewed-approve-btn:hover { background: #DCFCE7; border-color: #16A34A; }
   .ia-reviewed-undo-btn:hover { background: #E2E8F0; border-color: #94A3B8; }
-  .ia-reviewed-block-shell.approved .ia-reviewed-approve-btn, .ia-reviewed-block-shell[data-approved="true"] .ia-reviewed-approve-btn { width: 30px; background: #16A34A; border-color: #15803D; color: #fff; font-weight: 1000; }
+  .ia-reviewed-block-shell.approved .ia-reviewed-approve-btn, .ia-reviewed-block-shell[data-approved="true"] .ia-reviewed-approve-btn { min-width: 76px; background: #16A34A; border-color: #15803D; color: #fff; font-weight: 1000; }
   /* Evidence Analysis only (#ieaf-analysis-root) - a block excluded from the Evidence Analysis tree,
      greyed out in place until re-included or its Guide Block section is approved. Scoped so this
      never touches Transcript Processing's own editable reviewed-transcript view. */
@@ -8770,7 +8770,7 @@ function iaRenderReviewedBlockHTML(block, index) {
           <button class="ia-reviewed-edit-btn" type="button" title="Edit this guide question" data-review-action="edit">Edit</button>
           <button class="ia-reviewed-edit-btn" type="button" title="Duplicate this guide question" data-review-action="duplicate">Duplicate</button>
           <button class="ia-reviewed-delete-btn" type="button" title="Delete this guide card from the reviewed transcript" data-review-action="delete">Delete</button>
-          <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this guide question" data-review-action="undo">&#8630;</button>
+          <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this guide question" data-review-action="undo">Undo</button>
         </div>
       </div>
     `;
@@ -8794,8 +8794,8 @@ function iaRenderReviewedBlockHTML(block, index) {
         <button class="ia-reviewed-edit-btn" type="button" title="Convert this section to a blue guide card" data-review-action="make-guide">Make Guide</button>
         <button class="ia-reviewed-edit-btn" type="button" title="Duplicate this transcript section" data-review-action="duplicate">Duplicate</button>
         <button class="ia-reviewed-delete-btn" type="button" title="Delete this transcript section" data-review-action="delete">Delete</button>
-        <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this paragraph" data-review-action="undo">&#8630;</button>
-        <button class="ia-reviewed-approve-btn" type="button" title="Approve and save this paragraph" data-review-action="approve">&#10003;</button>
+        <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this paragraph" data-review-action="undo">Undo</button>
+        <button class="ia-reviewed-approve-btn" type="button" title="Approve and save this paragraph" data-review-action="approve">Approve</button>
       </div>
     </div>
   `;
