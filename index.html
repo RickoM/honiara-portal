@@ -8782,17 +8782,17 @@ function iaRenderReviewedBlockHTML(block, index) {
     ? 'speaker-interviewer'
     : (speakerKey === 'participant' ? 'speaker-participant' : '');
   const speakerSwitchAction = speakerKey === 'interviewer'
-    ? '<button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Participant" data-review-action="make-participant">Make Participant</button>'
+    ? '<button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Participant" data-review-action="make-participant">Participant</button>'
     : (speakerKey === 'participant'
-      ? '<button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Interviewer" data-review-action="make-interviewer">Make Interviewer</button>'
-      : '<button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Interviewer" data-review-action="make-interviewer">Make Interviewer</button><button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Participant" data-review-action="make-participant">Make Participant</button>');
+      ? '<button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Interviewer" data-review-action="make-interviewer">Interviewer</button>'
+      : '<button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Interviewer" data-review-action="make-interviewer">Interviewer</button><button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Participant" data-review-action="make-participant">Participant</button>');
   return `
     <div class="ia-reviewed-block-shell ${speakerClass} ${isApproved ? 'approved' : ''}" draggable="true" data-role="transcript" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" data-approved="${isApproved ? 'true' : 'false'}" data-original="${iaEsc(block.text)}">
       <div class="ia-reviewed-block" contenteditable="true" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" ondblclick="iaEditReviewedBlock(event, '${id}')" onblur="iaExitReviewedBlockEdit(event)">${iaEsc(iaFormatReviewedBlockDisplayText(block.text))}</div>
       <div class="ia-reviewed-block-actions">
         <button class="ia-reviewed-edit-btn" type="button" title="Edit this paragraph" data-review-action="edit">Edit</button>
         ${speakerSwitchAction}
-        <button class="ia-reviewed-edit-btn" type="button" title="Convert this section to a blue guide card" data-review-action="make-guide">Make Guide</button>
+        <button class="ia-reviewed-edit-btn" type="button" title="Convert this section to a blue guide card" data-review-action="make-guide">Guide</button>
         <button class="ia-reviewed-edit-btn" type="button" title="Duplicate this transcript section" data-review-action="duplicate">Duplicate</button>
         <button class="ia-reviewed-delete-btn" type="button" title="Delete this transcript section" data-review-action="delete">Delete</button>
         <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this paragraph" data-review-action="undo">Undo</button>
