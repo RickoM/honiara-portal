@@ -7898,7 +7898,7 @@ async function iaLoadInterviewRecordForTranscript() {
         audioStatus.className = 'ia-card-status ready';
       }
       if (evidence) evidence.textContent = `Stored audio evidence: ${iaCurrentInterview.media.mp3.filename}`;
-      try { await iaLoadInterviewAudioPlayer(iaCurrentInterview._id); } catch (err) { console.warn('Interview audio playback load warning:', err); }
+      iaLoadInterviewAudioPlayer(iaCurrentInterview._id).catch(err => console.warn('Interview audio playback load warning:', err));
     }
     const hasRaw = !!iaCurrentInterview.transcripts?.raw?.text;
     iaSetTranscriptionState(hasRaw ? 'Raw transcript exists' : 'Ready', hasRaw || !iaCurrentInterview.media?.mp3?.filename);
@@ -8727,15 +8727,16 @@ function iaShowReviewedMigrationNoticeIfAny() {
 
 function iaMergeInterviewResponse(interview) {
   if (!interview) return iaCurrentInterview;
-  const currentApprovals = Array.isArray(iaCurrentInterview?.transcripts?.reviewApprovals)
-    ? iaCurrentInterview.transcripts.reviewApprovals
+  const currentTranscripts = iaCurrentInterview?.transcripts || {};
+  const currentApprovals = Array.isArray(currentTranscripts.reviewApprovals)
+    ? currentTranscripts.reviewApprovals
     : [];
   const next = { ...iaCurrentInterview, ...interview };
-  if (interview.transcripts && currentApprovals.length && !Array.isArray(interview.transcripts.reviewApprovals)) {
-    next.transcripts = {
-      ...interview.transcripts,
-      reviewApprovals: currentApprovals
-    };
+  if (interview.transcripts) {
+    next.transcripts = { ...currentTranscripts, ...interview.transcripts };
+    if (currentApprovals.length && !Array.isArray(interview.transcripts.reviewApprovals)) {
+      next.transcripts.reviewApprovals = currentApprovals;
+    }
   }
   return next;
 }
@@ -10148,7 +10149,7 @@ async function iaOpenAudioVerification() {
   if (panel) panel.hidden = false;
   iaRenderTranscriptSegments();
   if (iaCurrentInterview?._id && !document.getElementById('ia-media-player')?.src) {
-    try { await iaLoadInterviewAudioPlayer(iaCurrentInterview._id); } catch (err) { console.warn('Interview audio playback load warning:', err); }
+    iaLoadInterviewAudioPlayer(iaCurrentInterview._id).catch(err => console.warn('Interview audio playback load warning:', err));
   }
   document.getElementById('ia-reviewed')?.focus();
 }
