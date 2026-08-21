@@ -8747,7 +8747,7 @@ function iaSetReviewedBlockApprovedState(shell, approved) {
   shell.dataset.approved = isApproved ? 'true' : 'false';
   const button = shell.querySelector?.('.ia-reviewed-approve-btn');
   if (button) {
-    button.textContent = '?';
+    button.innerHTML = isApproved ? '&#10003;' : 'Approve';
     button.title = isApproved ? 'Paragraph approved and saved' : 'Approve and save this paragraph';
   }
 }
@@ -8795,7 +8795,7 @@ function iaRenderReviewedBlockHTML(block, index) {
         <button class="ia-reviewed-edit-btn" type="button" title="Duplicate this transcript section" data-review-action="duplicate">Duplicate</button>
         <button class="ia-reviewed-delete-btn" type="button" title="Delete this transcript section" data-review-action="delete">Delete</button>
         <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this paragraph" data-review-action="undo">Undo</button>
-        <button class="ia-reviewed-approve-btn" type="button" title="Approve and save this paragraph" data-review-action="approve">Approve</button>
+        <button class="ia-reviewed-approve-btn" type="button" title="Approve and save this paragraph" data-review-action="approve">${isApproved ? '&#10003;' : 'Approve'}</button>
       </div>
     </div>
   `;
