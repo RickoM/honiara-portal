@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2627,7 +2627,7 @@
       <div class="layer-ctrl layer-collapsed" id="map-layer-panel">
         <div class="layer-ctrl-head">
           <div class="layer-ctrl-title">Map layers</div>
-          <button type="button" class="layer-collapse-btn" id="map-layer-toggle" onclick="toggleLayerPanel()" aria-expanded="false" title="Expand map layers">‚ñ∏</button>
+          <button type="button" class="layer-collapse-btn" id="map-layer-toggle" onclick="toggleLayerPanel()" aria-expanded="false" title="Expand map layers">?</button>
         </div>
         <div class="layer-ctrl-body">
         <label class="layer-toggle">
@@ -5818,7 +5818,7 @@ function iaRenderStage2ChainStatus(statement, participantAnswerText) {
     { label: 'Research Question(s) and/or Emerging Finding(s) selected', ok: chain.hasResearchQuestionOrEmergingFinding },
     { label: 'Researcher Analysis completed', ok: chain.hasResearcherAnalysis },
   ];
-  const rowsHtml = rows.map(row => `<div class="ieaf-node-sub">${row.ok ? '‚úì' : '‚úó'} ${iaEsc(row.label)}</div>`).join('');
+  const rowsHtml = rows.map(row => `<div class="ieaf-node-sub">${row.ok ? '?' : '?'} ${iaEsc(row.label)}</div>`).join('');
   const statusText = chain.complete ? 'Evidence Chain: Complete' : 'Evidence Chain: Incomplete';
   return {
     complete: chain.complete,
@@ -6255,7 +6255,7 @@ async function iaAnalysisLoadInterviewOptions() {
       return;
     }
     picker.innerHTML = hydrated.map(item => {
-      const label = [item.organisation, item.participant].filter(Boolean).join(' ‚Äì ') || item.interviewId;
+      const label = [item.organisation, item.participant].filter(Boolean).join(' ñ ') || item.interviewId;
       return `<option value="${iaEsc(item.interviewId)}">${iaEsc(label)}</option>`;
     }).join('');
     const nextValue = hydrated.some(item => item.interviewId === previousValue) ? previousValue : hydrated[0].interviewId;
@@ -6436,7 +6436,7 @@ function iaRenderStage2StatementNode(statement, participantAnswerText) {
       <label class="ieaf-rq-card ${rq.id.toLowerCase()} ${mappedRqIds.has(rq.id) ? 'on' : ''}" title="${iaEsc(rq.title)}">
         <div class="ieaf-rq-card-head">
           <input type="checkbox" data-stage2-field="rq-checkbox" data-stage2-statement-id="${iaEsc(statement.id)}" data-stage2-rq-id="${iaEsc(rq.id)}" ${mappedRqIds.has(rq.id) ? 'checked' : ''} onchange="iaToggleStage2ResearchQuestion('${iaEsc(statement.id)}', '${iaEsc(rq.id)}', this.checked)">
-          <span class="ieaf-rq-card-title">${iaEsc(rq.label)} ‚Äì ${iaEsc(rq.name)}</span>
+          <span class="ieaf-rq-card-title">${iaEsc(rq.label)} ñ ${iaEsc(rq.name)}</span>
         </div>
       </label>
     `).join('');
@@ -6655,7 +6655,7 @@ function iaRenderGuideSection(section) {
   const showGuideCard = !(isSectionApproved && isGuideExcluded);
   const bodyHtml = visibleBlocks.map(iaRenderBlockWithEvidenceAnalysis).join('');
   const probesHtml = section.probes.map(iaRenderGuideSection).join('');
-  const summaryLabel = guideText.length > 90 ? guideText.slice(0, 90).trim() + '‚Ä¶' : guideText;
+  const summaryLabel = guideText.length > 90 ? guideText.slice(0, 90).trim() + 'Ö' : guideText;
   const approvalControl = isSectionApproved
     ? `<button class="btn btn-sm ia-section-unapprove-btn" type="button" onclick="iaUnapproveStage2Section('${iaEsc(sectionKey)}')">Unapprove Section</button>`
     : `<button class="btn btn-sm ia-section-approve-btn" type="button" onclick="iaApproveStage2Section('${iaEsc(sectionKey)}')">Approve Section</button>`;
@@ -6758,7 +6758,7 @@ function iaRenderInterviewAnalysis() {
         <details class="ieaf-node summary-node" open>
           <summary>
             <span class="ieaf-tree-label">Interview Summary</span>
-            <span class="ieaf-tree-meta">${iaEsc(meta.transcriptStatus)} ¬∑ ${participantBlockCount} response(s) ¬∑ ${evidenceCount} evidence ¬∑ ${mappedCount} RQ-linked</span>
+            <span class="ieaf-tree-meta">${iaEsc(meta.transcriptStatus)} ∑ ${participantBlockCount} response(s) ∑ ${evidenceCount} evidence ∑ ${mappedCount} RQ-linked</span>
           </summary>
           <div class="ieaf-node-body">
             <div class="ieaf-progress-line">
@@ -7074,7 +7074,7 @@ function iaCleanTeamsName(name) {
 
 function iaOrganisationFromTeamsTitle(title) {
   const text = String(title || '').trim();
-  const parts = text.split(/\s+[‚Äì-]\s+/).map(part => part.trim()).filter(Boolean);
+  const parts = text.split(/\s+[ñ-]\s+/).map(part => part.trim()).filter(Boolean);
   return parts.length > 1 ? parts[parts.length - 1] : '';
 }
 
@@ -7488,7 +7488,7 @@ async function iaUploadExistingMp3Evidence(options = {}) {
     if (idEl) idEl.value = iaCurrentInterview.interviewId || interviewId;
     const picker = document.getElementById('ia-interview-picker');
     if (picker) picker.value = iaCurrentInterview.interviewId || interviewId;
-    if (evidence) evidence.textContent = `Stored locally: ${iaCurrentInterview.media?.mp3?.filename || file.name}`;
+    if (evidence) evidence.textContent = `Stored audio evidence: ${iaCurrentInterview.media?.mp3?.filename || file.name}`;
     if (audioStatus) {
       audioStatus.textContent = 'MP3 stored';
       audioStatus.className = 'ia-card-status ready';
@@ -7509,7 +7509,7 @@ async function iaUploadExistingMp3Evidence(options = {}) {
       retryWithReplacement = confirm(
         `Audio evidence already exists for ${interviewId}.\n\n` +
         `Existing file: ${existingFile}\n\n` +
-        'Replace it with the selected MP3? This will overwrite the local MP3 evidence for this interview.'
+        'Replace it with the selected MP3? This will overwrite the stored MP3 evidence for this interview.'
       );
       iaFailProgress('audio', retryWithReplacement ? 'Replacement confirmed. Restarting MP3 upload.' : 'Replacement cancelled. Existing MP3 evidence was kept.');
     } else {
@@ -7677,9 +7677,9 @@ async function iaPrepareAudioEvidence(options = {}) {
     if (picker) picker.value = iaCurrentInterview.interviewId || iaVideoSource.interviewId || '';
     iaRenderVideoSourceState();
     const storedFile = iaCurrentInterview.media?.mp3?.relativePath || iaCurrentInterview.media?.mp3?.filename || 'local audio storage';
-    if (evidence) evidence.textContent = `Stored locally: ${iaCurrentInterview.media?.mp3?.filename || storedFile}`;
+    if (evidence) evidence.textContent = `Stored audio evidence: ${iaCurrentInterview.media?.mp3?.filename || storedFile}`;
     if (audioStatus) {
-      audioStatus.textContent = 'Stored locally';
+      audioStatus.textContent = 'Stored audio';
       audioStatus.className = 'ia-card-status ready';
     }
     let playbackNote = '';
@@ -7689,7 +7689,7 @@ async function iaPrepareAudioEvidence(options = {}) {
       playbackNote = ' Playback could not be loaded yet; the MP3 file was still stored successfully.';
       console.warn('Interview audio playback load warning:', playbackErr);
     }
-    iaCompleteProgress('audio', `Audio evidence created successfully. MP3 stored in local backend storage: ${storedFile}.${playbackNote}`);
+    iaCompleteProgress('audio', `Audio evidence created successfully. Stored audio evidence: ${storedFile}.${playbackNote}`);
     iaLoadInterviewList();
   } catch (err) {
     const existingInterview = err?.data?.existingInterview;
@@ -7698,7 +7698,7 @@ async function iaPrepareAudioEvidence(options = {}) {
       retryWithReplacement = confirm(
         `Audio evidence already exists for ${iaVideoSource.interviewId}.\n\n` +
         `Existing file: ${existingFile}\n\n` +
-        'Replace it with the selected video? This will overwrite the local MP3 evidence for this interview.'
+        'Replace it with the selected video? This will overwrite the stored MP3 evidence for this interview.'
       );
       if (audioStatus) {
         audioStatus.textContent = retryWithReplacement ? 'Replacing' : 'Ready to convert';
@@ -7787,7 +7787,7 @@ async function iaLoadExistingAudioEvidence() {
     if (idEl) idEl.value = iaCurrentInterview.interviewId || interviewId;
     const picker = document.getElementById('ia-interview-picker');
     if (picker) picker.value = iaCurrentInterview.interviewId || interviewId;
-    if (evidence) evidence.textContent = `Stored locally: ${iaCurrentInterview.media.mp3.filename}`;
+    if (evidence) evidence.textContent = `Stored audio evidence: ${iaCurrentInterview.media.mp3.filename}`;
     if (audioStatus) {
       audioStatus.textContent = 'MP3 loaded';
       audioStatus.className = 'ia-card-status ready';
@@ -7897,7 +7897,7 @@ async function iaLoadInterviewRecordForTranscript() {
         audioStatus.textContent = 'MP3 loaded';
         audioStatus.className = 'ia-card-status ready';
       }
-      if (evidence) evidence.textContent = `Stored locally: ${iaCurrentInterview.media.mp3.filename}`;
+      if (evidence) evidence.textContent = `Stored audio evidence: ${iaCurrentInterview.media.mp3.filename}`;
       try { await iaLoadInterviewAudioPlayer(iaCurrentInterview._id); } catch (err) { console.warn('Interview audio playback load warning:', err); }
     }
     const hasRaw = !!iaCurrentInterview.transcripts?.raw?.text;
@@ -8747,7 +8747,7 @@ function iaSetReviewedBlockApprovedState(shell, approved) {
   shell.dataset.approved = isApproved ? 'true' : 'false';
   const button = shell.querySelector?.('.ia-reviewed-approve-btn');
   if (button) {
-    button.textContent = '‚úì';
+    button.textContent = '?';
     button.title = isApproved ? 'Paragraph approved and saved' : 'Approve and save this paragraph';
   }
 }
@@ -8764,7 +8764,7 @@ function iaRenderReviewedBlockHTML(block, index) {
           <button class="ia-reviewed-edit-btn" type="button" title="Edit this guide question" data-review-action="edit">Edit</button>
           <button class="ia-reviewed-edit-btn" type="button" title="Duplicate this guide question" data-review-action="duplicate">Duplicate</button>
           <button class="ia-reviewed-delete-btn" type="button" title="Delete this guide card from the reviewed transcript" data-review-action="delete">Delete</button>
-          <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this guide question" data-review-action="undo">‚Ü∂</button>
+          <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this guide question" data-review-action="undo">?</button>
         </div>
       </div>
     `;
@@ -8788,8 +8788,8 @@ function iaRenderReviewedBlockHTML(block, index) {
         <button class="ia-reviewed-edit-btn" type="button" title="Convert this section to a blue guide card" data-review-action="make-guide">Make Guide</button>
         <button class="ia-reviewed-edit-btn" type="button" title="Duplicate this transcript section" data-review-action="duplicate">Duplicate</button>
         <button class="ia-reviewed-delete-btn" type="button" title="Delete this transcript section" data-review-action="delete">Delete</button>
-        <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this paragraph" data-review-action="undo">‚Ü∂</button>
-        <button class="ia-reviewed-approve-btn" type="button" title="Approve and save this paragraph" data-review-action="approve">‚úì</button>
+        <button class="ia-reviewed-undo-btn" type="button" title="Undo edits in this paragraph" data-review-action="undo">?</button>
+        <button class="ia-reviewed-approve-btn" type="button" title="Approve and save this paragraph" data-review-action="approve">?</button>
       </div>
     </div>
   `;
@@ -11298,7 +11298,7 @@ function dwLoadChapter(id, rerenderList = true) {
   set('dw-figure-refs', chapter.figureRefs);
   set('dw-table-refs', chapter.tableRefs);
   const subtitle = document.getElementById('dw-editor-subtitle');
-  if (subtitle) subtitle.textContent = `${chapter.title} ¬∑ last modified ${chapter.lastModified ? new Date(chapter.lastModified).toLocaleString() : 'not saved yet'}`;
+  if (subtitle) subtitle.textContent = `${chapter.title} ∑ last modified ${chapter.lastModified ? new Date(chapter.lastModified).toLocaleString() : 'not saved yet'}`;
   evRenderSourceLinks('chapter', chapter.id, 'dw-evidence-links');
   dwRenderChapterDashboard(chapter);
   dwRenderEvidencePanel(chapter.id);
@@ -11371,7 +11371,7 @@ function dwRenderList() {
     const progress = dwChapterProgress(chapter);
     return `<button class="dw-list-item ${chapter.id === dwSelectedId ? 'on' : ''}" type="button" onclick="dwLoadChapter('${dashEscape(chapter.id)}')">
       <div class="dw-list-title">${dashEscape(chapter.title)}</div>
-      <div class="dw-list-meta">${dashEscape(chapter.status)} ¬∑ ${progress}% ¬∑ ${dwWordCount(chapter)} words</div>
+      <div class="dw-list-meta">${dashEscape(chapter.status)} ∑ ${progress}% ∑ ${dwWordCount(chapter)} words</div>
     </button>`;
   }).join('');
 }
@@ -12269,7 +12269,7 @@ function imRenderProgress() {
   const label = document.getElementById('im-progress-label');
   const grid = document.getElementById('im-stage-grid');
   if (fill) fill.style.width = `${pct}%`;
-  if (label) label.textContent = `${pct}% ¬∑ ${current}`;
+  if (label) label.textContent = `${pct}% ∑ ${current}`;
   if (grid) {
     grid.innerHTML = IM_STATUSES.map((stage, index) => `<div class="im-stage ${index < currentIndex ? 'done' : index === currentIndex ? 'current' : ''}">${index + 1}. ${dashEscape(stage)}</div>`).join('');
   }
@@ -12336,7 +12336,7 @@ function imRenderList() {
   const records = imFilteredRecords();
   target.innerHTML = records.length ? records.map(item => `<button class="im-list-item ${item.id === imSelectedId ? 'on' : ''}" type="button" onclick="imLoadRecord('${dashEscape(item.id)}')">
     <div class="im-list-title">${dashEscape(item.name || 'Unnamed interviewee')}</div>
-    <div class="im-list-meta">${dashEscape(item.organisation || 'No organisation')} ¬∑ ${dashEscape(item.date || 'No date')}</div>
+    <div class="im-list-meta">${dashEscape(item.organisation || 'No organisation')} ∑ ${dashEscape(item.date || 'No date')}</div>
     <div class="im-list-meta"><span class="badge ${['Ready for Coding','Coded','Linked to Dissertation'].includes(item.status) ? 'badge-ok' : item.status === 'Scheduled' ? 'badge-blue' : 'badge-warn'}">${dashEscape(item.status || 'Scheduled')}</span></div>
   </button>`).join('') : '<div class="dash-subtitle" style="padding:8px">No interview records match the current filters.</div>';
 }
@@ -12496,7 +12496,7 @@ function imRenderVersions(record) {
   const target = document.getElementById('im-version-list');
   if (!target) return;
   const versions = record?.transcript?.versions || [];
-  target.innerHTML = versions.length ? versions.map((version, index) => `<div class="im-version-item"><strong>${dashEscape(version.label || 'Transcript revision')} ¬∑ Version ${versions.length - index}</strong><br>${dashEscape(new Date(version.savedAt).toLocaleString())} ¬∑ ${version.wordCount || 0} words</div>`).join('') : '<div class="dash-subtitle">No transcript revisions saved yet.</div>';
+  target.innerHTML = versions.length ? versions.map((version, index) => `<div class="im-version-item"><strong>${dashEscape(version.label || 'Transcript revision')} ∑ Version ${versions.length - index}</strong><br>${dashEscape(new Date(version.savedAt).toLocaleString())} ∑ ${version.wordCount || 0} words</div>`).join('') : '<div class="dash-subtitle">No transcript revisions saved yet.</div>';
 }
 
 // Renders cleaned, reviewed and approved transcript snapshots separately.
@@ -15006,7 +15006,7 @@ function litRenderSearchResults() {
       <div class="lit-result-head">
         <div>
           <div class="lit-result-title">${dashEscape(item.title || 'Untitled result')}</div>
-          <div class="lit-list-meta">${dashEscape(item.authors || 'Unknown authors')} ¬∑ ${dashEscape(item.year || 'No year')}</div>
+          <div class="lit-list-meta">${dashEscape(item.authors || 'Unknown authors')} ∑ ${dashEscape(item.year || 'No year')}</div>
         </div>
         <div class="lit-score">${Number(item.relevanceScore || item.score || 0)}%</div>
       </div>
@@ -15461,7 +15461,7 @@ function litRenderList() {
   const records = litFilteredRecords();
   target.innerHTML = records.length ? records.map(item => `<button class="lit-list-item ${item.id === litSelectedId ? 'on' : ''}" type="button" onclick="litLoadRecord('${dashEscape(item.id)}')">
     <div class="lit-list-title">${dashEscape(item.title || 'Untitled reference')}</div>
-    <div class="lit-list-meta">${dashEscape(item.authors || 'No authors')} ¬∑ ${dashEscape(item.year || 'No year')}</div>
+    <div class="lit-list-meta">${dashEscape(item.authors || 'No authors')} ∑ ${dashEscape(item.year || 'No year')}</div>
     <div class="lit-list-meta"><span class="badge badge-blue">${dashEscape(item.citationKey || 'no-key')}</span> <span class="badge ${item.status === 'Cited' ? 'badge-ok' : item.status === 'Reading' ? 'badge-warn' : 'badge-blue'}">${dashEscape(item.status || 'To Read')}</span></div>
   </button>`).join('') : '<div class="dash-subtitle" style="padding:8px">No literature records match the current filters.</div>';
 }
@@ -15523,7 +15523,7 @@ function toggleLayerPanel(forceOpen) {
   panel.classList.toggle('layer-collapsed', !open);
   const btn = document.getElementById('map-layer-toggle');
   if (btn) {
-    btn.textContent = open ? '‚ñæ' : '‚ñ∏';
+    btn.textContent = open ? '?' : '?';
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
     btn.title = open ? 'Collapse map layers' : 'Expand map layers';
   }
@@ -17686,7 +17686,7 @@ function popupSignalReading(value, suffix) {
 
 function popupSignalAssessmentBadge(label, colour) {
   if (!label || label === '-') return '<span style="display:inline-flex;align-items:center;border-radius:999px;background:#f2f4f7;color:#667085;padding:2px 6px;font-size:9px;font-weight:850;white-space:nowrap">Pending</span>';
-  return `<span style="display:inline-flex;align-items:center;border-radius:999px;background:${colour}18;color:${colour};padding:2px 6px;font-size:9px;font-weight:900;white-space:nowrap">‚óè ${label}</span>`;
+  return `<span style="display:inline-flex;align-items:center;border-radius:999px;background:${colour}18;color:${colour};padding:2px 6px;font-size:9px;font-weight:900;white-space:nowrap">? ${label}</span>`;
 }
 
 function popupSignalTableHeader(valueLabel) {
@@ -17712,7 +17712,7 @@ function popupSignalMetricRow(metric, value, suffix, threshold, labelText, colou
 function rsrpThreshold(value) {
   const v = Number(value);
   if (!Number.isFinite(v)) return '&mdash;';
-  if (v >= -80) return '‚â• -80 dBm';
+  if (v >= -80) return '= -80 dBm';
   if (v >= -90) return '-80 to -90 dBm';
   if (v >= -100) return '-90 to -100 dBm';
   if (v >= -110) return '-100 to -110 dBm';
@@ -17732,7 +17732,7 @@ function rsrqLabel(value) {
 function rsrqThreshold(value) {
   const v = Number(value);
   if (!Number.isFinite(v)) return '&mdash;';
-  if (v >= -10) return '‚â• -10 dB';
+  if (v >= -10) return '= -10 dB';
   if (v >= -15) return '-10 to -15 dB';
   if (v >= -20) return '-15 to -20 dB';
   if (v >= -25) return '-20 to -25 dB';
@@ -17762,7 +17762,7 @@ function sinrLabel(value) {
 function sinrThreshold(value) {
   const v = Number(value);
   if (!Number.isFinite(v)) return '&mdash;';
-  if (v >= 20) return '‚â• 20 dB';
+  if (v >= 20) return '= 20 dB';
   if (v >= 13) return '13 to 20 dB';
   if (v >= 0) return '0 to 13 dB';
   if (v >= -10) return '-10 to 0 dB';
@@ -17784,7 +17784,7 @@ function coverageAssessmentCardHTML(p) {
   return `
     <div style="border:1px solid #d0d5dd;border-radius:14px;background:linear-gradient(180deg,#fff,#f8fafc);padding:14px;margin-bottom:10px;box-shadow:0 10px 24px rgba(15,31,51,0.09)">
       <div style="display:flex;align-items:center;gap:8px;padding-bottom:9px;border-bottom:1px solid #d0d5dd;margin-bottom:10px">
-        <span style="font-size:16px;line-height:1">üì∂</span>
+        <span style="font-size:16px;line-height:1">??</span>
         <div style="font-size:14px;font-weight:900;color:#172033;letter-spacing:.01em">Coverage</div>
       </div>
       ${popupSignalTableHeader('Reading')}
@@ -17798,7 +17798,7 @@ function radioQualityAssessmentCardHTML(p) {
   return `
     <div style="border:1px solid #d0d5dd;border-radius:14px;background:linear-gradient(180deg,#fff,#f8fafc);padding:14px;margin-bottom:10px;box-shadow:0 10px 24px rgba(15,31,51,0.09)">
       <div style="display:flex;align-items:center;gap:8px;padding-bottom:9px;border-bottom:1px solid #d0d5dd;margin-bottom:10px">
-        <span style="font-size:16px;line-height:1">üì°</span>
+        <span style="font-size:16px;line-height:1">??</span>
         <div style="font-size:14px;font-weight:900;color:#172033;letter-spacing:.01em">Radio Quality</div>
       </div>
       <div style="font-size:11px;font-weight:900;color:#344054;margin:8px 0 6px">Supporting Measurements</div>
@@ -17840,7 +17840,7 @@ function capacityPerformanceCardHTML(p) {
   return `
     <div style="border:1px solid #d0d5dd;border-radius:14px;background:linear-gradient(180deg,#fff,#f8fafc);padding:14px;margin-bottom:10px;box-shadow:0 10px 24px rgba(15,31,51,0.09)">
       <div style="display:flex;align-items:center;gap:8px;padding-bottom:9px;border-bottom:1px solid #d0d5dd;margin-bottom:10px">
-        <span style="font-size:16px;line-height:1">‚ö°</span>
+        <span style="font-size:16px;line-height:1">?</span>
         <div style="font-size:14px;font-weight:900;color:#172033;letter-spacing:.01em">Capacity Performance</div>
       </div>
       <div style="overflow-x:hidden;overflow-y:hidden;padding-bottom:2px">
@@ -17916,7 +17916,7 @@ function enhancedInfoWindowHTML(p) {
   return `<div style="font-family:'Inter',sans-serif;padding:4px;width:min(360px,92vw);min-width:0;max-width:360px;max-height:min(680px,72vh);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;box-sizing:border-box">
     <div style="border:1px solid #d0d5dd;border-radius:14px;background:linear-gradient(180deg,#fff,#f8fafc);padding:14px;margin-bottom:10px;box-shadow:0 10px 24px rgba(15,31,51,0.09)">
       <div style="display:flex;align-items:center;gap:8px;padding-bottom:9px;border-bottom:1px solid #d0d5dd;margin-bottom:8px">
-        <span style="font-size:16px;line-height:1">üì°</span>
+        <span style="font-size:16px;line-height:1">??</span>
         <div style="font-size:14px;font-weight:900;color:#172033;letter-spacing:.01em">Survey Assessment</div>
       </div>
       ${assessmentRow('Survey ID', p.id, towerColour)}
@@ -22802,7 +22802,7 @@ let evidenceReviewQueue = 'all';
 let evidenceReviewDirty = false;
 
 const EVIDENCE_REVIEW_SPEED_UNITS = ['Gbps', 'Mbps', 'Kbps'];
-const EVIDENCE_REVIEW_LATENCY_UNITS = ['ms', '¬µs'];
+const EVIDENCE_REVIEW_LATENCY_UNITS = ['ms', 'µs'];
 const EVIDENCE_REVIEW_PERCENT_UNITS = ['%'];
 const EVIDENCE_REVIEW_QUEUE_FILTERS = [
   { id: 'all', label: 'All Surveys' },
@@ -23006,12 +23006,12 @@ function evidenceReviewFieldQA(label, fields, displayValue) {
     }
   });
   if (uniqueMessages.some(message => message.level === 'error')) {
-    return { level: 'error', icon: '‚ùå', text: uniqueMessages.find(message => message.level === 'error').text };
+    return { level: 'error', icon: '?', text: uniqueMessages.find(message => message.level === 'error').text };
   }
   if (uniqueMessages.length) {
-    return { level: 'warning', icon: '‚ö†', text: uniqueMessages[0].text };
+    return { level: 'warning', icon: '?', text: uniqueMessages[0].text };
   }
-  return { level: 'pass', icon: '‚úì', text: 'Passed' };
+  return { level: 'pass', icon: '?', text: 'Passed' };
 }
 
 function evidenceReviewQAHTML(qa) {
@@ -23187,10 +23187,10 @@ function evidenceReviewUnitOptionsForField(label, field) {
 
 function evidenceReviewSplitUnit(value) {
   const text = String(value || '').trim();
-  const match = text.match(/^(.+?)\s*(Gbps|Mbps|Kbps|ms|us|¬µs|%)$/i);
+  const match = text.match(/^(.+?)\s*(Gbps|Mbps|Kbps|ms|us|µs|%)$/i);
   if (!match) return { value: text, unit: 'Mbps' };
   const allUnits = [...EVIDENCE_REVIEW_SPEED_UNITS, ...EVIDENCE_REVIEW_LATENCY_UNITS, ...EVIDENCE_REVIEW_PERCENT_UNITS];
-  const parsedUnit = match[2].toLowerCase() === 'us' ? '¬µs' : match[2];
+  const parsedUnit = match[2].toLowerCase() === 'us' ? 'µs' : match[2];
   const unit = allUnits.find(item => item.toLowerCase() === parsedUnit.toLowerCase()) || parsedUnit;
   return { value: match[1].trim(), unit };
 }
@@ -26599,7 +26599,7 @@ function validationHasValue(value) {
 }
 
 function validationNormaliseNumberText(value) {
-  const text = String(value ?? '').trim().replace(/\u2212/g, '-').replace(/[‚Äì‚Äî]/g, '-').replace(/,/g, '');
+  const text = String(value ?? '').trim().replace(/\u2212/g, '-').replace(/[ñó]/g, '-').replace(/,/g, '');
   if (!text) return '';
   if (!/^[+-]?\d+(?:\.\d+)?$/.test(text)) return text;
   const numeric = Number(text);
@@ -26608,7 +26608,7 @@ function validationNormaliseNumberText(value) {
 }
 
 function validationSpeedToMbps(value) {
-  const raw = String(value ?? '').trim().replace(/\u2212/g, '-').replace(/[‚Äì‚Äî]/g, '-').replace(/,/g, '');
+  const raw = String(value ?? '').trim().replace(/\u2212/g, '-').replace(/[ñó]/g, '-').replace(/,/g, '');
   if (!raw || /^(mbps|kbps|gbps|mb\/s|kb\/s|gb\/s)$/i.test(raw)) return { value: '', changed: !!raw, confidence: 'high' };
   const match = raw.match(/^([+-]?\d+(?:\.\d+)?)\s*([kmgt]?)(?:b(?:it)?\/?s|bps|b\/s|bits\/s)?$/i);
   if (!match) return null;
