@@ -8229,6 +8229,14 @@ function iaRenderInterviewGuideSummary() {
   const guide = iaCurrentInterview?.guide || null;
   const metadata = guide?.metadata || {};
   const questions = Array.isArray(guide?.questions) ? guide.questions : [];
+  const mainQuestionCount = questions.filter((question, index) => {
+    const label = question && typeof question === 'object' ? String(question.label || '') : `Q${index + 1}`;
+    return /^Q\d+\s*$/i.test(label.trim());
+  }).length;
+  const probeCount = Math.max(0, questions.length - mainQuestionCount);
+  const guideQuestionCountLabel = probeCount
+    ? `${mainQuestionCount} main questions + ${probeCount} probes`
+    : `${questions.length} questions`;
   const guideQuestionRows = questions.map((question, index) => {
     if (question && typeof question === 'object') {
       return `<li><strong>${iaEsc(question.label || `Q${index + 1}`)}:</strong> ${iaEsc(question.text || '')}</li>`;
@@ -8247,14 +8255,14 @@ function iaRenderInterviewGuideSummary() {
     <div class="ia-guide-summary-line"><strong>Interviewer:</strong> ${iaEsc(metadata.interviewer || 'Not found')}</div>
     <div class="ia-guide-summary-line"><strong>Participant:</strong> ${iaEsc(metadata.participantName || 'Not found')} ${metadata.participantTitle ? ' - ' + iaEsc(metadata.participantTitle) : ''}</div>
     <div class="ia-guide-summary-line"><strong>Organisation:</strong> ${iaEsc(metadata.organisation || 'Not found')}</div>
-    <div class="ia-guide-summary-line"><strong>Questions:</strong> ${questions.length} extracted from ${iaEsc(guide.originalName || 'guide')}</div>
+    <div class="ia-guide-summary-line"><strong>Guide items:</strong> ${guideQuestionCountLabel} extracted from ${iaEsc(guide.originalName || 'guide')}</div>
     ${questions.length ? `
       <details class="ia-guide-summary-line ia-guide-question-preview">
         <summary><strong>View extracted questions</strong><span class="ia-guide-readonly-chip">Guide</span></summary>
         <ol class="ia-guide-question-list" aria-label="Read only interview guide questions" tabindex="0">
           ${guideQuestionRows}
         </ol>
-        <div style="margin-top:5px">Showing all ${questions.length} questions.</div>
+        <div style="margin-top:5px">Showing all ${questions.length} guide items.</div>
       </details>
     ` : ''}
   `;
