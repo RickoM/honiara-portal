@@ -694,6 +694,8 @@
   .btn-primary:disabled, .btn-primary.is-processing { background: #64748b; border-color: #64748b; color: #fff; }
   .btn-primary { background: var(--navy); color: #fff; border-color: var(--navy); }
   .btn-primary:hover { background: var(--navy-light); }
+  .btn-danger { background: #B91C1C; color: #fff; border-color: #B91C1C; }
+  .btn-danger:hover { background: #991B1B; border-color: #991B1B; }
   .btn-sm { padding: 4px 10px; font-size: 11px; }
   
   /* -- FORM CONTROLS -- */
@@ -3611,6 +3613,8 @@
             <button class="btn btn-sm" type="button" id="ia-transcribe-btn" onclick="iaStartTranscription()" disabled>Generate Raw Transcript</button>
             <button class="btn btn-sm" type="button" id="ia-refresh-interviews-btn" onclick="iaLoadInterviewList()">Refresh List</button>
             <button class="btn btn-sm" type="button" id="ia-load-raw-btn" onclick="iaLoadInterviewRecordForTranscript()">Load Stored Raw Transcript</button>
+            <button class="btn btn-sm btn-danger" type="button" id="ia-hide-interview-btn" onclick="iaHideSelectedInterviewRecord()">Hide Selected ID</button>
+            <button class="btn btn-sm" type="button" id="ia-show-hidden-interviews-btn" onclick="iaShowHiddenInterviewRecords()">Show Hidden IDs</button>
             <button class="btn btn-primary btn-sm" type="button" id="ia-upload-raw-btn" onclick="iaUploadExistingRawTranscript()">Upload Existing Transcript</button>
             <button class="btn btn-sm" type="button" id="ia-arrange-raw-btn" onclick="iaArrangeRawTranscriptForReview()" disabled>Arrange for Review</button>
           </div>
@@ -7830,7 +7834,9 @@ async function iaLoadInterviewList() {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.detail || data.error || 'Could not list interviews.');
-    const interviews = Array.isArray(data.interviews) ? data.interviews : [];
+    const hiddenInterviewIds = new Set(iaHiddenInterviewRecordIds());
+    const interviews = (Array.isArray(data.interviews) ? data.interviews : [])
+      .filter(interview => !hiddenInterviewIds.has(String(interview.interviewId || '').trim()));
     picker.innerHTML = '<option value="">Select stored interview...</option>' + interviews.map(interview => {
       const isCurrentInterview = currentValue && interview.interviewId === currentValue && iaCurrentInterview?.interviewId === currentValue;
       const hasCurrentRaw = !!(iaCurrentInterview?.transcripts?.raw?.createdAt || iaCurrentInterview?.transcripts?.raw?.text);
@@ -7865,6 +7871,54 @@ async function iaSelectStoredInterview(interviewId) {
   await iaLoadInterviewRecordForTranscript();
 }
 
+function iaHiddenInterviewRecordIds() {
+  try {
+    const ids = JSON.parse(localStorage.getItem('ia-hidden-interview-record-ids') || '[]');
+    return Array.isArray(ids) ? ids.map(id => String(id || '').trim()).filter(Boolean) : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function iaSetHiddenInterviewRecordIds(ids) {
+  localStorage.setItem('ia-hidden-interview-record-ids', JSON.stringify([...new Set((ids || []).map(id => String(id || '').trim()).filter(Boolean))]));
+}
+
+async function iaShowHiddenInterviewRecords() {
+  const hidden = iaHiddenInterviewRecordIds();
+  if (!hidden.length) {
+    alert('No interview IDs are hidden in this browser.');
+    return;
+  }
+  const confirmed = confirm(`Show ${hidden.length} hidden interview ID${hidden.length === 1 ? '' : 's'} again?`);
+  if (!confirmed) return;
+  iaSetHiddenInterviewRecordIds([]);
+  await iaLoadInterviewList();
+}
+async function iaHideSelectedInterviewRecord() {
+  const picker = document.getElementById('ia-interview-picker');
+  const interviewId = String(picker?.value || document.getElementById('ia-id')?.value || iaCurrentInterview?.interviewId || '').trim();
+  if (!interviewId) {
+    alert('Select a stored interview ID first.');
+    return;
+  }
+  const confirmed = confirm(`Hide ${interviewId} from this Stored Interview Records list?\n\nThis only hides the ID in this browser. It does not delete the transcript, reviewed draft, MP3 evidence, or backend record.`);
+  if (!confirmed) return;
+  iaSetHiddenInterviewRecordIds([...iaHiddenInterviewRecordIds(), interviewId]);
+  if (iaCurrentInterview?.interviewId === interviewId) {
+    iaCurrentInterview = null;
+    iaReviewedBlocks = [];
+    iaReviewedBlocksInterviewId = '';
+    iaReviewedBlocksSourceText = '';
+    iaReviewApprovals = [];
+    iaSetTranscriptionState('Awaiting audio', true);
+    iaResetProgress('transcription');
+    iaRenderInterviewTranscriptState();
+  }
+  const idEl = document.getElementById('ia-id');
+  if (idEl?.value === interviewId) idEl.value = '';
+  await iaLoadInterviewList();
+}
 async function iaLoadInterviewRecordForTranscript() {
   if (!authToken) {
     alert('Please sign in before loading interview evidence.');
