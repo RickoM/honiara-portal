@@ -3613,6 +3613,7 @@
             <button class="btn btn-sm" type="button" id="ia-transcribe-btn" onclick="iaStartTranscription()" disabled>Generate Raw Transcript</button>
             <button class="btn btn-sm" type="button" id="ia-refresh-interviews-btn" onclick="iaLoadInterviewList()">Refresh List</button>
             <button class="btn btn-sm" type="button" id="ia-load-raw-btn" onclick="iaLoadInterviewRecordForTranscript()">Load Stored Raw Transcript</button>
+            <button class="btn btn-sm btn-danger" type="button" id="ia-reset-transcripts-btn" onclick="iaResetSelectedInterviewTranscripts()">Reset Transcript Only</button>
             <button class="btn btn-sm btn-danger" type="button" id="ia-hide-interview-btn" onclick="iaHideSelectedInterviewRecord()">Hide Selected ID</button>
             <button class="btn btn-sm" type="button" id="ia-show-hidden-interviews-btn" onclick="iaShowHiddenInterviewRecords()">Show Hidden IDs</button>
             <button class="btn btn-primary btn-sm" type="button" id="ia-upload-raw-btn" onclick="iaUploadExistingRawTranscript()">Upload Existing Transcript</button>
@@ -7973,6 +7974,63 @@ async function iaLoadInterviewRecordForTranscript() {
   }
 }
 
+async function iaResetSelectedInterviewTranscripts() {
+  if (!authToken) {
+    alert('Please sign in before resetting interview transcripts.');
+    return;
+  }
+  const picker = document.getElementById('ia-interview-picker');
+  const interviewId = String(picker?.value || document.getElementById('ia-id')?.value || iaCurrentInterview?.interviewId || '').trim();
+  if (!interviewId) {
+    alert('Select or load the stored interview record first.');
+    return;
+  }
+  if (!iaCurrentInterview || iaCurrentInterview.interviewId !== interviewId) {
+    await iaLoadInterviewRecordForTranscript();
+  }
+  if (!iaCurrentInterview?._id || iaCurrentInterview.interviewId !== interviewId) return;
+  if (!iaCurrentInterview.media?.mp3?.filename) {
+    alert('This interview record does not have stored MP3 evidence to transcribe again.');
+    return;
+  }
+  const confirmed = confirm(`Reset transcript only for ${interviewId}?\n\nThis keeps the stored MP3 evidence, but clears the raw transcript, reviewed draft, reviewed transcript, and block approvals so you can generate a fresh diarized transcript.`);
+  if (!confirmed) return;
+  const button = document.getElementById('ia-reset-transcripts-btn');
+  try {
+    if (button) {
+      button.disabled = true;
+      button.classList.add('is-processing');
+      button.textContent = 'Resetting...';
+    }
+    const res = await fetch(API_URL + '/api/interviews/' + encodeURIComponent(iaCurrentInterview._id) + '/transcripts', {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + authToken }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || data.error || 'Could not reset interview transcripts.');
+    iaCurrentInterview = data.interview;
+    iaReviewedBlocks = [];
+    iaReviewedBlocksInterviewId = '';
+    iaReviewedBlocksSourceText = '';
+    iaReviewApprovals = [];
+    iaSetTranscriptionState('Ready', false);
+    iaResetProgress('transcription');
+    iaRenderInterviewTranscriptState();
+    if (iaCurrentInterview?._id) {
+      iaLoadInterviewAudioPlayer(iaCurrentInterview._id).catch(err => console.warn('Interview audio playback load warning:', err));
+    }
+    await iaLoadInterviewList();
+    alert(`Transcript reset complete for ${interviewId}. The stored MP3 was kept. Click Generate Raw Transcript to transcribe it again with diarization.`);
+  } catch (err) {
+    alert('Reset transcript failed:\n\n' + (err?.message || 'Unknown error'));
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.classList.remove('is-processing');
+      button.textContent = 'Reset Transcript Only';
+    }
+  }
+}
 async function iaLoadStoredReviewedTranscript() {
   if (!authToken) {
     alert('Please sign in before loading interview evidence.');
