@@ -8684,11 +8684,52 @@ async function iaHandleRawSegmentClick(event, index) {
   iaJumpToTranscriptSegment(index);
 }
 
+function iaReviewedSourceSegmentMeta(text) {
+  const source = String(text || '');
+  let first = -1;
+  let last = -1;
+  const sourceRange = source.match(/\[SOURCE\s+SEGMENTS?\s*:\s*(\d+)(?:\s*(?:-|to)\s*(\d+))?\s*\]/i);
+  if (sourceRange) {
+    first = Number(sourceRange[1]) - 1;
+    last = Number(sourceRange[2] || sourceRange[1]) - 1;
+  } else {
+    const markers = [...source.matchAll(/\[SEGMENT\s+(\d+)\b[^\]]*\]/gi)].map(match => Number(match[1]) - 1).filter(index => Number.isFinite(index) && index >= 0);
+    if (markers.length) {
+      first = Math.min(...markers);
+      last = Math.max(...markers);
+    }
+  }
+  return {
+    segmentIndex: Number.isFinite(first) && first >= 0 ? first : undefined,
+    endSegmentIndex: Number.isFinite(last) && last >= 0 ? Math.max(first, last) : undefined
+  };
+}
+
+function iaStripReviewedSourceMarkers(text) {
+  return String(text || '')
+    .replace(/\s*\[SOURCE\s+SEGMENTS?\s*:\s*\d+(?:\s*(?:-|to)\s*\d+)?\s*\]\s*/gi, '\n')
+    .replace(/\s*\[SEGMENT\s+\d+\b[^\]]*\]\s*/gi, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function iaReviewedBlockFromTextWithSource(text) {
+  const meta = iaReviewedSourceSegmentMeta(text);
+  const cleanText = iaStripReviewedSourceMarkers(text);
+  return {
+    text: cleanText,
+    ...(Number.isFinite(Number(meta.segmentIndex)) ? { segmentIndex: meta.segmentIndex } : {}),
+    ...(Number.isFinite(Number(meta.endSegmentIndex)) ? { endSegmentIndex: meta.endSegmentIndex } : {})
+  };
+}
+
 function iaSplitReviewedTranscript(text) {
   return String(text || '')
     .split(/\n{2,}/)
-    .map(item => item.trim())
-    .filter(Boolean);
+    .map(item => iaReviewedBlockFromTextWithSource(item.trim()))
+    .filter(item => item.text);
 }
 function iaRawTranscriptTextForReview() {
   const raw = iaCurrentInterview?.transcripts?.raw || null;
@@ -9087,7 +9128,9 @@ function iaMigrateReviewedBlocksFromText(text, transcripts = {}) {
   const approvalsByKey = new Map(approvals.map(item => [item?.blockKey, item]).filter(([key]) => key));
   const sectionCounts = {};
   let currentSectionKey = 'intro';
-  const migrated = rawBlocks.map((blockText, index) => {
+  const migrated = rawBlocks.map((blockItem, index) => {
+    const parsedBlock = typeof blockItem === 'object' && blockItem ? blockItem : iaReviewedBlockFromTextWithSource(blockItem);
+    const blockText = parsedBlock.text;
     const isUploadedGuideQuestion = iaReviewedBlockMatchesUploadedGuide(blockText);
     const isCachedGuideQuestion = iaIsReviewedGuideQuestionBlock(blockText) && iaReviewedGuideRoleKeys.has(iaReviewedRoleTextKey(blockText));
     const isGuideQuestion = isUploadedGuideQuestion || isCachedGuideQuestion;
@@ -9109,6 +9152,8 @@ function iaMigrateReviewedBlocksFromText(text, transcripts = {}) {
       approvedAt: matchedApproval?.approvedAt || null,
       approvedBy: matchedApproval?.approvedBy || null,
       createdAt: new Date().toISOString(),
+      ...(Number.isFinite(Number(parsedBlock.segmentIndex)) ? { segmentIndex: parsedBlock.segmentIndex } : {}),
+      ...(Number.isFinite(Number(parsedBlock.endSegmentIndex)) ? { endSegmentIndex: parsedBlock.endSegmentIndex } : {})
     };
   });
   const migratedApprovedCount = migrated.filter(block => block.approved).length;
@@ -9140,16 +9185,18 @@ function iaReconcileReviewedBlocksWithNewText(newText) {
     if (match) { match.claimed = true; return match; }
     return null;
   };
-  return newRawBlocks.map(blockText => {
+  return newRawBlocks.map(blockItem => {
+    const parsedBlock = typeof blockItem === 'object' && blockItem ? blockItem : iaReviewedBlockFromTextWithSource(blockItem);
+    const blockText = parsedBlock.text;
     const isUploadedGuideQuestion = iaReviewedBlockMatchesUploadedGuide(blockText);
     const isCachedGuideQuestion = iaIsReviewedGuideQuestionBlock(blockText) && iaReviewedGuideRoleKeys.has(iaReviewedRoleTextKey(blockText));
     const role = (isUploadedGuideQuestion || isCachedGuideQuestion) ? 'guide' : 'transcript';
     if (role === 'guide') iaMarkReviewedGuideRole(blockText);
     const matched = claimMatch(blockText);
     if (matched) {
-      return { id: matched.id, text: blockText, role, approved: matched.approved, approvedAt: matched.approvedAt, approvedBy: matched.approvedBy, createdAt: matched.createdAt, segmentIndex: matched.segmentIndex, endSegmentIndex: matched.endSegmentIndex };
+      return { id: matched.id, text: blockText, role, approved: matched.approved, approvedAt: matched.approvedAt, approvedBy: matched.approvedBy, createdAt: matched.createdAt, segmentIndex: Number.isFinite(Number(parsedBlock.segmentIndex)) ? parsedBlock.segmentIndex : matched.segmentIndex, endSegmentIndex: Number.isFinite(Number(parsedBlock.endSegmentIndex)) ? parsedBlock.endSegmentIndex : matched.endSegmentIndex };
     }
-    return iaNewReviewedBlock(blockText, role);
+    return iaNewReviewedBlock(blockText, role, parsedBlock);
   });
 }
 
@@ -9172,9 +9219,12 @@ function iaEnsureReviewedBlocksAdopted() {
   }
   const reviewedTranscript = iaSelectReviewedWorkingTranscript(iaCurrentInterview?.transcripts || {});
   const sourceText = String(reviewedTranscript?.text || '');
-  const storedBlocks = Array.isArray(iaCurrentInterview?.transcripts?.reviewed?.blocks)
-    ? iaCurrentInterview.transcripts.reviewed.blocks
-    : [];
+  const workingBlocks = Array.isArray(reviewedTranscript?.blocks) ? reviewedTranscript.blocks : [];
+  const storedBlocks = workingBlocks.length
+    ? workingBlocks
+    : (Array.isArray(iaCurrentInterview?.transcripts?.reviewed?.blocks)
+      ? iaCurrentInterview.transcripts.reviewed.blocks
+      : []);
 
   if (iaReviewedBlocksInterviewId === interviewId) {
     if (sourceText === iaReviewedBlocksSourceText) return false;
@@ -9292,6 +9342,77 @@ function iaRenderReviewedBlockHTML(block, index) {
   `;
 }
 
+function iaReviewedBlockHasSegmentRange(block) {
+  return Number.isFinite(Number(block?.segmentIndex)) && Number(block.segmentIndex) >= 0;
+}
+
+function iaReviewedAlignmentTokens(text) {
+  const stop = new Set(['the','and','that','this','with','from','your','have','they','there','what','when','where','which','then','than','into','onto','about','because','were','been','will','would','could','should','their','them','you','for','are','was','can','how']);
+  return iaNormaliseTranscriptTokens(iaStripReviewedSourceMarkers(text))
+    .filter(token => token.length > 3 && !stop.has(token));
+}
+
+function iaFindReviewedBlockSegmentRange(block, fromIndex = 0) {
+  const segments = iaRawSegmentsForReview();
+  if (!segments.length) return null;
+  const from = Math.max(0, Math.min(segments.length - 1, Number(fromIndex) || 0));
+  const text = String(block?.text || '');
+  const tokens = [...new Set(iaReviewedAlignmentTokens(text))];
+  if (!tokens.length) return null;
+  const firstPhrase = tokens.slice(0, Math.min(7, tokens.length)).join(' ');
+  const lastPhrase = tokens.slice(Math.max(0, tokens.length - 7)).join(' ');
+  let best = null;
+  for (let start = from; start < segments.length; start += 1) {
+    let combined = '';
+    for (let end = start; end < Math.min(segments.length, start + 24); end += 1) {
+      combined = iaNormaliseTranscriptTokens(`${combined} ${segments[end]?.text || ''}`).join(' ');
+      if (!combined) continue;
+      const matched = tokens.reduce((total, token) => total + (combined.includes(token) ? 1 : 0), 0);
+      const coverage = matched / Math.max(1, tokens.length);
+      const firstBonus = firstPhrase && combined.includes(firstPhrase) ? 0.35 : 0;
+      const lastBonus = lastPhrase && combined.includes(lastPhrase) ? 0.2 : 0;
+      const distancePenalty = Math.min(0.25, (start - from) / Math.max(40, segments.length));
+      const score = coverage + firstBonus + lastBonus - distancePenalty;
+      if (!best || score > best.score) best = { start, end, score, coverage };
+      if (coverage >= 0.82 && (combined.includes(lastPhrase) || end > start + 2)) return { segmentIndex: start, endSegmentIndex: end };
+      if (combined.length > String(text).length * 1.8 + 800) break;
+    }
+  }
+  if (best && (best.coverage >= 0.28 || best.score >= 0.5)) return { segmentIndex: best.start, endSegmentIndex: best.end };
+  return null;
+}
+
+function iaEnsureReviewedBlockSegmentRanges() {
+  const segments = iaRawSegmentsForReview();
+  if (!segments.length || !iaReviewedBlocks.length) return false;
+  let changed = false;
+  let cursor = 0;
+  iaReviewedBlocks.forEach(block => {
+    if (iaReviewedBlockHasSegmentRange(block)) {
+      cursor = Math.max(cursor, Number(block.endSegmentIndex ?? block.segmentIndex) + 1);
+      return;
+    }
+    if (block.role === 'guide') return;
+    const range = iaFindReviewedBlockSegmentRange(block, cursor);
+    if (!range) return;
+    block.segmentIndex = range.segmentIndex;
+    block.endSegmentIndex = Math.max(range.segmentIndex, range.endSegmentIndex ?? range.segmentIndex);
+    cursor = block.endSegmentIndex + 1;
+    changed = true;
+  });
+  iaReviewedBlocks.forEach((block, index) => {
+    if (iaReviewedBlockHasSegmentRange(block)) return;
+    if (block.role !== 'guide') return;
+    const next = iaReviewedBlocks.slice(index + 1).find(iaReviewedBlockHasSegmentRange);
+    const previous = [...iaReviewedBlocks.slice(0, index)].reverse().find(iaReviewedBlockHasSegmentRange);
+    const anchor = next || previous;
+    if (!anchor) return;
+    block.segmentIndex = Number(anchor.segmentIndex);
+    block.endSegmentIndex = Number(anchor.endSegmentIndex ?? anchor.segmentIndex);
+    changed = true;
+  });
+  return changed;
+}
 // Renders iaReviewedBlocks as-is: identity, order, role and approval all come from the block
 // objects themselves. Re-rendering never re-derives structure from text or position, so it can
 // never assign a different id to an unchanged block - "regenerating" only ever repaints HTML
@@ -9302,7 +9423,9 @@ function iaRenderReviewedTranscriptBlocks(options = {}) {
   if (!editor) return;
   const force = !!options.force;
   if (!force && editor.dataset.dirty === 'true' && iaGetReviewedTranscriptText().trim()) return;
-  const signature = iaReviewedBlocks.map(block => `${block.id}:${block.role}:${block.approved ? 1 : 0}:${block.text}`).join('');
+  const rangesChanged = iaEnsureReviewedBlockSegmentRanges();
+  const signature = iaReviewedBlocks.map(block => `${block.id}:${block.role}:${block.approved ? 1 : 0}:${block.segmentIndex ?? ''}:${block.endSegmentIndex ?? ''}:${block.text}`).join('\u0001');
+  if (rangesChanged) iaScheduleFirstReviewDraftSave();
   if (!force && editor.dataset.renderedSignature === signature) return;
   editor.dataset.dirty = 'false';
   editor.dataset.renderedSignature = signature;
@@ -9498,7 +9621,9 @@ function iaReviewedBlockItems() {
 function iaNewReviewedBlock(text, role, options = {}) {
   const block = { id: iaNewReviewedBlockId(), text, role, approved: false, approvedAt: null, approvedBy: null, createdAt: new Date().toISOString() };
   const segmentIndex = Number(options.segmentIndex);
+  const endSegmentIndex = Number(options.endSegmentIndex);
   if (Number.isFinite(segmentIndex) && segmentIndex >= 0) block.segmentIndex = segmentIndex;
+  if (Number.isFinite(endSegmentIndex) && endSegmentIndex >= 0) block.endSegmentIndex = Number.isFinite(segmentIndex) && segmentIndex >= 0 ? Math.max(segmentIndex, endSegmentIndex) : endSegmentIndex;
   return block;
 }
 
@@ -10579,6 +10704,18 @@ function iaScheduleFirstReviewDraftSave() {
   }, 1800);
 }
 
+function iaReviewedBlocksForSave() {
+  iaEnsureReviewedBlockSegmentRanges();
+  return iaReviewedBlocks.map((block, index) => ({
+    id: block.id,
+    text: block.text,
+    role: block.role,
+    order: index,
+    approved: block.approved,
+    segmentIndex: Number.isFinite(Number(block.segmentIndex)) ? Number(block.segmentIndex) : undefined,
+    endSegmentIndex: Number.isFinite(Number(block.endSegmentIndex)) ? Number(block.endSegmentIndex) : undefined,
+  }));
+}
 async function iaSaveFirstReviewDraft(options = {}) {
   if (iaFirstReviewDraftTimer) {
     clearTimeout(iaFirstReviewDraftTimer);
@@ -10599,7 +10736,7 @@ async function iaSaveFirstReviewDraft(options = {}) {
         'Authorization': 'Bearer ' + authToken,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ text, interviewDetails })
+      body: JSON.stringify({ text, interviewDetails, blocks: iaReviewedBlocksForSave() })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.detail || data.error || 'First Review Draft save failed');
@@ -10717,15 +10854,7 @@ async function iaSaveReviewedTranscript(options = {}) {
     }
     const interviewDetails = iaAttachInterviewDetailsToCurrent();
     iaSaveInterviewDetailsLocal(null, interviewDetails);
-    const blocks = iaReviewedBlocks.map((block, index) => ({
-      id: block.id,
-      text: block.text,
-      role: block.role,
-      order: index,
-      approved: block.approved,
-      segmentIndex: Number.isFinite(Number(block.segmentIndex)) ? Number(block.segmentIndex) : undefined,
-      endSegmentIndex: Number.isFinite(Number(block.endSegmentIndex)) ? Number(block.endSegmentIndex) : undefined,
-    }));
+    const blocks = iaReviewedBlocksForSave();
     const res = await fetch(API_URL + '/api/interviews/' + encodeURIComponent(iaCurrentInterview._id) + '/reviewed-transcript', {
       method: 'PUT',
       headers: {
