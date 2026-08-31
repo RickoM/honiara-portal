@@ -3587,6 +3587,7 @@
           </div>
           <div class="ia-card-body">
             <div class="ia-note">Transcription will run from the retained MP3 evidence file. Raw transcript output is preserved exactly as produced by the transcription engine.</div>
+            <div class="ia-note">TXT, VTT and SRT transcripts can also be uploaded directly and arranged for Step 4 review.</div>
             <div class="ia-metrics">
               <div class="ia-metric"><div class="ia-metric-label">Input</div><div class="ia-metric-value">MP3 evidence</div></div>
               <div class="ia-metric"><div class="ia-metric-label">Output</div><div class="ia-metric-value">Raw transcript</div></div>
@@ -3604,13 +3605,14 @@
                 <option value="">Loading stored interviews...</option>
               </select>
             </div>
-            <input id="ia-raw-transcript-file" type="file" accept=".vtt,.srt,.txt,text/vtt,text/plain" onchange="iaHandleRawTranscriptFileSelected()" hidden>
+            <input id="ia-raw-transcript-file" type="file" accept=".vtt,.srt,.txt,.tex,text/vtt,text/plain,text/x-tex,application/x-tex" onchange="iaHandleRawTranscriptFileSelected()" hidden>
           </div>
           <div class="ia-actions">
             <button class="btn btn-sm" type="button" id="ia-transcribe-btn" onclick="iaStartTranscription()" disabled>Generate Raw Transcript</button>
             <button class="btn btn-sm" type="button" id="ia-refresh-interviews-btn" onclick="iaLoadInterviewList()">Refresh List</button>
             <button class="btn btn-sm" type="button" id="ia-load-raw-btn" onclick="iaLoadInterviewRecordForTranscript()">Load Stored Raw Transcript</button>
             <button class="btn btn-primary btn-sm" type="button" id="ia-upload-raw-btn" onclick="iaUploadExistingRawTranscript()">Upload Existing Transcript</button>
+            <button class="btn btn-sm" type="button" id="ia-arrange-raw-btn" onclick="iaArrangeRawTranscriptForReview()" disabled>Arrange for Review</button>
           </div>
         </div>
 
@@ -7957,6 +7959,13 @@ function iaHandleRawTranscriptFileSelected() {
   if (file) iaUploadExistingRawTranscript({ selected: true });
 }
 
+async function iaTranscriptUploadFileForBackend(file) {
+  if (!/\.tex$/i.test(file?.name || '')) return file;
+  const text = await file.text();
+  const safeName = String(file.name || 'transcript.tex').replace(/\.tex$/i, '.txt');
+  return new File([text], safeName, { type: 'text/plain' });
+}
+
 async function iaUploadExistingRawTranscript(options = {}) {
   if (!authToken) {
     alert('Please sign in before uploading transcript evidence.');
@@ -7968,15 +7977,17 @@ async function iaUploadExistingRawTranscript(options = {}) {
     if (input) input.click();
     return;
   }
-  if (!/\.(vtt|srt|txt)$/i.test(file.name || '')) {
-    alert('Please select a VTT, SRT or TXT transcript file.');
+  if (!/\.(vtt|srt|txt|tex)$/i.test(file.name || '')) {
+    alert('Please select a VTT, SRT, TXT or TEX transcript file.');
     if (input) input.value = '';
     return;
   }
   const button = document.getElementById('ia-upload-raw-btn');
   const originalText = button?.textContent || 'Upload Existing Transcript';
+  const uploadFile = await iaTranscriptUploadFileForBackend(file);
   const form = new FormData();
-  form.append('transcript', file, file.name);
+  form.append('transcript', uploadFile, uploadFile.name);
+  if (uploadFile.name !== file.name) form.append('originalName', file.name);
   const interviewId = iaCurrentInterview?.interviewId || document.getElementById('ia-id')?.value.trim();
   if (interviewId) form.append('interviewId', interviewId);
   try {
@@ -8001,9 +8012,14 @@ async function iaUploadExistingRawTranscript(options = {}) {
     if (picker) picker.value = iaCurrentInterview.interviewId || interviewId || '';
     iaSetTranscriptionState('Raw transcript uploaded', true);
     iaRenderInterviewTranscriptState();
-    iaCompleteProgress('transcription', 'Immutable raw transcript uploaded and ready for AI-assisted review.');
+    const arrangedForReview = await iaArrangeRawTranscriptForReview({ silent: true, replaceReviewed: false });
+    iaCompleteProgress('transcription', arrangedForReview
+      ? 'Immutable raw transcript uploaded and arranged for AI-assisted review.'
+      : 'Immutable raw transcript uploaded and ready for AI-assisted review.');
     iaLoadInterviewList();
-    alert('Raw transcript uploaded and stored. Step 4 AI Assisted Review is ready.');
+    alert(arrangedForReview
+      ? 'Raw transcript uploaded and arranged in Step 4 for review.'
+      : 'Raw transcript uploaded and stored. Step 4 AI Assisted Review is ready.');
   } catch (err) {
     iaFailProgress('transcription', err?.message || 'Raw transcript upload failed.');
     alert('Upload existing transcript failed:\n\n' + (err?.message || 'Unknown error'));
@@ -8147,7 +8163,10 @@ async function iaStartTranscription() {
     if (raw) raw.value = iaFormatRawTranscript(transcript);
     iaSetTranscriptionState('Raw transcript created', true);
     iaRenderInterviewTranscriptState();
-    iaCompleteProgress('transcription', 'Immutable raw transcript created from MP3 evidence.');
+    const arrangedForReview = await iaArrangeRawTranscriptForReview({ silent: true, replaceReviewed: false, promptReplaceExisting: true });
+    iaCompleteProgress('transcription', arrangedForReview
+      ? 'Immutable raw transcript created and grouped into review blocks.'
+      : 'Immutable raw transcript created from MP3 evidence.');
     iaLoadInterviewList();
   } catch (err) {
     if (raw) raw.value = '';
@@ -8178,6 +8197,107 @@ function iaFormatTranscriptTime(seconds) {
   return [h, m, s].map(value => String(value).padStart(2, '0')).join(':');
 }
 
+function iaRawSegmentsForReview() {
+  return Array.isArray(iaCurrentInterview?.transcripts?.raw?.segments)
+    ? iaCurrentInterview.transcripts.raw.segments
+    : [];
+}
+
+function iaRawSegmentSpeakerLabel(segment) {
+  const raw = segment?.speakerLabel ?? segment?.speaker_label ?? segment?.speaker ?? segment?.speakerId ?? segment?.speaker_id ?? '';
+  const label = String(raw || '').trim();
+  if (!label) return '';
+  return /^speaker/i.test(label) ? label.replace(/\s+/g, ' ') : `Speaker ${label}`;
+}
+
+function iaTranscriptRoleFromText(text) {
+  const clean = String(text || '').trim();
+  if (iaIsReviewedGuideQuestionBlock(clean)) return 'guide';
+  if (/^(?:Interviewer|Richard)(?:\s*\([^)]*\))?\s*:/i.test(clean)) return 'interviewer';
+  if (/^(?:Participant|Respondent|Speaker unclear|Speaker\s+\d+|Speaker\s+[A-Z]|Male|Female)(?:\s*\([^)]*\))?\s*:/i.test(clean)) return 'participant';
+  return 'transcript';
+}
+
+function iaTranscriptRoleFromSegment(segment, text) {
+  const textRole = iaTranscriptRoleFromText(text);
+  if (textRole !== 'transcript') return textRole;
+  const speakerLabel = iaRawSegmentSpeakerLabel(segment);
+  return speakerLabel ? speakerLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'transcript';
+}
+
+function iaSegmentTextForReview(segment) {
+  const text = String(segment?.text || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  if (iaTranscriptRoleFromText(text) !== 'transcript') return text;
+  const speakerLabel = iaRawSegmentSpeakerLabel(segment);
+  return speakerLabel ? `${speakerLabel}: ${text}` : text;
+}
+
+function iaReviewBlockTextFromParts(parts) {
+  return parts
+    .map(part => String(part || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+([,.?!;:])/g, '$1')
+    .trim();
+}
+
+function iaBuildReviewBlocksFromRawSegments(segments) {
+  const source = Array.isArray(segments) ? segments : [];
+  if (!source.length) return [];
+  const blocks = [];
+  let current = null;
+  const maxChars = 1700;
+  const minCharsBeforeNaturalBreak = 650;
+  const startBlock = (segment, index, text, role) => ({
+    role,
+    startSegmentIndex: index,
+    start: Number(segment?.start) || 0,
+    end: Number(segment?.end ?? segment?.start) || 0,
+    endSegmentIndex: index,
+    parts: [text]
+  });
+  const flush = () => {
+    if (!current) return;
+    const text = iaReviewBlockTextFromParts(current.parts);
+    if (text) blocks.push({ text, role: current.role, segmentIndex: current.startSegmentIndex, endSegmentIndex: current.endSegmentIndex, start: current.start, end: current.end });
+    current = null;
+  };
+
+  source.forEach((segment, index) => {
+    const text = iaSegmentTextForReview(segment);
+    if (!text) return;
+    const role = iaTranscriptRoleFromSegment(segment, text);
+    if (role === 'guide') {
+      flush();
+      blocks.push({ text, role: 'guide', segmentIndex: index, endSegmentIndex: index, start: Number(segment?.start) || 0, end: Number(segment?.end ?? segment?.start) || 0 });
+      return;
+    }
+    if (!current) {
+      current = startBlock(segment, index, text, role);
+      return;
+    }
+    const currentText = iaReviewBlockTextFromParts(current.parts);
+    const currentLength = currentText.length;
+    const nextLength = currentLength + text.length + 1;
+    const previousEnd = Number(current.end) || Number(source[index - 1]?.end ?? source[index - 1]?.start) || 0;
+    const gap = Math.max(0, (Number(segment?.start) || 0) - previousEnd);
+    const roleChanged = role !== 'transcript' && current.role !== 'transcript' && role !== current.role;
+    const naturalBreak = /[.!?]$/.test(currentText) && currentLength >= minCharsBeforeNaturalBreak;
+    const shouldFlush = nextLength > maxChars || roleChanged || (gap > 8 && naturalBreak);
+    if (shouldFlush) {
+      flush();
+      current = startBlock(segment, index, text, role);
+      return;
+    }
+    current.parts.push(text);
+    current.end = Number(segment?.end ?? segment?.start) || current.end;
+    current.endSegmentIndex = index;
+    if (current.role === 'transcript' && role !== 'transcript') current.role = role;
+  });
+  flush();
+  return blocks;
+}
 function iaSelectReviewedWorkingTranscript(transcripts = {}) {
   const reviewed = transcripts.reviewed || null;
   const firstReviewDraft = transcripts.firstReviewDraft || null;
@@ -8195,6 +8315,7 @@ function iaRenderInterviewTranscriptState() {
   const verificationBtn = document.getElementById('ia-verification-btn');
   const guideBtn = document.getElementById('ia-guide-btn');
   const uploadReviewedBtn = document.getElementById('ia-upload-reviewed-btn');
+  const arrangeRawBtn = document.getElementById('ia-arrange-raw-btn');
   const saveBtn = document.getElementById('ia-save-reviewed-btn');
   const draftStatus = document.getElementById('ia-draft-status');
   const hasRaw = !!String(rawTranscript?.text || '').trim();
@@ -8210,6 +8331,7 @@ function iaRenderInterviewTranscriptState() {
   if (verificationBtn) verificationBtn.disabled = !hasRaw;
   if (guideBtn) guideBtn.disabled = !iaCurrentInterview?._id || iaReviewBusy;
   if (uploadReviewedBtn) uploadReviewedBtn.disabled = !hasRaw;
+  if (arrangeRawBtn) arrangeRawBtn.disabled = !hasRaw || iaReviewBusy;
   if (saveBtn) saveBtn.disabled = !String(iaGetReviewedTranscriptText()).trim();
   if (draftStatus) {
     const draft = iaCurrentInterview?.transcripts?.firstReviewDraft;
@@ -8381,14 +8503,31 @@ function iaSyncTranscriptToAudio() {
   iaSetActiveTranscriptSegment(activeIndex);
 }
 
-function iaJumpToTranscriptSegment(index, options = {}) {
-  const segment = iaCurrentInterview?.transcripts?.raw?.segments?.[index];
+function iaJumpToReviewedBlockAudioPosition(blockIndex, blockTotal, options = {}) {
   const player = document.getElementById('ia-media-player');
-  if (!segment) return;
-  iaSetActiveTranscriptSegment(index);
-  if (!player?.src) return;
+  if (!player?.src) return false;
+  const duration = Number.isFinite(player.duration) && player.duration > 0 ? player.duration : 0;
+  if (!duration) {
+    player.play?.().catch(() => {});
+    return false;
+  }
+  const ratio = Math.max(0, Math.min(1, (Number(blockIndex) || 0) / Math.max(1, (Number(blockTotal) || 1) - 1)));
+  player.currentTime = Math.max(0, Math.min(duration - 0.25, duration * ratio));
+  if (options.play !== false) player.play?.().catch(() => {});
+  return true;
+}
+
+function iaJumpToTranscriptSegment(index, options = {}) {
+  const numericIndex = Number(index);
+  if (!Number.isFinite(numericIndex) || numericIndex < 0) return false;
+  const segment = iaCurrentInterview?.transcripts?.raw?.segments?.[numericIndex];
+  const player = document.getElementById('ia-media-player');
+  if (!segment) return false;
+  iaSetActiveTranscriptSegment(numericIndex);
+  if (!player?.src) return true;
   player.currentTime = Math.max(0, Number(segment.start) || 0);
   if (options.play !== false) player.play?.().catch(() => {});
+  return true;
 }
 
 async function iaCopyTextToClipboard(text) {
@@ -8439,7 +8578,227 @@ function iaSplitReviewedTranscript(text) {
     .map(item => item.trim())
     .filter(Boolean);
 }
+function iaRawTranscriptTextForReview() {
+  const raw = iaCurrentInterview?.transcripts?.raw || null;
+  const formatted = iaFormatRawTranscript(raw);
+  return String(formatted || raw?.text || '').trim();
+}
 
+function iaDecodeLatexTranscriptText(text) {
+  return String(text || '')
+    .replace(/\\(?:textbf|textit|emph)\{([^{}]*)\}/g, '$1')
+    .replace(/\\(?:noindent|medskip|smallskip|bigskip|clearpage)\b/g, '')
+    .replace(/\\(?:begin|end)\{[^}]+\}/g, '')
+    .replace(/\\label\{[^}]*\}/g, '')
+    .replace(/\\[a-zA-Z]+\*?(?:\[[^\]]*\])?(?:\{[^}]*\})?/g, '')
+    .replace(/\\&/g, '&')
+    .replace(/\\%/g, '%')
+    .replace(/\\_/g, '_')
+    .replace(/\\#/g, '#')
+    .replace(/\\\$/g, '$')
+    .replace(/[{}]/g, '')
+    .replace(/~+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function iaTranscriptTurnRoleFromLabel(label) {
+  const clean = String(label || '').trim();
+  if (/^Q\d+[a-z]?(?:\s+(?:Probe|Additional)\s+[^:]+)?\s*:/i.test(clean)) return 'guide';
+  if (/^Interviewer/i.test(clean)) return 'interviewer';
+  if (/^(Participant|Respondent|Speaker unclear|Speaker\s+\d+|Male|Female)/i.test(clean)) return 'participant';
+  return '';
+}
+
+function iaIsBackchannelTranscriptTurn(text) {
+  const clean = String(text || '')
+    .replace(/^(?:Interviewer|Participant|Respondent|Richard|Speaker unclear|Speaker\s+\d+|Male|Female)(?:\s*\([^)]*\))?\s*:/i, '')
+    .replace(/[.?!,;:\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  if (!clean) return true;
+  if (clean.length > 28) return false;
+  return /^(yes|yeah|yep|ok|okay|right|sure|mmm|mm|hm|um|uh|eee|poole|thank you|thanks|fine|good)$/.test(clean);
+}
+
+function iaCoalesceTranscriptTurnsForReview(turns) {
+  const blocks = [];
+  const maxBlockChars = 5200;
+  const buckets = { interviewer: [], participant: [] };
+  const appendBucket = turn => {
+    const role = turn.role === 'interviewer' ? 'interviewer' : 'participant';
+    buckets[role].push(turn.text);
+  };
+  const pushRoleBlock = role => {
+    const parts = buckets[role].map(part => part.trim()).filter(Boolean);
+    buckets[role] = [];
+    if (!parts.length) return;
+    let chunk = '';
+    parts.forEach(part => {
+      const next = chunk ? `${chunk}\n\n${part}` : part;
+      if (chunk && next.length > maxBlockChars) {
+        blocks.push(chunk.trim());
+        chunk = part;
+      } else {
+        chunk = next;
+      }
+    });
+    if (chunk.trim()) blocks.push(chunk.trim());
+  };
+  const flushSection = () => {
+    pushRoleBlock('interviewer');
+    pushRoleBlock('participant');
+  };
+
+  turns.forEach(turn => {
+    if (!turn?.text) return;
+    if (turn.role === 'guide') {
+      flushSection();
+      blocks.push(turn.text.trim());
+      return;
+    }
+    appendBucket(turn);
+  });
+  flushSection();
+  return blocks;
+}
+
+function iaExtractLatexTranscriptBlocks(text) {
+  const source = String(text || '').replace(/\r\n?/g, '\n');
+  if (!/\\textbf\{/i.test(source) || !/\\(?:par|medskip|noindent)/i.test(source)) return [];
+  const turns = [];
+  const re = /\\noindent\s*\\textbf\{([^{}]+)\}\s*:?[ \t\n]*([\s\S]*?)(?=\\par\\smallskip|\n\\medskip\s*\n\s*\\noindent\s*\\textbf\{|\n\s*\\noindent\s*\\textbf\{|\n\s*\\clearpage|\n\s*\\subsection|$)/g;
+  let match;
+  while ((match = re.exec(source))) {
+    const label = iaDecodeLatexTranscriptText(match[1]);
+    const body = iaDecodeLatexTranscriptText(match[2]);
+    if (!label || /^(Participants|Role\/Title|Organisation|Interview date|Duration|Platform|Interview ID|Status)\s*:/i.test(label)) continue;
+    const role = iaTranscriptTurnRoleFromLabel(label);
+    if (role === 'guide') {
+      turns.push({ role, text: label.trim() });
+    } else if (role) {
+      const speaker = label.replace(/\s*:$/, '').trim();
+      if (body) turns.push({ role, text: `${speaker}: ${body}` });
+    }
+  }
+  return iaCoalesceTranscriptTurnsForReview(turns);
+}
+
+function iaIsRawTranscriptNoiseLine(line) {
+  const clean = String(line || '').trim();
+  if (!clean) return false;
+  if (/^WEBVTT$/i.test(clean)) return true;
+  if (/^\d+$/.test(clean)) return true;
+  if (/^(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[,.]\d{1,3})?\s*(?:-->|-)\s*(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[,.]\d{1,3})?/.test(clean)) return true;
+  if (/^\[?(?:\d{1,2}:)?\d{1,2}:\d{2}(?:[,.]\d{1,3})?\]?$/.test(clean)) return true;
+  return false;
+}
+
+function iaIsTranscriptSpeakerOrGuideStart(line) {
+  const clean = String(line || '').trim();
+  return iaIsReviewedGuideQuestionBlock(clean)
+    || /^(?:Interviewer|Participant|Respondent|Richard|Speaker(?:\s+\d+|\s+[A-Z])?|Speaker unclear|Male|Female)(?:\s*\([^)]*\))?\s*:/i.test(clean);
+}
+
+function iaSplitRawTranscriptForReview(text) {
+  const latexBlocks = iaExtractLatexTranscriptBlocks(text);
+  if (latexBlocks.length) return latexBlocks;
+
+  const segmentBlocks = iaBuildReviewBlocksFromRawSegments(iaRawSegmentsForReview());
+  if (segmentBlocks.length) return segmentBlocks;
+
+  const cleaned = String(text || '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line && !iaIsRawTranscriptNoiseLine(line));
+  if (!cleaned.length) return [];
+
+  const paragraphs = iaSplitReviewedTranscript(cleaned.join('\n'));
+  if (paragraphs.length > 1) return paragraphs;
+
+  const blocks = [];
+  let current = '';
+  cleaned.forEach(line => {
+    const startsNew = iaIsTranscriptSpeakerOrGuideStart(line);
+    if (startsNew && current.trim()) {
+      blocks.push(current.trim());
+      current = line;
+    } else {
+      current = current ? `${current} ${line}` : line;
+    }
+  });
+  if (current.trim()) blocks.push(current.trim());
+  if (blocks.length > 1) return blocks;
+
+  const sentences = cleaned.join(' ').match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [cleaned.join(' ')];
+  const chunks = [];
+  let chunk = '';
+  sentences.forEach(sentence => {
+    const next = `${chunk} ${sentence}`.trim();
+    if (chunk && next.length > 900) {
+      chunks.push(chunk.trim());
+      chunk = sentence.trim();
+    } else {
+      chunk = next;
+    }
+  });
+  if (chunk.trim()) chunks.push(chunk.trim());
+  return chunks.filter(Boolean);
+}
+
+async function iaArrangeRawTranscriptForReview(options = {}) {
+  if (!iaCurrentInterview?._id || !iaCurrentInterview?.transcripts?.raw?.text) {
+    if (!options.silent) alert('Upload or load a raw transcript first.');
+    return false;
+  }
+  const rawText = iaRawTranscriptTextForReview();
+  const blocks = iaSplitRawTranscriptForReview(rawText);
+  if (!blocks.length) {
+    if (!options.silent) alert('The raw transcript is empty or could not be arranged for review.');
+    return false;
+  }
+  const existingReviewedText = String(iaSelectReviewedWorkingTranscript(iaCurrentInterview?.transcripts || {})?.text || '').trim();
+  if (existingReviewedText && options.replaceReviewed !== true) {
+    const shouldAsk = options.promptReplaceExisting || !options.silent;
+    if (!shouldAsk) return false;
+    const replace = confirm('A reviewed draft already exists for this interview. Replace the editable review draft with newly grouped blocks from the raw transcript?');
+    if (!replace) return false;
+  }
+  iaReviewedBlocks = blocks.map(item => {
+    const text = String(item && typeof item === 'object' ? item.text : item || '').trim();
+    const itemRole = item && typeof item === 'object' ? item.role : '';
+    const role = itemRole === 'guide' || iaIsReviewedGuideQuestionBlock(text) || iaReviewedBlockMatchesUploadedGuide(text) ? 'guide' : 'transcript';
+    if (role === 'guide') iaMarkReviewedGuideRole(text);
+    const block = iaNewReviewedBlock(text, role);
+    const segmentIndex = Number(item && typeof item === 'object' ? item.segmentIndex : -1);
+    const endSegmentIndex = Number(item && typeof item === 'object' ? item.endSegmentIndex : -1);
+    if (Number.isFinite(segmentIndex) && segmentIndex >= 0) block.segmentIndex = segmentIndex;
+    if (Number.isFinite(endSegmentIndex) && endSegmentIndex >= 0) block.endSegmentIndex = endSegmentIndex;
+    return block;
+  });
+  const reviewedText = iaGetReviewedTranscriptText();
+  iaCurrentInterview = iaMergeInterviewResponse({
+    transcripts: {
+      firstReviewDraft: {
+        text: reviewedText,
+        source: 'arranged-raw-transcript-upload',
+        updatedAt: new Date().toISOString()
+      }
+    }
+  });
+  iaReviewedBlocksInterviewId = iaCurrentInterview._id;
+  iaReviewedBlocksSourceText = reviewedText;
+  iaRenderReviewedTranscriptBlocks({ force: true });
+  await iaOpenAudioVerification();
+  iaSetReviewedDirty(true);
+  const saved = await iaSaveFirstReviewDraft({ silent: true });
+  iaRenderInterviewTranscriptState();
+  if (saved) iaSetReviewedDirty(false);
+  if (!options.silent) alert(`Raw transcript arranged into ${iaReviewedBlocks.length} editable review block${iaReviewedBlocks.length === 1 ? '' : 's'}.`);
+  return true;
+}
 function iaNormaliseReviewedQuestionLabels(text) {
   let mainQuestionNumber = 0;
   return String(text || '')
@@ -8676,7 +9035,7 @@ function iaReconcileReviewedBlocksWithNewText(newText) {
     if (role === 'guide') iaMarkReviewedGuideRole(blockText);
     const matched = claimMatch(blockText);
     if (matched) {
-      return { id: matched.id, text: blockText, role, approved: matched.approved, approvedAt: matched.approvedAt, approvedBy: matched.approvedBy, createdAt: matched.createdAt };
+      return { id: matched.id, text: blockText, role, approved: matched.approved, approvedAt: matched.approvedAt, approvedBy: matched.approvedBy, createdAt: matched.createdAt, segmentIndex: matched.segmentIndex, endSegmentIndex: matched.endSegmentIndex };
     }
     return iaNewReviewedBlock(blockText, role);
   });
@@ -8770,14 +9129,22 @@ function iaFormatReviewedBlockDisplayText(text) {
   );
 }
 function iaRenderReviewedBlockHTML(block, index) {
-  const segmentIndex = iaFindBestRawSegmentIndex(block.text, index, iaReviewedBlocks.length);
+  const storedSegmentIndex = Number(block.segmentIndex);
+  const segmentIndex = Number.isFinite(storedSegmentIndex) && storedSegmentIndex >= 0
+    ? storedSegmentIndex
+    : iaFindBestRawSegmentIndex(block.text, index, iaReviewedBlocks.length);
+  const storedEndSegmentIndex = Number(block.endSegmentIndex);
+  const endSegmentIndex = Number.isFinite(storedEndSegmentIndex) && storedEndSegmentIndex >= segmentIndex
+    ? storedEndSegmentIndex
+    : segmentIndex;
   const id = iaEsc(block.id);
   if (block.role === 'guide') {
     return `
-      <div class="ia-reviewed-block-shell guide-question" draggable="true" data-role="guide" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" data-approved="false" data-original="${iaEsc(block.text)}">
-        <div class="ia-reviewed-block guide-question" contenteditable="true" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" ondblclick="iaEditReviewedBlock(event, '${id}')" onblur="iaExitReviewedBlockEdit(event)">${iaEsc(iaFormatReviewedBlockDisplayText(block.text))}</div>
+      <div class="ia-reviewed-block-shell guide-question" draggable="true" data-role="guide" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" data-end-segment-index="${endSegmentIndex}" data-approved="false" data-original="${iaEsc(block.text)}">
+        <div class="ia-reviewed-block guide-question" contenteditable="true" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" data-end-segment-index="${endSegmentIndex}" ondblclick="iaEditReviewedBlock(event, '${id}')" onblur="iaExitReviewedBlockEdit(event)">${iaEsc(iaFormatReviewedBlockDisplayText(block.text))}</div>
         <div class="ia-reviewed-guide-footer">
           <span class="ia-reviewed-readonly-chip">Guide</span>
+          <button class="ia-reviewed-edit-btn" type="button" title="Play audio from this guide block" data-review-action="play">Play</button>
           <button class="ia-reviewed-edit-btn" type="button" title="Edit this guide question" data-review-action="edit">Edit</button>
           <button class="ia-reviewed-edit-btn" type="button" title="Duplicate this guide question" data-review-action="duplicate">Duplicate</button>
           <button class="ia-reviewed-delete-btn" type="button" title="Delete this guide card from the reviewed transcript" data-review-action="delete">Delete</button>
@@ -8797,9 +9164,10 @@ function iaRenderReviewedBlockHTML(block, index) {
       ? '<button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Interviewer" data-review-action="make-interviewer">Interviewer</button>'
       : '<button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Interviewer" data-review-action="make-interviewer">Interviewer</button><button class="ia-reviewed-edit-btn" type="button" title="Convert this card to Participant" data-review-action="make-participant">Participant</button>');
   return `
-    <div class="ia-reviewed-block-shell ${speakerClass} ${isApproved ? 'approved' : ''}" draggable="true" data-role="transcript" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" data-approved="${isApproved ? 'true' : 'false'}" data-original="${iaEsc(block.text)}">
-      <div class="ia-reviewed-block" contenteditable="true" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" ondblclick="iaEditReviewedBlock(event, '${id}')" onblur="iaExitReviewedBlockEdit(event)">${iaEsc(iaFormatReviewedBlockDisplayText(block.text))}</div>
+    <div class="ia-reviewed-block-shell ${speakerClass} ${isApproved ? 'approved' : ''}" draggable="true" data-role="transcript" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" data-end-segment-index="${endSegmentIndex}" data-approved="${isApproved ? 'true' : 'false'}" data-original="${iaEsc(block.text)}">
+      <div class="ia-reviewed-block" contenteditable="true" data-block-id="${id}" data-block-index="${index}" data-segment-index="${segmentIndex}" data-end-segment-index="${endSegmentIndex}" ondblclick="iaEditReviewedBlock(event, '${id}')" onblur="iaExitReviewedBlockEdit(event)">${iaEsc(iaFormatReviewedBlockDisplayText(block.text))}</div>
       <div class="ia-reviewed-block-actions">
+        <button class="ia-reviewed-edit-btn" type="button" title="Play audio from this review block" data-review-action="play">Play</button>
         <button class="ia-reviewed-edit-btn" type="button" title="Edit this paragraph" data-review-action="edit">Edit</button>
         ${speakerSwitchAction}
         <button class="ia-reviewed-edit-btn" type="button" title="Convert this section to a blue guide card" data-review-action="make-guide">Guide</button>
@@ -8847,43 +9215,87 @@ function iaNormaliseTranscriptTokens(text) {
     .filter(token => token.length > 2);
 }
 
-function iaFindBestRawSegmentIndex(text, fallbackIndex = 0, fallbackTotal = 1) {
-  const segments = Array.isArray(iaCurrentInterview?.transcripts?.raw?.segments)
-    ? iaCurrentInterview.transcripts.raw.segments
-    : [];
+function iaFindBestRawSegmentIndex(text, fallbackIndex = 0, fallbackTotal = 1, options = {}) {
+  const segments = iaRawSegmentsForReview();
   if (!segments.length) return -1;
+  const from = Math.max(0, Number.isFinite(Number(options.from)) ? Number(options.from) : 0);
+  const to = Math.min(segments.length - 1, Number.isFinite(Number(options.to)) ? Number(options.to) : segments.length - 1);
   const tokens = [...new Set(iaNormaliseTranscriptTokens(text))];
-  if (!tokens.length) return Math.min(segments.length - 1, Math.max(0, fallbackIndex));
+  if (!tokens.length) return Math.min(to, Math.max(from, fallbackIndex));
   let bestIndex = -1;
   let bestScore = 0;
-  segments.forEach((segment, index) => {
-    const segmentText = iaNormaliseTranscriptTokens(segment.text).join(' ');
+  for (let index = from; index <= to; index += 1) {
+    const segmentText = iaNormaliseTranscriptTokens(segments[index]?.text).join(' ');
     const score = tokens.reduce((total, token) => total + (segmentText.includes(token) ? 1 : 0), 0);
     if (score > bestScore) {
       bestScore = score;
       bestIndex = index;
     }
-  });
+  }
   if (bestIndex >= 0 && bestScore >= Math.min(3, tokens.length)) return bestIndex;
   const proportional = Math.round((Math.max(0, fallbackIndex) / Math.max(1, fallbackTotal - 1)) * (segments.length - 1));
-  return Math.min(segments.length - 1, Math.max(0, proportional));
+  return Math.min(to, Math.max(from, proportional));
 }
 
-function iaTextAroundSelection(target) {
-  const fullText = String(target?.innerText || '').trim();
+function iaNormaliseAudioSearchText(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/^(richard|interviewer|participant|speaker unclear|respondent)(?:\s*\([^)]*\))?\s*:/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function iaReviewedBlockSegmentRange(shell, fallbackIndex = 0) {
+  const segments = iaRawSegmentsForReview();
+  if (!segments.length) return { from: -1, to: -1 };
+  const from = Number(shell?.dataset?.segmentIndex);
+  const nextShell = shell?.nextElementSibling?.matches?.('.ia-reviewed-block-shell') ? shell.nextElementSibling : null;
+  const explicitTo = Number(shell?.dataset?.endSegmentIndex);
+  const nextStart = Number(nextShell?.dataset?.segmentIndex);
+  const start = Number.isFinite(from) && from >= 0 ? from : Math.max(0, Math.min(segments.length - 1, fallbackIndex));
+  let end = Number.isFinite(explicitTo) && explicitTo >= start ? explicitTo : start;
+  if (Number.isFinite(nextStart) && nextStart > start) end = Math.min(end < start ? nextStart - 1 : Math.max(end, start), nextStart - 1);
+  return { from: start, to: Math.min(segments.length - 1, Math.max(start, end)) };
+}
+
+function iaFindSelectedTextSegmentIndexInBlock(selectedText, shell, fallbackIndex = 0) {
+  const segments = iaRawSegmentsForReview();
+  const selected = iaNormaliseAudioSearchText(selectedText);
+  if (!segments.length || !selected) return -1;
+  const range = iaReviewedBlockSegmentRange(shell, fallbackIndex);
+  if (range.from < 0) return -1;
+  for (let start = range.from; start <= range.to; start += 1) {
+    let combined = '';
+    for (let end = start; end <= range.to; end += 1) {
+      combined = iaNormaliseAudioSearchText(`${combined} ${segments[end]?.text || ''}`);
+      if (combined.includes(selected)) return start;
+      if (combined.length > selected.length + 600) break;
+    }
+  }
+  return iaFindBestRawSegmentIndex(selectedText, fallbackIndex, 1, range);
+}
+
+function iaSelectedReviewedText(target) {
   const selection = window.getSelection?.();
-  if (!selection?.rangeCount || !target?.contains(selection.anchorNode)) return fullText;
+  if (!selection?.rangeCount || selection.isCollapsed) return '';
   const selected = String(selection.toString() || '').trim();
-  if (selected) return selected;
-  const anchorText = String(selection.anchorNode?.textContent || '').trim();
-  if (!anchorText) return fullText;
-  const offset = Math.max(0, Number(selection.anchorOffset) || 0);
-  const before = anchorText.slice(0, offset);
-  const after = anchorText.slice(offset);
-  const start = Math.max(before.lastIndexOf('.'), before.lastIndexOf('?'), before.lastIndexOf('!')) + 1;
-  const endCandidates = ['.', '?', '!'].map(mark => after.indexOf(mark)).filter(value => value >= 0);
-  const end = endCandidates.length ? offset + Math.min(...endCandidates) + 1 : anchorText.length;
-  return anchorText.slice(start, end).trim() || fullText;
+  if (!selected) return '';
+  if (!target?.contains(selection.anchorNode) || !target?.contains(selection.focusNode)) return '';
+  return selected;
+}
+
+function iaPlayReviewedBlockAudio(shell, options = {}) {
+  const block = shell?.querySelector?.('.ia-reviewed-block');
+  if (!block) return false;
+  const blocks = [...document.querySelectorAll('#ia-reviewed .ia-reviewed-block')];
+  const blockIndex = Number(block.dataset.blockIndex);
+  const fallbackIndex = Number.isFinite(blockIndex) ? blockIndex : blocks.indexOf(block);
+  const storedSegmentIndex = Number(block.dataset.segmentIndex || shell?.dataset?.segmentIndex);
+  if (Number.isFinite(storedSegmentIndex) && storedSegmentIndex >= 0) {
+    return iaJumpToTranscriptSegment(storedSegmentIndex, options);
+  }
+  return iaJumpToReviewedBlockAudioPosition(fallbackIndex, blocks.length || 1, options);
 }
 
 function iaHandleReviewedEditorClick(event) {
@@ -8893,6 +9305,7 @@ function iaHandleReviewedEditorClick(event) {
     event.stopPropagation();
     const shell = actionButton.closest('.ia-reviewed-block-shell');
     const blockId = shell?.dataset?.blockId;
+    if (actionButton.dataset.reviewAction === 'play') iaPlayReviewedBlockAudio(actionButton.closest('.ia-reviewed-block-shell'));
     if (actionButton.dataset.reviewAction === 'approve') iaApproveReviewedBlock(event, blockId);
     if (actionButton.dataset.reviewAction === 'undo') iaUndoReviewedBlock(event, blockId);
     if (actionButton.dataset.reviewAction === 'edit') iaEditReviewedBlock(event, blockId);
@@ -8911,14 +9324,19 @@ function iaHandleReviewedClick(event) {
   if (!block) return;
   const blocks = [...document.querySelectorAll('#ia-reviewed .ia-reviewed-block')];
   const blockIndex = Number(block.dataset.blockIndex);
-  const selectedText = iaTextAroundSelection(block);
-  const segmentIndex = iaFindBestRawSegmentIndex(selectedText || block.innerText, blockIndex || blocks.indexOf(block), blocks.length || 1);
-  block.dataset.segmentIndex = segmentIndex;
+  const fallbackIndex = Number.isFinite(blockIndex) ? blockIndex : blocks.indexOf(block);
+  const selectedText = iaSelectedReviewedText(block);
   const shell = block.closest('.ia-reviewed-block-shell');
-  if (shell) shell.dataset.segmentIndex = segmentIndex;
   const editor = document.getElementById('ia-reviewed');
-  if (editor) editor.dataset.lastFocusedBlockIndex = String(blockIndex);
-  iaJumpToTranscriptSegment(segmentIndex);
+  if (editor) editor.dataset.lastFocusedBlockIndex = String(fallbackIndex);
+  if (selectedText) {
+    const selectedSegmentIndex = iaFindSelectedTextSegmentIndexInBlock(selectedText, shell, fallbackIndex);
+    if (Number.isFinite(Number(selectedSegmentIndex)) && Number(selectedSegmentIndex) >= 0) {
+      iaJumpToTranscriptSegment(selectedSegmentIndex);
+      return;
+    }
+  }
+  iaPlayReviewedBlockAudio(shell);
 }
 
 function iaPauseTranscriptAudio() {
@@ -8965,8 +9383,11 @@ function iaReviewedBlockItems() {
   return iaReviewedBlocks.map(block => ({ text: block.text, role: block.role }));
 }
 
-function iaNewReviewedBlock(text, role) {
-  return { id: iaNewReviewedBlockId(), text, role, approved: false, approvedAt: null, approvedBy: null, createdAt: new Date().toISOString() };
+function iaNewReviewedBlock(text, role, options = {}) {
+  const block = { id: iaNewReviewedBlockId(), text, role, approved: false, approvedAt: null, approvedBy: null, createdAt: new Date().toISOString() };
+  const segmentIndex = Number(options.segmentIndex);
+  if (Number.isFinite(segmentIndex) && segmentIndex >= 0) block.segmentIndex = segmentIndex;
+  return block;
 }
 
 // Forces a re-render from the current (already-mutated) iaReviewedBlocks array. This never
@@ -10190,6 +10611,8 @@ async function iaSaveReviewedTranscript(options = {}) {
       role: block.role,
       order: index,
       approved: block.approved,
+      segmentIndex: Number.isFinite(Number(block.segmentIndex)) ? Number(block.segmentIndex) : undefined,
+      endSegmentIndex: Number.isFinite(Number(block.endSegmentIndex)) ? Number(block.endSegmentIndex) : undefined,
     }));
     const res = await fetch(API_URL + '/api/interviews/' + encodeURIComponent(iaCurrentInterview._id) + '/reviewed-transcript', {
       method: 'PUT',
