@@ -8721,7 +8721,8 @@ function iaReviewedBlockFromTextWithSource(text) {
   return {
     text: cleanText,
     ...(Number.isFinite(Number(meta.segmentIndex)) ? { segmentIndex: meta.segmentIndex } : {}),
-    ...(Number.isFinite(Number(meta.endSegmentIndex)) ? { endSegmentIndex: meta.endSegmentIndex } : {})
+    ...(Number.isFinite(Number(meta.endSegmentIndex)) ? { endSegmentIndex: meta.endSegmentIndex } : {}),
+    ...(Number.isFinite(Number(meta.segmentIndex)) ? { sourceSegmentMethod: 'source-marker' } : {})
   };
 }
 
@@ -9291,14 +9292,9 @@ function iaFormatReviewedBlockDisplayText(text) {
   );
 }
 function iaRenderReviewedBlockHTML(block, index) {
-  const storedSegmentIndex = Number(block.segmentIndex);
-  const segmentIndex = Number.isFinite(storedSegmentIndex) && storedSegmentIndex >= 0
-    ? storedSegmentIndex
-    : iaFindBestRawSegmentIndex(block.text, index, iaReviewedBlocks.length);
-  const storedEndSegmentIndex = Number(block.endSegmentIndex);
-  const endSegmentIndex = Number.isFinite(storedEndSegmentIndex) && storedEndSegmentIndex >= segmentIndex
-    ? storedEndSegmentIndex
-    : segmentIndex;
+  const reliableRange = iaReliableReviewedBlockSegmentRange(block);
+  const segmentIndex = reliableRange ? reliableRange.segmentIndex : -1;
+  const endSegmentIndex = reliableRange ? reliableRange.endSegmentIndex : -1;
   const id = iaEsc(block.id);
   if (block.role === 'guide') {
     return `
@@ -9343,9 +9339,38 @@ function iaRenderReviewedBlockHTML(block, index) {
 }
 
 function iaReviewedBlockHasSegmentRange(block) {
-  return Number.isFinite(Number(block?.segmentIndex)) && Number(block.segmentIndex) >= 0;
+  return !!iaReliableReviewedBlockSegmentRange(block);
 }
 
+function iaRawTextForSegmentRange(startIndex, endIndex) {
+  const segments = iaRawSegmentsForReview();
+  const start = Math.max(0, Number(startIndex) || 0);
+  const end = Math.min(segments.length - 1, Math.max(start, Number(endIndex ?? startIndex) || start));
+  if (!segments.length || start >= segments.length) return '';
+  return segments.slice(start, end + 1).map(segment => segment?.text || '').join(' ');
+}
+
+function iaReviewedRangeTextCoverage(blockText, rawText) {
+  const tokens = [...new Set(iaReviewedAlignmentTokens(blockText))];
+  if (!tokens.length) return 0;
+  const raw = iaNormaliseTranscriptTokens(rawText).join(' ');
+  if (!raw) return 0;
+  const matched = tokens.reduce((total, token) => total + (raw.includes(token) ? 1 : 0), 0);
+  return matched / tokens.length;
+}
+
+function iaReliableReviewedBlockSegmentRange(block) {
+  const segments = iaRawSegmentsForReview();
+  const start = Number(block?.segmentIndex);
+  if (!segments.length || !Number.isFinite(start) || start < 0 || start >= segments.length) return null;
+  const endRaw = Number(block?.endSegmentIndex);
+  const end = Number.isFinite(endRaw) && endRaw >= start ? Math.min(segments.length - 1, endRaw) : start;
+  if (String(block?.sourceSegmentMethod || '') === 'source-marker') return { segmentIndex: start, endSegmentIndex: end };
+  if (block?.role === 'guide') return null;
+  const coverage = iaReviewedRangeTextCoverage(block?.text || '', iaRawTextForSegmentRange(start, end));
+  if (coverage >= 0.55) return { segmentIndex: start, endSegmentIndex: end };
+  return null;
+}
 function iaReviewedAlignmentTokens(text) {
   const stop = new Set(['the','and','that','this','with','from','your','have','they','there','what','when','where','which','then','than','into','onto','about','because','were','been','will','would','could','should','their','them','you','for','are','was','can','how']);
   return iaNormaliseTranscriptTokens(iaStripReviewedSourceMarkers(text))
@@ -9378,7 +9403,7 @@ function iaFindReviewedBlockSegmentRange(block, fromIndex = 0) {
       if (combined.length > String(text).length * 1.8 + 800) break;
     }
   }
-  if (best && (best.coverage >= 0.28 || best.score >= 0.5)) return { segmentIndex: best.start, endSegmentIndex: best.end };
+  if (best && (best.coverage >= 0.62 || best.score >= 0.9)) return { segmentIndex: best.start, endSegmentIndex: best.end, sourceSegmentMethod: 'text-match' };
   return null;
 }
 
@@ -9397,6 +9422,7 @@ function iaEnsureReviewedBlockSegmentRanges() {
     if (!range) return;
     block.segmentIndex = range.segmentIndex;
     block.endSegmentIndex = Math.max(range.segmentIndex, range.endSegmentIndex ?? range.segmentIndex);
+    block.sourceSegmentMethod = range.sourceSegmentMethod || 'text-match';
     cursor = block.endSegmentIndex + 1;
     changed = true;
   });
@@ -9488,8 +9514,8 @@ function iaReviewedBlockSegmentRange(shell, fallbackIndex = 0) {
   const nextShell = shell?.nextElementSibling?.matches?.('.ia-reviewed-block-shell') ? shell.nextElementSibling : null;
   const explicitTo = Number(shell?.dataset?.endSegmentIndex);
   const nextStart = Number(nextShell?.dataset?.segmentIndex);
-  const start = Number.isFinite(from) && from >= 0 ? from : Math.max(0, Math.min(segments.length - 1, fallbackIndex));
-  let end = Number.isFinite(explicitTo) && explicitTo >= start ? explicitTo : start;
+  const start = Number.isFinite(from) && from >= 0 ? from : 0;
+  let end = Number.isFinite(explicitTo) && explicitTo >= start ? explicitTo : (Number.isFinite(from) && from >= 0 ? start : segments.length - 1);
   if (Number.isFinite(nextStart) && nextStart > start) end = Math.min(end < start ? nextStart - 1 : Math.max(end, start), nextStart - 1);
   return { from: start, to: Math.min(segments.length - 1, Math.max(start, end)) };
 }
@@ -9508,7 +9534,8 @@ function iaFindSelectedTextSegmentIndexInBlock(selectedText, shell, fallbackInde
       if (combined.length > selected.length + 600) break;
     }
   }
-  return iaFindBestRawSegmentIndex(selectedText, fallbackIndex, 1, range);
+  const matched = iaFindBestRawSegmentIndex(selectedText, range.from, 1, { ...range, noProportional: true });
+  return Number.isFinite(Number(matched)) ? matched : -1;
 }
 
 function iaSelectedReviewedText(target) {
@@ -9521,16 +9548,27 @@ function iaSelectedReviewedText(target) {
 }
 
 function iaPlayReviewedBlockAudio(shell, options = {}) {
-  const block = shell?.querySelector?.('.ia-reviewed-block');
-  if (!block) return false;
-  const blocks = [...document.querySelectorAll('#ia-reviewed .ia-reviewed-block')];
-  const blockIndex = Number(block.dataset.blockIndex);
-  const fallbackIndex = Number.isFinite(blockIndex) ? blockIndex : blocks.indexOf(block);
-  const storedSegmentIndex = Number(block.dataset.segmentIndex || shell?.dataset?.segmentIndex);
-  if (Number.isFinite(storedSegmentIndex) && storedSegmentIndex >= 0) {
-    return iaJumpToTranscriptSegment(storedSegmentIndex, options);
+  const blockEl = shell?.querySelector?.('.ia-reviewed-block');
+  if (!blockEl) return false;
+  const blockId = shell?.dataset?.blockId || blockEl.dataset.blockId || '';
+  const block = iaReviewedBlocks.find(item => item.id === blockId) || { text: blockEl.innerText || '', role: shell?.dataset?.role || 'transcript' };
+  let range = iaReliableReviewedBlockSegmentRange(block);
+  if (!range && block.role !== 'guide') {
+    range = iaFindReviewedBlockSegmentRange(block, 0);
+    if (range) {
+      block.segmentIndex = range.segmentIndex;
+      block.endSegmentIndex = range.endSegmentIndex;
+      block.sourceSegmentMethod = range.sourceSegmentMethod || 'text-match';
+      shell.dataset.segmentIndex = String(range.segmentIndex);
+      shell.dataset.endSegmentIndex = String(range.endSegmentIndex);
+      blockEl.dataset.segmentIndex = String(range.segmentIndex);
+      blockEl.dataset.endSegmentIndex = String(range.endSegmentIndex);
+      iaScheduleFirstReviewDraftSave();
+    }
   }
-  return iaJumpToReviewedBlockAudioPosition(fallbackIndex, blocks.length || 1, options);
+  if (range) return iaJumpToTranscriptSegment(range.segmentIndex, options);
+  alert('This reviewed block is not confidently matched to a raw audio timestamp yet. Click the matching raw transcript timestamp on the left, or regenerate the reviewed transcript after the latest update so source segment anchors are created.');
+  return false;
 }
 
 function iaHandleReviewedEditorClick(event) {
